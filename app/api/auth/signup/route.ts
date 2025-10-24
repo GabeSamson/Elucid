@@ -4,8 +4,6 @@ import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 const signupSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string()
@@ -77,6 +75,7 @@ export async function POST(request: NextRequest) {
 
     // Send verification email
     try {
+      const resend = new Resend(process.env.RESEND_API_KEY);
       const result = await resend.emails.send({
         from: 'Elucid LDN <hello@elucid.london>',
         to: normalizedEmail,

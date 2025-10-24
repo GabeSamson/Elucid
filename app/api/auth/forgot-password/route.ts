@@ -3,8 +3,6 @@ import { prisma } from '@/lib/prisma';
 import { Resend } from 'resend';
 import { randomBytes } from 'crypto';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -48,6 +46,7 @@ export async function POST(request: NextRequest) {
     const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${resetToken}`;
 
     try {
+      const resend = new Resend(process.env.RESEND_API_KEY);
       const result = await resend.emails.send({
         from: 'Elucid LDN <hello@elucid.london>',
         to: user.email,
