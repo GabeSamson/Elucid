@@ -3,12 +3,11 @@ import Stripe from 'stripe';
 import { auth } from '@/auth';
 import { createOrderFromStripeSession } from '@/lib/orders/createOrderFromStripeSession';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-09-30.clover',
-});
-
 export async function POST(request: NextRequest) {
   try {
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+      apiVersion: '2025-09-30.clover',
+    });
     const body = await request.json();
     const sessionId: string | undefined = body?.sessionId;
 

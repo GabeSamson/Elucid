@@ -2,14 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createOrderFromStripeSession } from '@/lib/orders/createOrderFromStripeSession';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-09-30.clover',
-});
-
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
-
 export async function POST(request: NextRequest) {
   try {
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+      apiVersion: '2025-09-30.clover',
+    });
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
     const body = await request.text();
     const signature = request.headers.get('stripe-signature')!;
 
