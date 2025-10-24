@@ -1,0 +1,249 @@
+// Elucid LDN Database Schema - Local SQLite
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id                     String    @id @default(uuid())
+  email                  String    @unique
+  password               String?
+  name                   String?
+  avatarUrl              String?   @map("avatar_url")
+  role                   String    @default("user")
+  emailVerified          Boolean   @default(false) @map("email_verified")
+  verificationToken      String?   @map("verification_token")
+  resetPasswordToken     String?   @map("reset_password_token")
+  resetPasswordExpires   DateTime? @map("reset_password_expires")
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+
+  orders     Order[]
+
+  @@map("users")
+}
+
+model Collection {
+  id          String    @id @default(uuid())
+  name        String
+  slug        String    @unique
+  description String?
+  imageUrl    String?   @map("image_url")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  products          Product[]
+  homepageFeatures  HomepageConfig[] @relation("HomepageFeaturedCollection")
+
+  @@map("collections")
+}
+
+model Product {
+  id              String    @id @default(uuid())
+  name            String
+  description     String
+  price           Float
+  compareAtPrice  Float?    @map("compare_at_price")
+  costPrice       Float?    @map("cost_price") // Cost to manufacture/buy
+  images          String    @default("[]") // JSON array as string
+  stock           Int       @default(0)
+  collectionId    String?   @map("collection_id")
+  sizes           String    @default("[]") // JSON array as string
+  colors          String    @default("[]") // JSON array with name and hexCode: [{"name": "Navy Blue", "hexCode": "#001F3F"}]
+  featured        Boolean   @default(false)
+  active          Boolean   @default(true)
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  collection      Collection? @relation(fields: [collectionId], references: [id])
+  orderItems      OrderItem[]
+  variants        ProductVariant[]
+
+  @@map("products")
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PromoDiscountType {
+  PERCENTAGE
+  FIXED
+}
+
+model Order {
+  id              String      @id @default(uuid())
+  userId          String?     @map("user_id")
+  email           String?
+  name            String
+  address         String      // JSON as string
+  subtotal        Float
+  shipping        Float
+  tax             Float
+  total           Float
+  discount        Float       @default(0)
+  promoCodeId     String?     @map("promo_code_id")
+  promoCodeCode   String?     @map("promo_code_code")
+  status          OrderStatus @default(PENDING)
+  trackingNumber  String?     @map("tracking_number")
+  shippedAt       DateTime?   @map("shipped_at")
+  stripePaymentId String?     @map("stripe_payment_id")
+  isInPerson      Boolean     @default(false) @map("is_in_person")
+  notes           String?
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  user            User?       @relation(fields: [userId], references: [id])
+  promoCode       PromoCode?  @relation(fields: [promoCodeId], references: [id])
+  items           OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id               String   @id @default(uuid())
+  orderId          String   @map("order_id")
+  productId        String   @map("product_id")
+  productName      String   @map("product_name")
+  productImage     String?  @map("product_image")
+  quantity         Int
+  size             String?
+  color            String?
+  priceAtPurchase  Float    @map("price_at_purchase")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  order            Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product          Product  @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
+
+model Newsletter {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("newsletter")
+}
+
+model ProductVariant {
+  id        String   @id @default(uuid())
+  productId String   @map("product_id")
+  size      String
+  color     String   // Color name (e.g., "Navy Blue")
+  stock     Int      @default(0)
+  sku       String?  // Optional SKU for inventory management
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, size, color])
+  @@map("product_variants")
+}
+
+model PromoCode {
+  id                 String             @id @default(uuid())
+  code               String             @unique
+  description        String?
+  discountType       PromoDiscountType  @map("discount_type")
+  amount             Float
+  active             Boolean            @default(true)
+  minimumOrderValue  Float?             @map("minimum_order_value")
+  maxRedemptions     Int?               @map("max_redemptions")
+  redemptions        Int                @default(0)
+  startsAt           DateTime?          @map("starts_at")
+  endsAt             DateTime?          @map("ends_at")
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+
+  orders             Order[]
+
+  @@map("promo_codes")
+}
+
+model HomepageConfig {
+  id                   String      @id @default("main")
+  heroHeading          String?     @map("hero_heading")
+  heroSubheading       String?     @map("hero_subheading")
+  heroCtaLabel         String?     @map("hero_cta_label")
+  heroCtaHref          String?     @map("hero_cta_href")
+  customContent        String?     @map("custom_content")
+  showCountdown        Boolean     @default(false) @map("show_countdown")
+  countdownLabel       String?     @map("countdown_label")
+  countdownTarget      DateTime?   @map("countdown_target")
+  featuredCollectionId String?     @map("featured_collection_id")
+  featuredTitle        String?     @map("featured_title")
+  featuredSubtitle     String?     @map("featured_subtitle")
+  featuredDescription  String?     @map("featured_description")
+  writingSection       String?     @map("writing_section")
+  createdAt            DateTime    @default(now()) @map("created_at")
+  updatedAt            DateTime    @updatedAt @map("updated_at")
+
+  featuredCollection   Collection? @relation("HomepageFeaturedCollection", fields: [featuredCollectionId], references: [id])
+
+  @@map("homepage_config")
+}
+
+model PendingUser {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  password  String   // Hashed password
+  code      String   // 6-digit verification code
+  expiresAt DateTime
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("pending_users")
+}
+
+model CalendarEvent {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  startDate   DateTime @map("start_date")
+  endDate     DateTime @map("end_date")
+  createdBy   String   @map("created_by") // User ID of creator
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("calendar_events")
+}
+
+model TeamTask {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  completed   Boolean  @default(false)
+  assignedTo  String?  @map("assigned_to") // User ID if assigned
+  priority    String   @default("medium") // low, medium, high
+  dueDate     DateTime? @map("due_date")
+  createdBy   String   @map("created_by") // User ID of creator
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("team_tasks")
+}
+
+model PersonalTask {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  title       String
+  description String?
+  completed   Boolean  @default(false)
+  priority    String   @default("medium") // low, medium, high
+  dueDate     DateTime? @map("due_date")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("personal_tasks")
+}

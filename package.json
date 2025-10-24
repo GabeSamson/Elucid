@@ -1,27 +1,43 @@
 {
-  "name": "elucid-temp",
+  "name": "elucid",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
+    "dev": "next dev --turbopack -H 0.0.0.0",
+    "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "next lint"
   },
   "dependencies": {
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
-    "next": "15.5.6"
+    "@prisma/client": "^6.17.1",
+    "@stripe/stripe-js": "^8.1.0",
+    "@tiptap/extension-text-align": "^3.7.2",
+    "@tiptap/extension-underline": "^3.7.2",
+    "@tiptap/react": "^3.7.2",
+    "@tiptap/starter-kit": "^3.7.2",
+    "@vercel/blob": "^2.0.0",
+    "bcryptjs": "^3.0.2",
+    "framer-motion": "^11.15.0",
+    "next": "^15.5.6",
+    "next-auth": "^5.0.0-beta.29",
+    "prisma": "^6.17.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-hook-form": "^7.65.0",
+    "react-icons": "^5.5.0",
+    "recharts": "^3.3.0",
+    "resend": "^6.2.2",
+    "stripe": "^19.1.0",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
-    "typescript": "^5",
-    "@types/node": "^20",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4",
-    "eslint": "^9",
-    "eslint-config-next": "15.5.6",
-    "@eslint/eslintrc": "^3"
+    "autoprefixer": "^10",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5"
   }
 }
