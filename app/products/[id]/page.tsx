@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, Suspense } from "react";
 import { useParams } from "next/navigation";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
@@ -128,7 +128,9 @@ export default function ProductPage() {
   if (error || !product) {
     return (
       <main className="min-h-screen bg-cream">
-        <Navigation />
+        <Suspense fallback={<div className="h-20" />}>
+          <Navigation />
+        </Suspense>
         <div className="pt-32 pb-20 px-6 flex items-center justify-center">
           <div className="text-center">
             <h1 className="font-serif text-4xl text-charcoal-dark mb-4">
@@ -158,7 +160,9 @@ const discountPercent = hasDiscount
 
   return (
     <main className="min-h-screen bg-cream">
-      <Navigation />
+      <Suspense fallback={<div className="h-20" />}>
+        <Navigation />
+      </Suspense>
 
       <div className="pt-32 pb-20 px-6">
         <div className="max-w-7xl mx-auto">

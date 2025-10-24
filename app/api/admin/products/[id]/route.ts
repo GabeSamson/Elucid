@@ -188,14 +188,14 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+
   try {
     // Authentication check
     const session = await auth();
     if (!session?.user || session.user.role !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    const { id } = await params;
     const searchParams = request.nextUrl.searchParams;
     const deleteAnalytics = searchParams.get('deleteAnalytics') === 'true';
     if (deleteAnalytics) {

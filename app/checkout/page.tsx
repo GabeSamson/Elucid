@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/contexts/CartContext";
 import { useSession } from "next-auth/react";
@@ -195,7 +195,9 @@ useEffect(() => {
   if (status === 'loading') {
     return (
       <main className="min-h-screen bg-cream">
-        <Navigation />
+        <Suspense fallback={<div className="h-20" />}>
+          <Navigation />
+        </Suspense>
         <div className="pt-32 pb-20 px-6 flex items-center justify-center">
           <div className="text-center text-charcoal/60">
             Loading...
@@ -210,7 +212,9 @@ useEffect(() => {
   if (status === 'unauthenticated') {
     return (
       <main className="min-h-screen bg-cream">
-        <Navigation />
+        <Suspense fallback={<div className="h-20" />}>
+          <Navigation />
+        </Suspense>
         <div className="pt-32 pb-20 px-6 flex items-center justify-center">
           <div className="text-center">
             <h1 className="font-serif text-4xl text-charcoal-dark mb-4">
@@ -229,7 +233,9 @@ useEffect(() => {
   if (items.length === 0) {
     return (
       <main className="min-h-screen bg-cream">
-        <Navigation />
+        <Suspense fallback={<div className="h-20" />}>
+          <Navigation />
+        </Suspense>
         <div className="pt-32 pb-20 px-6 flex items-center justify-center">
           <div className="text-center">
             <h1 className="font-serif text-4xl text-charcoal-dark mb-4">
@@ -253,7 +259,9 @@ useEffect(() => {
 
   return (
     <main className="min-h-screen bg-cream">
-      <Navigation />
+      <Suspense fallback={<div className="h-20" />}>
+        <Navigation />
+      </Suspense>
 
       <div className="pt-32 pb-20 px-6">
         <div className="max-w-6xl mx-auto">

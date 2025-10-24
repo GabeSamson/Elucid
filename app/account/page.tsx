@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Order } from "@/types/product.types";
@@ -84,7 +84,9 @@ export default function AccountPage() {
 
   return (
     <main className="min-h-screen bg-cream">
-      <Navigation />
+      <Suspense fallback={<div className="h-20" />}>
+        <Navigation />
+      </Suspense>
 
       <div className="pt-32 pb-20 px-6">
         <div className="max-w-6xl mx-auto">

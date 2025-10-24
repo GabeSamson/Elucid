@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useParams } from "next/navigation";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
@@ -50,7 +50,9 @@ export default function CollectionPage() {
   if (error || !collection) {
     return (
       <main className="min-h-screen bg-cream">
-        <Navigation />
+        <Suspense fallback={<div className="h-20" />}>
+          <Navigation />
+        </Suspense>
         <div className="pt-32 pb-20 px-6 flex items-center justify-center">
           <div className="text-center">
             <h1 className="font-serif text-4xl text-charcoal-dark mb-4">
@@ -76,7 +78,9 @@ export default function CollectionPage() {
 
   return (
     <main className="min-h-screen bg-cream">
-      <Navigation />
+      <Suspense fallback={<div className="h-20" />}>
+        <Navigation />
+      </Suspense>
 
       <div className="pt-32 pb-20 px-6">
         <div className="max-w-7xl mx-auto">

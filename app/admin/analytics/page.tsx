@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { formatCurrency, getActiveCurrency } from '@/lib/currency';
 import {
@@ -57,7 +57,7 @@ const STATUS_COLORS: { [key: string]: string } = {
   CANCELLED: '#ef4444',
 };
 
-export default function AdminAnalyticsPage() {
+function AdminAnalyticsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const productId = searchParams.get('product');
@@ -654,5 +654,17 @@ export default function AdminAnalyticsPage() {
         </div>
       </section>
     </div>
+  );
+}
+
+export default function AdminAnalyticsPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-charcoal/60 text-lg">Loading analytics...</div>
+      </div>
+    }>
+      <AdminAnalyticsContent />
+    </Suspense>
   );
 }

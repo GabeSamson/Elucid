@@ -75,7 +75,7 @@ export function validateEnv(): Env {
     return envSchema.parse(env);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const missingVars = error.errors.map(err => {
+      const missingVars = error.issues.map(err => {
         const path = err.path.join('.');
         return `  - ${path}: ${err.message}`;
       }).join('\n');

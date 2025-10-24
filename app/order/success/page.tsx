@@ -1,13 +1,13 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useCart } from "@/contexts/CartContext";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 
-export default function OrderSuccessPage() {
+function OrderSuccessContent() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('session_id');
   const { clearCart } = useCart();
@@ -54,7 +54,9 @@ export default function OrderSuccessPage() {
 
   return (
     <main className="min-h-screen bg-cream">
-      <Navigation />
+      <Suspense fallback={<div className="h-20" />}>
+        <Navigation />
+      </Suspense>
 
       <div className="pt-32 pb-20 px-6">
         <div className="max-w-xl mx-auto text-center">
@@ -107,5 +109,20 @@ export default function OrderSuccessPage() {
 
       <Footer />
     </main>
+  );
+}
+
+export default function OrderSuccessPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen bg-cream">
+        <div className="h-20" />
+        <div className="pt-32 pb-20 px-6 flex items-center justify-center">
+          <div className="text-center text-charcoal/60">Loading...</div>
+        </div>
+      </main>
+    }>
+      <OrderSuccessContent />
+    </Suspense>
   );
 }

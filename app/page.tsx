@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
 import WritingSection from "@/components/WritingSection";
@@ -8,7 +9,9 @@ import Footer from "@/components/Footer";
 export default function Home() {
   return (
     <main>
-      <Navigation />
+      <Suspense fallback={<div className="h-20" />}>
+        <Navigation />
+      </Suspense>
       <Hero />
       <WritingSection />
       <Featured />

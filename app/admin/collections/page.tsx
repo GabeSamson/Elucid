@@ -47,7 +47,7 @@ async function createCollectionAction(formData: FormData) {
 }
 
 interface AdminCollectionsPageProps {
-  searchParams?: Record<string, string | string[] | undefined>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }
 
 export default async function AdminCollectionsPage({ searchParams }: AdminCollectionsPageProps) {
@@ -57,8 +57,9 @@ export default async function AdminCollectionsPage({ searchParams }: AdminCollec
     orderBy: { createdAt: "desc" },
   });
 
-  const success = typeof searchParams?.success === "string" ? searchParams?.success : null;
-  const error = typeof searchParams?.error === "string" ? searchParams?.error : null;
+  const resolvedSearchParams = await searchParams;
+  const success = typeof resolvedSearchParams?.success === "string" ? resolvedSearchParams?.success : null;
+  const error = typeof resolvedSearchParams?.error === "string" ? resolvedSearchParams?.error : null;
 
   return (
     <div className="space-y-8">

@@ -170,10 +170,20 @@ export async function createOrderFromStripeSession(
     };
   });
 
-  const orderItemsToCreate = orderItemsData.filter(
-    (item): item is Prisma.OrderItemCreateWithoutOrderInput =>
-      typeof item.productId === 'string' && item.productId.length > 0
-  );
+  const orderItemsToCreate: Prisma.OrderItemUncheckedCreateWithoutOrderInput[] = orderItemsData
+    .filter(
+      (item) =>
+        typeof item.productId === 'string' && item.productId.length > 0
+    )
+    .map(item => ({
+      productId: item.productId as string,
+      productName: item.productName,
+      productImage: item.productImage,
+      quantity: item.quantity,
+      size: item.size ?? null,
+      color: item.color ?? null,
+      priceAtPurchase: item.priceAtPurchase,
+    }));
 
   const stripePaymentId = paymentIntentId || session.id;
 

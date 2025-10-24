@@ -91,7 +91,7 @@ async function updateHomepageSettingsAction(formData: FormData) {
 }
 
 interface AdminHomepagePageProps {
-  searchParams?: Record<string, string | string[] | undefined>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }
 
 export default async function AdminHomepagePage({ searchParams }: AdminHomepagePageProps) {
@@ -107,7 +107,8 @@ export default async function AdminHomepagePage({ searchParams }: AdminHomepageP
     }),
   ]);
 
-  const success = typeof searchParams?.success === "string" ? searchParams?.success : null;
+  const resolvedSearchParams = await searchParams;
+  const success = typeof resolvedSearchParams?.success === "string" ? resolvedSearchParams?.success : null;
 
   return (
     <div className="space-y-8">
@@ -360,7 +361,7 @@ export default async function AdminHomepagePage({ searchParams }: AdminHomepageP
           </header>
 
           <form action={updateHomepageSettingsAction} className="space-y-5">
-            <WritingSectionEditor initialContent={homepageConfig?.writingSection} />
+            <WritingSectionEditor initialContent={homepageConfig?.writingSection ?? null} />
 
             <div className="flex flex-wrap justify-end gap-3">
               <Link

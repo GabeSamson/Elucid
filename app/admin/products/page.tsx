@@ -4,15 +4,16 @@ import DeleteProductButton from '@/components/admin/DeleteProductButton';
 import { formatCurrency } from '@/lib/currency';
 
 interface AdminProductsPageProps {
-  searchParams?: {
+  searchParams?: Promise<{
     search?: string;
     status?: string;
-  };
+  }>;
 }
 
 export default async function AdminProductsPage({ searchParams }: AdminProductsPageProps) {
-  const search = searchParams?.search?.trim() ?? '';
-  const statusFilter = (searchParams?.status || 'all').toLowerCase();
+  const resolvedSearchParams = await searchParams;
+  const search = resolvedSearchParams?.search?.trim() ?? '';
+  const statusFilter = (resolvedSearchParams?.status || 'all').toLowerCase();
 
   const where: any = {};
 
