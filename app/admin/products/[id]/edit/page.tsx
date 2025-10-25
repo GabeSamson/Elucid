@@ -51,6 +51,7 @@ export default async function EditProductPage({
     collectionId: product.collectionId || undefined,
     featured: product.featured,
     active: product.active,
+    includeShipping: product.includeShipping,
   };
 
   return (

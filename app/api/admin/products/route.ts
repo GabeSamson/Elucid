@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
       collectionId,
       featured,
       active,
+      includeShipping,
       colorImages,
     } = body;
 
@@ -44,6 +45,7 @@ export async function POST(request: NextRequest) {
 
     const normalizedFeatured = toBoolean(featured, false);
     const normalizedActive = toBoolean(active, true);
+    const normalizedIncludeShipping = toBoolean(includeShipping, true);
     const parsedPrice =
       typeof price === 'string' ? parseFloat(price) : Number(price);
     const parsedCompareAtPrice =
@@ -95,6 +97,7 @@ export async function POST(request: NextRequest) {
         collectionId: collectionId || null,
         featured: normalizedFeatured,
         active: normalizedActive,
+        includeShipping: normalizedIncludeShipping,
         variants: {
           create: variants?.map((v: any) => ({
             size: v.size,

@@ -31,6 +31,7 @@ interface ProductFormData {
   collectionId?: string;
   featured: boolean;
   active: boolean;
+  includeShipping: boolean;
 }
 
 interface ProductFormProps {
@@ -351,6 +352,25 @@ useEffect(() => {
                   />
                   <span className="text-sm text-charcoal">
                     Visible in shop
+                  </span>
+                </label>
+              )}
+            />
+
+            <Controller
+              control={control}
+              name="includeShipping"
+              defaultValue={initialData?.includeShipping ?? true}
+              render={({ field }) => (
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={field.value}
+                    onChange={(event) => field.onChange(event.target.checked)}
+                    className="w-4 h-4 rounded border-charcoal/30 text-charcoal focus:ring-charcoal"
+                  />
+                  <span className="text-sm text-charcoal">
+                    Include shipping cost
                   </span>
                 </label>
               )}

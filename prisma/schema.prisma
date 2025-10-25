@@ -56,6 +56,7 @@ model Product {
   colors          String    @default("[]") // JSON array with name and hexCode: [{"name": "Navy Blue", "hexCode": "#001F3F"}]
   featured        Boolean   @default(false)
   active          Boolean   @default(true)
+  includeShipping Boolean   @default(true) @map("include_shipping")
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
