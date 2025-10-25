@@ -7,12 +7,14 @@ interface ImageUploaderProps {
   images: string[];
   onChange: (images: string[]) => void;
   maxImages?: number;
+  folder?: 'products' | 'collections';
 }
 
 export default function ImageUploader({
   images,
   onChange,
   maxImages = 10,
+  folder = 'products',
 }: ImageUploaderProps) {
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
@@ -33,6 +35,7 @@ export default function ImageUploader({
       const uploadPromises = Array.from(files).map(async (file) => {
         const formData = new FormData();
         formData.append('file', file);
+        formData.append('folder', folder);
 
         const response = await fetch('/api/admin/upload', {
           method: 'POST',

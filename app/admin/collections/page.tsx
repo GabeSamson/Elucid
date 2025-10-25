@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/slugify";
 import { revalidatePath, unstable_noStore as noStore } from "next/cache";
 import { redirect } from "next/navigation";
+import CollectionHeroUploader from "@/components/admin/CollectionHeroUploader";
 
 export const dynamic = "force-dynamic";
 
@@ -131,13 +132,9 @@ export default async function AdminCollectionsPage({ searchParams }: AdminCollec
             </div>
             <div>
               <label className="mb-2 block text-sm font-medium text-charcoal">
-                Hero image URL
+                Hero image
               </label>
-              <input
-                name="imageUrl"
-                placeholder="Full URL to collection banner image"
-                className="input-modern"
-              />
+              <CollectionHeroUploader />
             </div>
             <button
               type="submit"
