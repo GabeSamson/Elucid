@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
+import { put } from '@vercel/blob';
 import { auth } from '@/auth';
-import path from 'path';
-import { existsSync } from 'fs';
 import crypto from 'crypto';
 
 // POST /api/admin/upload - Upload product images
@@ -62,27 +60,18 @@ export async function POST(request: NextRequest) {
     // Generate unique filename with cryptographically secure randomness
     const timestamp = Date.now();
     const randomBytes = crypto.randomBytes(16).toString('hex'); // 32 characters
-    const filename = `product-${timestamp}-${randomBytes}.${extension}`;
+    const filename = `products/product-${timestamp}-${randomBytes}.${extension}`;
 
-    // Ensure upload directory exists
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'products');
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true });
-    }
-
-    // Save file
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    const filepath = path.join(uploadDir, filename);
-    await writeFile(filepath, buffer);
-
-    // Return public URL
-    const url = `/uploads/products/${filename}`;
+    // Upload to Vercel Blob
+    const blob = await put(filename, file, {
+      access: 'public',
+      contentType: file.type,
+    });
 
     return NextResponse.json({
       success: true,
-      url,
-      filename,
+      url: blob.url,
+      filename: blob.pathname,
     });
   } catch (error) {
     console.error('Upload error:', error);
