@@ -44,9 +44,19 @@ export default function CheckoutPage() {
 
   const shippingFee = getShippingFee();
   const freeShippingThreshold = getFreeShippingThreshold();
-  const isFreeShipping = totalPrice >= freeShippingThreshold;
+  const requiresShipping = items.some((item) => item.product.includeShipping !== false);
+  const qualifiesForFreeShippingThreshold = totalPrice >= freeShippingThreshold;
+  const isFreeShipping = !requiresShipping || qualifiesForFreeShippingThreshold;
   const shipping = isFreeShipping ? 0 : shippingFee;
-  const amountUntilFreeShipping = Math.max(freeShippingThreshold - totalPrice, 0);
+  const amountUntilFreeShipping =
+    requiresShipping && !qualifiesForFreeShippingThreshold
+      ? Math.max(freeShippingThreshold - totalPrice, 0)
+      : 0;
+  const shippingLabel = !requiresShipping
+    ? 'Not required'
+    : shipping === 0
+      ? 'Free'
+      : formatCurrency(shipping);
   const tax = 0;
   const rawDiscount = appliedPromo
     ? appliedPromo.discountType === 'PERCENTAGE'
@@ -477,10 +487,10 @@ useEffect(() => {
                 <div className="flex justify-between">
                   <span className="text-charcoal-light">Shipping</span>
                   <span className="text-charcoal-dark">
-                    {shipping === 0 ? 'Free' : formatCurrency(shipping)}
+                    {shippingLabel}
                   </span>
                 </div>
-                {!isFreeShipping && amountUntilFreeShipping > 0 && (
+                {requiresShipping && !isFreeShipping && amountUntilFreeShipping > 0 && (
                   <p className="text-xs text-charcoal/60">
                     Spend {formatCurrency(amountUntilFreeShipping)} more to unlock free shipping.
                   </p>

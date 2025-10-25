@@ -30,6 +30,7 @@ export interface Product {
   variants?: ProductVariant[];
   featured: boolean;
   active: boolean;
+  includeShipping: boolean;
   createdAt: string;
   updatedAt: string;
 }
