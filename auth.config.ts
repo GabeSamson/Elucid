@@ -58,6 +58,17 @@ export default {
         token.role = (user as any).role || 'user';
       }
 
+      // Always fetch the latest role from database to ensure it's up-to-date
+      if (token.id) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: { role: true },
+        });
+        if (dbUser) {
+          token.role = dbUser.role;
+        }
+      }
+
       return token;
     },
     async session({ session, token }) {
