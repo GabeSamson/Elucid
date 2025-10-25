@@ -1,11 +1,9 @@
 import HeroClient from "./HeroClient";
 import { prisma } from "@/lib/prisma";
-import { unstable_noStore as noStore } from "next/cache";
 
 export const dynamic = "force-dynamic";
 
 export default async function Hero() {
-  noStore();
 
   const config = await prisma.homepageConfig.findUnique({
     where: { id: "main" },

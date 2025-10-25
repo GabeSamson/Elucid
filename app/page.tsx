@@ -6,6 +6,8 @@ import Featured from "@/components/Featured";
 import Newsletter from "@/components/Newsletter";
 import Footer from "@/components/Footer";
 
+export const dynamic = 'force-dynamic';
+
 export default function Home() {
   return (
     <main>
