@@ -3,6 +3,8 @@ import Link from 'next/link';
 import DeleteProductButton from '@/components/admin/DeleteProductButton';
 import { formatCurrency } from '@/lib/currency';
 
+export const dynamic = 'force-dynamic';
+
 interface AdminProductsPageProps {
   searchParams?: Promise<{
     search?: string;

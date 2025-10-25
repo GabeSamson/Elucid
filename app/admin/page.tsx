@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/prisma';
 import { formatCurrency } from '@/lib/currency';
 
+export const dynamic = 'force-dynamic';
+
 export default async function AdminDashboard() {
   // Get statistics
   const [totalProducts, totalOrders, pendingOrders, totalRevenue, recentOrders] = await Promise.all([

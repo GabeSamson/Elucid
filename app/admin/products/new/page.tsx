@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/prisma';
 import NewProductForm from '@/components/admin/NewProductForm';
 
+export const dynamic = 'force-dynamic';
+
 export default async function NewProductPage() {
   // Fetch collections for dropdown
   const collections = await prisma.collection.findMany({

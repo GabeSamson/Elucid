@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/prisma';
 import PromoCodesManager from '@/components/admin/PromoCodesManager';
 
+export const dynamic = 'force-dynamic';
+
 export default async function AdminPromoCodesPage() {
   const promos = await (prisma as any).promoCode.findMany({
     orderBy: { createdAt: 'desc' },

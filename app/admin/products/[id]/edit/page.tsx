@@ -3,6 +3,8 @@ import EditProductForm from '@/components/admin/EditProductForm';
 import { notFound } from 'next/navigation';
 import { parseProductImages } from '@/lib/productImages';
 
+export const dynamic = 'force-dynamic';
+
 export default async function EditProductPage({
   params,
 }: {
