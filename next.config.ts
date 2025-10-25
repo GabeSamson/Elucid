@@ -12,6 +12,13 @@ const nextConfig: NextConfig = {
   },
   allowedDevOrigins: ['192.168.1.124'],
 
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals.push('@libsql/client', '@prisma/adapter-libsql');
+    }
+    return config;
+  },
+
   // Security headers
   async headers() {
     return [
