@@ -12,13 +12,25 @@ export async function middleware(request: NextRequest) {
       secret: process.env.NEXTAUTH_SECRET
     });
 
+    console.log('🔐 Admin access attempt:', {
+      path,
+      hasToken: !!token,
+      tokenEmail: token?.email,
+      tokenRole: token?.role,
+      tokenId: token?.id
+    });
+
     if (!token) {
+      console.log('❌ No token found, redirecting to homepage');
       return NextResponse.redirect(new URL('/', request.url));
     }
 
     if (token.role !== 'admin') {
+      console.log('❌ User role is not admin:', token.role, 'redirecting to homepage');
       return NextResponse.redirect(new URL('/', request.url));
     }
+
+    console.log('✅ Admin access granted');
   }
 
   return NextResponse.next();
