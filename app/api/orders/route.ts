@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { sendOrderThankYouEmail } from '@/lib/email/sendOrderThankYouEmail';
 import { auth } from '@/auth';
 
 export async function GET(request: NextRequest) {
@@ -132,6 +133,15 @@ export async function POST(request: NextRequest) {
             decrement: item.quantity,
           },
         },
+      });
+    }
+
+    if (normalizedEmail) {
+      sendOrderThankYouEmail({
+        to: normalizedEmail,
+        name,
+      }).catch((emailError) => {
+        console.error('Failed to queue thank-you email:', emailError);
       });
     }
 

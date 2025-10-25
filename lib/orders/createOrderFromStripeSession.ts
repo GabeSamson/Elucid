@@ -1,6 +1,7 @@
 import type Stripe from 'stripe';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { sendOrderThankYouEmail } from '@/lib/email/sendOrderThankYouEmail';
 
 interface CreateOrderOptions {
   fallbackUserId?: string | null;
@@ -238,6 +239,17 @@ export async function createOrderFromStripeSession(
           stockError
         );
       }
+    }
+  }
+
+  if (order.email) {
+    try {
+      await sendOrderThankYouEmail({
+        to: order.email,
+        name: order.name,
+      });
+    } catch (emailError) {
+      console.error('Failed to send thank-you email after Stripe checkout:', emailError);
     }
   }
 
