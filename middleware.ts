@@ -6,6 +6,10 @@ export async function middleware(request: NextRequest) {
 
   // Protect admin routes
   if (path.startsWith('/admin')) {
+    // Log all available cookies for debugging
+    const allCookies = request.cookies.getAll();
+    console.log('🍪 All cookies:', allCookies.map(c => c.name));
+
     // Check for session token cookie
     const sessionToken = request.cookies.get('next-auth.session-token') ||
                         request.cookies.get('__Secure-next-auth.session-token');
@@ -16,12 +20,8 @@ export async function middleware(request: NextRequest) {
       cookieName: sessionToken?.name
     });
 
-    if (!sessionToken) {
-      console.log('❌ No session cookie found, redirecting to homepage');
-      return NextResponse.redirect(new URL('/', request.url));
-    }
-
     // Fetch the session from the API route to verify role
+    // (We'll try this even if no cookie found, as NextAuth might use a different storage method)
     try {
       const protocol = request.headers.get('x-forwarded-proto') || 'http';
       const host = request.headers.get('host');
