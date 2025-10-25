@@ -2,29 +2,38 @@
 
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import AuthModal from "@/components/AuthModal";
 import { Order } from "@/types/product.types";
 import { formatCurrency } from "@/lib/currency";
 
 export default function AccountPage() {
   const { data: session, status } = useSession();
-  const router = useRouter();
+  const searchParams = useSearchParams();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const signInMessage =
+    searchParams.get('redirect') === '/checkout'
+      ? 'Please sign in to continue to checkout.'
+      : 'Please sign in to access your account.';
 
   useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/");
-    } else if (status === "authenticated") {
+    if (status === "authenticated") {
+      setAuthModalOpen(false);
+      setLoading(true);
       fetchOrders();
+    } else if (status === "unauthenticated") {
+      setAuthModalOpen(true);
     }
-  }, [status, router]);
+  }, [status]);
 
   const fetchOrders = async () => {
+    setLoading(true);
     try {
       const res = await fetch('/api/orders');
       const data = await res.json();
@@ -72,12 +81,55 @@ export default function AccountPage() {
     }
   };
 
-  if (status === "loading" || status === "unauthenticated") {
+  if (status === "loading") {
     return (
       <main className="min-h-screen bg-cream flex items-center justify-center">
         <div className="text-charcoal/60 text-lg uppercase tracking-wider">
           Loading...
         </div>
+      </main>
+    );
+  }
+
+  if (status === "unauthenticated") {
+    return (
+      <main className="min-h-screen bg-cream">
+        <Suspense fallback={<div className="h-20" />}>
+          <Navigation />
+        </Suspense>
+
+        <div className="pt-32 pb-20 px-6 flex items-center justify-center">
+          <div className="max-w-md text-center">
+            <h1 className="font-serif text-4xl text-charcoal-dark mb-4">
+              Sign In Required
+            </h1>
+            <p className="text-charcoal-light mb-8">
+              {signInMessage}
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <button
+                onClick={() => setAuthModalOpen(true)}
+                className="px-8 py-3 bg-charcoal-dark text-cream-light hover:bg-charcoal transition-colors duration-300 tracking-wider text-sm uppercase"
+              >
+                Sign In
+              </button>
+              <a
+                href="/"
+                className="px-8 py-3 border border-charcoal-dark text-charcoal-dark hover:bg-charcoal-dark hover:text-cream transition-colors duration-300 tracking-wider text-sm uppercase"
+              >
+                Continue Shopping
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <Footer />
+
+        <AuthModal
+          isOpen={authModalOpen}
+          onClose={() => setAuthModalOpen(false)}
+          initialMode="signin"
+        />
       </main>
     );
   }
