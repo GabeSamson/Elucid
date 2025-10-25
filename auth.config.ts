@@ -21,7 +21,7 @@ export default {
         const parsedCredentials = z
           .object({
             email: z.string().email(),
-            password: z.string().min(12, 'Password must be at least 12 characters')
+            password: z.string().min(5, 'Password must be at least 5 characters')
           })
           .safeParse(credentials);
 

@@ -6,12 +6,7 @@ import { Resend } from 'resend';
 
 const signupSchema = z.object({
   email: z.string().email('Invalid email address'),
-  password: z.string()
-    .min(12, 'Password must be at least 12 characters')
-    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
-    .regex(/[0-9]/, 'Password must contain at least one number')
-    .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
+  password: z.string().min(5, 'Password must be at least 5 characters'),
   name: z.string().min(1, 'Name is required'),
 });
 

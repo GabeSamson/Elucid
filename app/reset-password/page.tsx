@@ -32,8 +32,8 @@ function ResetPasswordForm() {
       return;
     }
 
-    if (password.length < 8) {
-      setMessage({ type: 'error', text: 'Password must be at least 8 characters' });
+    if (password.length < 5) {
+      setMessage({ type: 'error', text: 'Password must be at least 5 characters' });
       return;
     }
 
@@ -87,7 +87,7 @@ function ResetPasswordForm() {
               required
               disabled={loading || !token}
               className="w-full px-4 py-3 bg-cream border border-charcoal/20 focus:border-charcoal focus:outline-none transition-colors disabled:opacity-50"
-              placeholder="At least 8 characters"
+              placeholder="At least 5 characters"
             />
           </div>
 
