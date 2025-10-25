@@ -11,6 +11,14 @@ import { Order } from "@/types/product.types";
 import { formatCurrency } from "@/lib/currency";
 
 export default function AccountPage() {
+  return (
+    <Suspense fallback={<AccountPageLoading />}>
+      <AccountPageContent />
+    </Suspense>
+  );
+}
+
+function AccountPageContent() {
   const { data: session, status } = useSession();
   const searchParams = useSearchParams();
   const [orders, setOrders] = useState<Order[]>([]);
@@ -82,13 +90,7 @@ export default function AccountPage() {
   };
 
   if (status === "loading") {
-    return (
-      <main className="min-h-screen bg-cream flex items-center justify-center">
-        <div className="text-charcoal/60 text-lg uppercase tracking-wider">
-          Loading...
-        </div>
-      </main>
-    );
+    return <AccountPageLoading />;
   }
 
   if (status === "unauthenticated") {
@@ -270,6 +272,16 @@ export default function AccountPage() {
       </div>
 
       <Footer />
+    </main>
+  );
+}
+
+function AccountPageLoading() {
+  return (
+    <main className="min-h-screen bg-cream flex items-center justify-center">
+      <div className="text-charcoal/60 text-lg uppercase tracking-wider">
+        Loading...
+      </div>
     </main>
   );
 }
