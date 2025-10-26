@@ -3,18 +3,37 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
+import { usePathname } from "next/navigation";
 import AuthModal from "./AuthModal";
 import CartModal from "./CartModal";
 import { useCart } from "@/contexts/CartContext";
 import Link from "next/link";
 
 export default function Navigation() {
+  const { data: session, status } = useSession();
+  const { totalItems, openCart } = useCart();
+  const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
   const [isLandscape, setIsLandscape] = useState(true);
-  const { data: session, status } = useSession();
-  const { totalItems, openCart } = useCart();
+  const [navVariant, setNavVariant] = useState<'dark' | 'light'>(() => (pathname === "/" ? "dark" : "light"));
+
+  useEffect(() => {
+    if (pathname !== "/") {
+      setNavVariant("light");
+      return;
+    }
+
+    const updateVariant = () => {
+      const threshold = Math.max(window.innerHeight * 0.6, 240);
+      setNavVariant(window.scrollY < threshold ? "dark" : "light");
+    };
+
+    updateVariant();
+    window.addEventListener("scroll", updateVariant);
+    return () => window.removeEventListener("scroll", updateVariant);
+  }, [pathname]);
 
   useEffect(() => {
     const checkOrientation = () => {
@@ -35,6 +54,26 @@ export default function Navigation() {
     await signOut({ redirect: false });
   };
 
+  const isDarkSurface = navVariant === "dark";
+  const navSurfaceClasses = isDarkSurface
+    ? "bg-charcoal-dark/90 border-charcoal/60 shadow-lg"
+    : "bg-cream/95 border-charcoal/10 shadow-sm";
+  const brandLinkClasses = `text-sm font-light tracking-wider uppercase transition-colors duration-300 ${
+    isDarkSurface ? "text-cream-light hover:text-cream" : "text-charcoal-dark hover:text-charcoal"
+  }`;
+  const navLinkClasses = `transition-colors text-sm uppercase tracking-wider ${
+    isDarkSurface ? "text-cream-light/80 hover:text-cream-light" : "text-charcoal/80 hover:text-charcoal-dark"
+  }`;
+  const mobileBrandClasses = `text-xs font-light tracking-wide uppercase transition-colors duration-300 ${
+    isDarkSurface ? "text-cream-light hover:text-cream" : "text-charcoal-dark hover:text-charcoal"
+  }`;
+  const mobileActionClasses = `transition-colors text-xs uppercase tracking-wide ${
+    isDarkSurface ? "text-cream-light/80 hover:text-cream-light" : "text-charcoal/80 hover:text-charcoal-dark"
+  }`;
+  const mobileMenuButtonClasses = `p-2 transition-colors ${
+    isDarkSurface ? "text-cream-light" : "text-charcoal-dark"
+  }`;
+
   return (
     <>
       <motion.nav
@@ -42,22 +81,22 @@ export default function Navigation() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
         style={{ paddingTop: 'max(3rem, env(safe-area-inset-top))' }}
-        className="fixed top-0 left-0 right-0 z-50 px-4 pb-4 md:px-6 md:py-6 transition-colors duration-300 bg-charcoal-dark/90 backdrop-blur-sm border-b border-charcoal/40 shadow-lg"
+        className={`fixed top-0 left-0 right-0 z-50 px-4 pb-4 md:px-6 md:py-6 transition-colors duration-300 border-b backdrop-blur-sm ${navSurfaceClasses}`}
       >
         {/* Desktop Navigation */}
         <div className={`${isLandscape ? 'grid' : 'hidden'} grid-cols-3 max-w-7xl mx-auto items-center w-full gap-4`}>
-          <Link href="/" className="text-sm font-light tracking-wider uppercase transition-colors duration-300 text-cream-light hover:text-cream">
+          <Link href="/" className={brandLinkClasses}>
             Elucid LDN
           </Link>
 
           <div className="flex items-center justify-center gap-12">
-            <Link href="/shop" className="transition-colors text-sm uppercase tracking-wider text-cream-light/80 hover:text-cream-light">
+            <Link href="/shop" className={navLinkClasses}>
               Shop
             </Link>
-            <Link href="/collections" className="transition-colors text-sm uppercase tracking-wider text-cream-light/80 hover:text-cream-light">
+            <Link href="/collections" className={navLinkClasses}>
               Collections
             </Link>
-            <Link href="/about" className="transition-colors text-sm uppercase tracking-wider text-cream-light/80 hover:text-cream-light">
+            <Link href="/about" className={navLinkClasses}>
               About
             </Link>
           </div>
@@ -65,19 +104,19 @@ export default function Navigation() {
           <div className="flex items-center justify-end gap-6">
             {status === "authenticated" && session?.user ? (
               <div className="flex items-center gap-4">
-                <Link href="/account" className="transition-colors text-sm uppercase tracking-wider text-cream-light/80 hover:text-cream-light">
+                <Link href="/account" className={navLinkClasses}>
                   {session.user.name || "Account"}
                 </Link>
-                <button onClick={handleSignOut} className="transition-colors text-sm uppercase tracking-wider text-cream-light/80 hover:text-cream-light">
+                <button onClick={handleSignOut} className={navLinkClasses}>
                   Sign Out
                 </button>
               </div>
             ) : (
-              <button onClick={() => openAuthModal('signin')} className="transition-colors text-sm uppercase tracking-wider text-cream-light/80 hover:text-cream-light">
+              <button onClick={() => openAuthModal('signin')} className={navLinkClasses}>
                 Sign In
               </button>
             )}
-            <button onClick={openCart} className="transition-colors text-sm uppercase tracking-wider text-cream-light/80 hover:text-cream-light">
+            <button onClick={openCart} className={navLinkClasses}>
               Cart ({totalItems})
             </button>
           </div>
@@ -85,17 +124,17 @@ export default function Navigation() {
 
         {/* Mobile Navigation */}
         <div className={`${isLandscape ? 'hidden' : 'flex'} w-full items-center justify-between`}>
-          <Link href="/" className="text-xs font-light tracking-wide uppercase transition-colors duration-300 text-cream-light hover:text-cream">
+          <Link href="/" className={mobileBrandClasses}>
             Elucid LDN
           </Link>
 
           <div className="flex items-center gap-4">
-            <button onClick={openCart} className="transition-colors text-xs uppercase tracking-wide text-cream-light/80 hover:text-cream-light">
+            <button onClick={openCart} className={mobileActionClasses}>
               Cart ({totalItems})
             </button>
             <button
               onClick={() => setMobileMenuOpen(true)}
-              className="p-2 transition-colors text-cream-light"
+              className={mobileMenuButtonClasses}
               aria-label="Open menu"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
