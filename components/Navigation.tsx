@@ -58,6 +58,8 @@ export default function Navigation() {
     await signOut({ redirect: false });
   };
 
+  const showSolidBackground = pathname !== "/" || isDark;
+
   return (
     <>
       <motion.nav
@@ -65,7 +67,11 @@ export default function Navigation() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
         style={{ paddingTop: 'max(3rem, env(safe-area-inset-top))' }}
-        className="fixed top-0 left-0 right-0 z-50 px-4 pb-4 md:px-6 md:py-6 transition-colors duration-300"
+        className={`fixed top-0 left-0 right-0 z-50 px-4 pb-4 md:px-6 md:py-6 transition-colors duration-300 ${
+          showSolidBackground
+            ? "bg-cream/95 backdrop-blur-sm border-b border-charcoal/10 shadow-sm"
+            : "bg-transparent"
+        }`}
       >
         {/* Desktop Navigation */}
         <div className={`${isLandscape ? 'grid' : 'hidden'} grid-cols-3 max-w-7xl mx-auto items-center w-full gap-4`}>

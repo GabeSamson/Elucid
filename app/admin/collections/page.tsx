@@ -47,6 +47,32 @@ async function createCollectionAction(formData: FormData) {
   redirect("/admin/collections?success=collection-created");
 }
 
+async function deleteCollectionAction(formData: FormData) {
+  "use server";
+
+  const collectionId = formData.get("collectionId")?.toString();
+
+  if (!collectionId) {
+    redirect("/admin/collections?error=missing-collection");
+  }
+
+  try {
+    await prisma.collection.delete({
+      where: { id: collectionId },
+    });
+  } catch (error) {
+    console.error("Failed to delete collection", error);
+    redirect("/admin/collections?error=delete-failed");
+  }
+
+  revalidatePath("/admin/collections");
+  revalidatePath("/collections");
+  revalidatePath("/shop");
+  revalidatePath("/");
+
+  redirect("/admin/collections?success=collection-deleted");
+}
+
 interface AdminCollectionsPageProps {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }
@@ -74,6 +100,7 @@ export default async function AdminCollectionsPage({ searchParams }: AdminCollec
       {success && (
         <div className="rounded-lg border border-beige bg-beige/20 px-4 py-3 text-sm text-charcoal">
           {success === "collection-created" && "New collection created successfully."}
+          {success === "collection-deleted" && "Collection deleted successfully."}
         </div>
       )}
 
@@ -83,6 +110,9 @@ export default async function AdminCollectionsPage({ searchParams }: AdminCollec
           {error === "invalid-slug" && "Please provide a valid slug using letters and numbers only."}
           {error === "collection-exists" &&
             "That slug already exists. Try a different name or slug value."}
+          {error === "missing-collection" && "We couldn't identify which collection to delete."}
+          {error === "delete-failed" &&
+            "Unable to delete this collection. Ensure it is not linked to products and try again."}
         </div>
       )}
 
@@ -157,7 +187,7 @@ export default async function AdminCollectionsPage({ searchParams }: AdminCollec
             {collections.map((collection) => (
               <div
                 key={collection.id}
-                className="flex items-start justify-between rounded-xl border border-charcoal/15 bg-white px-5 py-4"
+                className="flex flex-col gap-4 rounded-xl border border-charcoal/15 bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div>
                   <p className="font-medium text-charcoal">{collection.name}</p>
@@ -168,12 +198,23 @@ export default async function AdminCollectionsPage({ searchParams }: AdminCollec
                     <p className="mt-2 text-sm text-charcoal/70">{collection.description}</p>
                   )}
                 </div>
-                <Link
-                  href={`/collections/${collection.slug}`}
-                  className="rounded-lg border border-charcoal/20 px-4 py-2 text-xs uppercase tracking-wider text-charcoal hover:border-charcoal transition-colors"
-                >
-                  View
-                </Link>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Link
+                    href={`/collections/${collection.slug}`}
+                    className="rounded-lg border border-charcoal/20 px-4 py-2 text-xs uppercase tracking-wider text-charcoal hover:border-charcoal transition-colors"
+                  >
+                    View
+                  </Link>
+                  <form action={deleteCollectionAction}>
+                    <input type="hidden" name="collectionId" value={collection.id} />
+                    <button
+                      type="submit"
+                      className="rounded-lg border border-red-500/40 px-4 py-2 text-xs uppercase tracking-wider text-red-600 hover:border-red-600 hover:text-red-700 transition-colors"
+                    >
+                      Delete
+                    </button>
+                  </form>
+                </div>
               </div>
             ))}
             {collections.length === 0 && (
