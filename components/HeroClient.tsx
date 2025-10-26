@@ -92,7 +92,10 @@ export default function HeroClient({
   }, [countdown]);
 
   return (
-    <section className="relative flex min-h-screen min-h-[100dvh] items-center justify-center overflow-hidden bg-charcoal-dark pb-12 pt-12 sm:pt-20">
+    <section
+      className="relative flex min-h-screen min-h-[100dvh] items-center justify-center overflow-hidden bg-charcoal-dark pb-12 pt-12 sm:pt-20"
+      data-nav-tone="dark"
+    >
       <div className="absolute inset-0 film-grain opacity-20" />
 
       <div className="relative z-10 mx-auto w-full max-w-7xl px-6 text-center">

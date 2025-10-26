@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import AuthModal from "./AuthModal";
@@ -13,6 +13,7 @@ export default function Navigation() {
   const { data: session, status } = useSession();
   const { totalItems, openCart } = useCart();
   const pathname = usePathname();
+  const navRef = useRef<HTMLElement | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
@@ -20,19 +21,39 @@ export default function Navigation() {
   const [navVariant, setNavVariant] = useState<'dark' | 'light'>(() => (pathname === "/" ? "dark" : "light"));
 
   useEffect(() => {
+    const navEl = navRef.current;
+
+    if (!navEl) return;
+
     if (pathname !== "/") {
       setNavVariant("light");
       return;
     }
 
-    const updateVariant = () => {
-      const threshold = Math.max(window.innerHeight / 3, 160);
-      setNavVariant(window.scrollY < threshold ? "dark" : "light");
+    const heroEl = document.querySelector<HTMLElement>('[data-nav-tone="dark"]');
+
+    if (!heroEl) {
+      setNavVariant("light");
+      return;
+    }
+
+    const evaluateVariant = () => {
+      const navHeight = navEl.getBoundingClientRect().height;
+      const heroRect = heroEl.getBoundingClientRect();
+      setNavVariant(heroRect.bottom > navHeight ? "dark" : "light");
     };
 
-    updateVariant();
-    window.addEventListener("scroll", updateVariant);
-    return () => window.removeEventListener("scroll", updateVariant);
+    evaluateVariant();
+
+    const handleResize = () => evaluateVariant();
+
+    window.addEventListener("scroll", evaluateVariant, { passive: true });
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("scroll", evaluateVariant);
+      window.removeEventListener("resize", handleResize);
+    };
   }, [pathname]);
 
   useEffect(() => {
@@ -77,6 +98,7 @@ export default function Navigation() {
   return (
     <>
       <motion.nav
+        ref={navRef}
         initial={{ opacity: 0, y: 0 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
