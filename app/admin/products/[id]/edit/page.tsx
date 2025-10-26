@@ -55,6 +55,7 @@ export default async function EditProductPage({
     includeShipping: product.includeShipping,
     comingSoon: product.comingSoon,
     releaseDate: product.releaseDate ? product.releaseDate.toISOString() : null,
+    targetAudience: product.targetAudience || 'UNISEX',
   };
 
   return (

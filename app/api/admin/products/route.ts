@@ -5,6 +5,7 @@ import {
   normalizeProductImageInput,
   serializeProductImages,
 } from '@/lib/productImages';
+import { ProductAudience } from '@prisma/client';
 
 // POST /api/admin/products - Create new product
 export async function POST(request: NextRequest) {
@@ -33,6 +34,7 @@ export async function POST(request: NextRequest) {
       colorImages,
       comingSoon,
       releaseDate,
+      targetAudience,
     } = body;
 
     const toBoolean = (value: unknown, fallback: boolean) => {
@@ -89,6 +91,15 @@ export async function POST(request: NextRequest) {
         : null;
 
     const imagePayload = normalizeProductImageInput(images, colorImages);
+    const allowedAudiences = new Set<ProductAudience>([
+      ProductAudience.MALE,
+      ProductAudience.FEMALE,
+      ProductAudience.UNISEX,
+    ]);
+    const normalizedTargetAudience =
+      typeof targetAudience === 'string' && allowedAudiences.has(targetAudience.toUpperCase() as ProductAudience)
+        ? (targetAudience.toUpperCase() as ProductAudience)
+        : ProductAudience.UNISEX;
 
     // Create product with variants
     const product = await prisma.product.create({
@@ -112,6 +123,7 @@ export async function POST(request: NextRequest) {
         includeShipping: normalizedIncludeShipping,
         comingSoon: normalizedComingSoon,
         releaseDate: normalizedComingSoon ? parsedReleaseDate : null,
+        targetAudience: normalizedTargetAudience,
         variants: {
           create: variants?.map((v: any) => ({
             size: v.size,

@@ -29,6 +29,7 @@ interface ProductFormData {
   active: boolean;
   includeShipping: boolean;
   comingSoon: boolean;
+  targetAudience: 'MALE' | 'FEMALE' | 'UNISEX';
   releaseDate?: string | null;
 }
 

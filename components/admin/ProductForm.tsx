@@ -33,6 +33,7 @@ interface ProductFormData {
   active: boolean;
   includeShipping: boolean;
   comingSoon: boolean;
+  targetAudience: 'MALE' | 'FEMALE' | 'UNISEX';
   releaseDate?: string | null;
 }
 
@@ -74,6 +75,7 @@ export default function ProductForm({
       comingSoon: initialData?.comingSoon ?? false,
       releaseDate: initialData?.releaseDate ?? null,
       colorImages: initialData?.colorImages || {},
+      targetAudience: initialData?.targetAudience || 'UNISEX',
     },
   });
 
@@ -337,6 +339,23 @@ useEffect(() => {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-charcoal mb-2">
+              Intended audience
+            </label>
+            <select
+              {...register('targetAudience')}
+              className="select-modern"
+            >
+              <option value="UNISEX">Unisex</option>
+              <option value="MALE">Male</option>
+              <option value="FEMALE">Female</option>
+            </select>
+            <p className="text-xs text-charcoal/60 mt-1">
+              Controls where the product is highlighted in gender-specific views.
+            </p>
           </div>
 
           {/* Toggles */}

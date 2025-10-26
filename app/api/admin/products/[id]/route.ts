@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
-import { Prisma } from '@prisma/client';
+import { Prisma, ProductAudience } from '@prisma/client';
 import {
   normalizeProductImageInput,
   parseProductImages,
@@ -88,6 +88,7 @@ export async function PUT(
       colorImages,
       comingSoon,
       releaseDate,
+      targetAudience,
     } = body;
 
     const toBoolean = (value: unknown, fallback: boolean) => {
@@ -143,6 +144,15 @@ export async function PUT(
         : null;
 
     const imagePayload = normalizeProductImageInput(images, colorImages);
+    const allowedAudiences = new Set<ProductAudience>([
+      ProductAudience.MALE,
+      ProductAudience.FEMALE,
+      ProductAudience.UNISEX,
+    ]);
+    const normalizedTargetAudience =
+      typeof targetAudience === 'string' && allowedAudiences.has(targetAudience.toUpperCase() as ProductAudience)
+        ? (targetAudience.toUpperCase() as ProductAudience)
+        : ProductAudience.UNISEX;
 
     // Delete existing variants and create new ones
     await prisma.productVariant.deleteMany({
@@ -172,6 +182,7 @@ export async function PUT(
         includeShipping: normalizedIncludeShipping,
         comingSoon: normalizedComingSoon,
         releaseDate: normalizedComingSoon ? parsedReleaseDate : null,
+        targetAudience: normalizedTargetAudience,
         variants: {
           create: variants?.map((v: any) => ({
             size: v.size,
