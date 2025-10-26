@@ -3,7 +3,13 @@ import { formatCurrency } from '@/lib/currency';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminDashboard() {
+type ProfitRange = 'day' | 'week' | 'month' | 'year' | 'lifetime';
+
+interface AdminDashboardProps {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}
+
+export default async function AdminDashboard({ searchParams }: AdminDashboardProps) {
   // Get statistics
   const [totalProducts, totalOrders, pendingOrders, totalRevenue, recentOrders, ordersForProfit] = await Promise.all([
     prisma.product.count(),
@@ -73,13 +79,19 @@ export default async function AdminDashboard() {
     });
   });
 
-  const profitCards: Array<{ key: keyof typeof profitBuckets; label: string; helper: string; summary: { revenue: number; cost: number; profit: number } }> = [
-    { key: 'day', label: 'Today', helper: 'Since midnight', summary: { revenue: profitBuckets.day.revenue, cost: profitBuckets.day.cost, profit: profitBuckets.day.revenue - profitBuckets.day.cost } },
-    { key: 'week', label: 'This Week', helper: 'From Monday', summary: { revenue: profitBuckets.week.revenue, cost: profitBuckets.week.cost, profit: profitBuckets.week.revenue - profitBuckets.week.cost } },
-    { key: 'month', label: 'This Month', helper: 'Calendar month', summary: { revenue: profitBuckets.month.revenue, cost: profitBuckets.month.cost, profit: profitBuckets.month.revenue - profitBuckets.month.cost } },
-    { key: 'year', label: 'This Year', helper: `${now.getFullYear()} totals`, summary: { revenue: profitBuckets.year.revenue, cost: profitBuckets.year.cost, profit: profitBuckets.year.revenue - profitBuckets.year.cost } },
-    { key: 'lifetime', label: 'Lifetime', helper: 'All recorded orders', summary: { revenue: profitBuckets.lifetime.revenue, cost: profitBuckets.lifetime.cost, profit: profitBuckets.lifetime.revenue - profitBuckets.lifetime.cost } },
-  ];
+  const profitOptions: Record<ProfitRange, { label: string; helper: string }> = {
+    day: { label: 'Today', helper: 'Since midnight' },
+    week: { label: 'This Week', helper: 'From Monday' },
+    month: { label: 'This Month', helper: 'Calendar month' },
+    year: { label: 'This Year', helper: `${now.getFullYear()} totals` },
+    lifetime: { label: 'Lifetime', helper: 'All recorded orders' },
+  };
+
+  const resolvedSearchParams = await searchParams;
+  const requestedRange = typeof resolvedSearchParams?.range === 'string' ? resolvedSearchParams.range : undefined;
+  const selectedRange: ProfitRange = requestedRange && requestedRange in profitBuckets ? (requestedRange as ProfitRange) : 'week';
+  const selectedSummary = profitBuckets[selectedRange];
+  const profitValue = selectedSummary.revenue - selectedSummary.cost;
 
   return (
     <div>
@@ -125,21 +137,57 @@ export default async function AdminDashboard() {
       </div>
 
       <div className="bg-cream-light p-6 mb-8">
-        <h2 className="font-serif text-2xl text-charcoal-dark mb-4">Profit Snapshot</h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          {profitCards.map(({ key, label, helper, summary }) => (
-            <div key={key} className="bg-cream shadow-sm border border-charcoal/10 p-4 rounded-lg">
-              <div className="text-xs uppercase tracking-wider text-charcoal-light">{label}</div>
-              <div className="text-2xl font-serif text-charcoal-dark mt-1">
-                {formatCurrency(summary.profit)}
-              </div>
-              <div className="text-xs text-charcoal/70 mt-3">
-                {helper}
-                <br />
-                Revenue {formatCurrency(summary.revenue)} · Costs {formatCurrency(summary.cost)}
-              </div>
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="font-serif text-2xl text-charcoal-dark">Profit</h2>
+            <p className="text-sm text-charcoal/70">
+              {profitOptions[selectedRange].helper}
+            </p>
+          </div>
+          <form className="flex items-center gap-3">
+            <label htmlFor="profit-range" className="text-xs uppercase tracking-wider text-charcoal/70">
+              Range
+            </label>
+            <select
+              id="profit-range"
+              name="range"
+              defaultValue={selectedRange}
+              className="select-modern-sm bg-white"
+            >
+              {(Object.keys(profitOptions) as ProfitRange[]).map((rangeKey) => (
+                <option key={rangeKey} value={rangeKey}>
+                  {profitOptions[rangeKey].label}
+                </option>
+              ))}
+            </select>
+            <button
+              type="submit"
+              className="rounded-lg border border-charcoal/20 px-3 py-2 text-xs uppercase tracking-wider text-charcoal hover:bg-charcoal/5 transition-colors"
+            >
+              Update
+            </button>
+          </form>
+        </div>
+
+        <div className="mt-6 grid gap-4 sm:grid-cols-3">
+          <div className="bg-cream shadow-sm border border-charcoal/10 p-5 rounded-lg">
+            <div className="text-xs uppercase tracking-wider text-charcoal-light">Profit</div>
+            <div className="text-3xl font-serif text-charcoal-dark mt-2">
+              {formatCurrency(profitValue)}
             </div>
-          ))}
+          </div>
+          <div className="bg-cream shadow-sm border border-charcoal/10 p-5 rounded-lg">
+            <div className="text-xs uppercase tracking-wider text-charcoal-light">Revenue</div>
+            <div className="text-xl font-serif text-charcoal-dark mt-2">
+              {formatCurrency(selectedSummary.revenue)}
+            </div>
+          </div>
+          <div className="bg-cream shadow-sm border border-charcoal/10 p-5 rounded-lg">
+            <div className="text-xs uppercase tracking-wider text-charcoal-light">Costs</div>
+            <div className="text-xl font-serif text-charcoal-dark mt-2">
+              {formatCurrency(selectedSummary.cost)}
+            </div>
+          </div>
         </div>
       </div>
 
