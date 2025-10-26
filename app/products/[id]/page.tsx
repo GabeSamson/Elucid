@@ -176,6 +176,12 @@ const discountPercent = hasDiscount
   ? Math.round(((product.compareAtPrice! - product.price) / product.compareAtPrice!) * 100)
   : 0;
   const freeShippingThreshold = getFreeShippingThreshold();
+  const audienceLabelMap: Record<Product['targetAudience'], string> = {
+    MALE: 'Men',
+    FEMALE: 'Women',
+    UNISEX: 'Everyone',
+  };
+  const audienceLabel = audienceLabelMap[product.targetAudience] ?? 'Everyone';
 
   return (
     <main className="min-h-screen bg-cream">
@@ -248,6 +254,13 @@ const discountPercent = hasDiscount
               <h1 className="font-serif text-4xl md:text-5xl text-charcoal-dark mb-6">
                 {product.name}
               </h1>
+
+              <div className="mb-6 flex flex-wrap items-center gap-2 text-sm uppercase tracking-wider text-charcoal/60">
+                <span>Designed for</span>
+                <span className="px-2 py-1 border border-charcoal/20 text-charcoal-dark rounded">
+                  {audienceLabel}
+                </span>
+              </div>
 
               {/* Price */}
               <div className="mb-8">
