@@ -26,7 +26,7 @@ export default function Navigation() {
     }
 
     const updateVariant = () => {
-      const threshold = Math.max(window.innerHeight * 0.6, 240);
+      const threshold = Math.max(window.innerHeight / 3, 160);
       setNavVariant(window.scrollY < threshold ? "dark" : "light");
     };
 
@@ -80,8 +80,8 @@ export default function Navigation() {
         initial={{ opacity: 0, y: 0 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        style={{ paddingTop: 'max(3rem, env(safe-area-inset-top))' }}
-        className={`fixed top-0 left-0 right-0 z-50 px-4 py-4 md:px-6 md:py-6 transition-colors duration-300 border-b backdrop-blur-sm ${navSurfaceClasses}`}
+        style={{ paddingBlock: 'max(2.75rem, env(safe-area-inset-top))' }}
+        className={`fixed top-0 left-0 right-0 z-50 px-4 md:px-6 transition-colors duration-300 border-b backdrop-blur-sm ${navSurfaceClasses}`}
       >
         {/* Desktop Navigation */}
         <div className={`${isLandscape ? 'grid' : 'hidden'} grid-cols-3 max-w-7xl mx-auto items-center w-full gap-4`}>
