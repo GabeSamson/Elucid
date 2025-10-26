@@ -23,8 +23,6 @@ export default function Navigation() {
   useEffect(() => {
     const navEl = navRef.current;
 
-    if (!navEl) return;
-
     if (pathname !== "/") {
       setNavVariant("light");
       return;
@@ -38,7 +36,7 @@ export default function Navigation() {
     }
 
     const evaluateVariant = () => {
-      const navHeight = navEl.getBoundingClientRect().height;
+      const navHeight = navEl?.getBoundingClientRect().height ?? 0;
       const heroRect = heroEl.getBoundingClientRect();
       setNavVariant(heroRect.bottom > navHeight ? "dark" : "light");
     };
@@ -102,8 +100,13 @@ export default function Navigation() {
         initial={{ opacity: 0, y: 0 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        style={{ paddingTop: 'max(2.5rem, env(safe-area-inset-top))' }}
-        className={`fixed top-0 left-0 right-0 z-50 px-4 pb-3 md:px-6 md:py-6 transition-colors duration-300 border-b backdrop-blur-sm ${navSurfaceClasses}`}
+        style={{
+          paddingTop: 'calc(env(safe-area-inset-top) + 1.4rem)',
+          paddingBottom: '1.4rem',
+        }}
+        className={`fixed top-0 left-0 right-0 z-50 px-4 md:px-6 md:py-6 transition-colors duration-300 border-b ${
+          mobileMenuOpen && !isLandscape ? "" : "backdrop-blur-sm"
+        } ${navSurfaceClasses}`}
       >
         {/* Desktop Navigation */}
         <div className={`${isLandscape ? 'grid' : 'hidden'} grid-cols-3 max-w-7xl mx-auto items-center w-full gap-4`}>
