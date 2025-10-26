@@ -70,6 +70,21 @@ export default function CartModal() {
                         : undefined;
                     const displayImage =
                       colorSpecificImage || (item.product.images && item.product.images[0]);
+                    const isComingSoon = item.product.comingSoon;
+                    const releaseDate = item.product.releaseDate
+                      ? new Date(item.product.releaseDate)
+                      : null;
+                    const releaseLabel = releaseDate
+                      ? releaseDate.toLocaleDateString(undefined, {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })
+                      : null;
+                    const preorderCap = 10;
+                    const quantityLimit = isComingSoon
+                      ? preorderCap
+                      : Math.max(item.product.stock, 0);
 
                     return (
                       <div key={itemKey} className="flex gap-4 pb-6 border-b border-charcoal/10 last:border-0">
@@ -93,6 +108,12 @@ export default function CartModal() {
                           <h3 className="font-serif text-lg text-charcoal-dark mb-1">
                             {item.product.name}
                           </h3>
+
+                          {isComingSoon && (
+                            <p className="text-xs uppercase tracking-wider text-charcoal/60 mb-2">
+                              Pre-order{releaseLabel ? ` · Ships ${releaseLabel}` : ''}
+                            </p>
+                          )}
 
                           {(item.size || item.color) && (
                             <div className="text-sm text-charcoal-light mb-2">
@@ -119,8 +140,15 @@ export default function CartModal() {
                                 {item.quantity}
                               </span>
                               <button
-                                onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.size, item.color)}
-                                disabled={item.quantity >= item.product.stock}
+                                onClick={() =>
+                                  updateQuantity(
+                                    item.product.id,
+                                    Math.min(item.quantity + 1, quantityLimit),
+                                    item.size,
+                                    item.color
+                                  )
+                                }
+                                disabled={item.quantity >= quantityLimit}
                                 className="w-8 h-8 hover:bg-cream-dark transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 +

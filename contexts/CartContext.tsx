@@ -49,14 +49,38 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           item.color === color
       );
 
+      const preorderCap = 10;
+
       if (existingIndex > -1) {
         // Update quantity of existing item
         const newItems = [...currentItems];
-        newItems[existingIndex].quantity += quantity;
+        const existingItem = newItems[existingIndex];
+        const maxQuantity = product.comingSoon
+          ? preorderCap
+          : Math.max(product.stock, 0);
+        if (!product.comingSoon && maxQuantity === 0) {
+          return currentItems;
+        }
+        const newQuantity =
+          maxQuantity > 0
+            ? Math.min(existingItem.quantity + quantity, maxQuantity)
+            : existingItem.quantity + quantity;
+        newItems[existingIndex] = {
+          ...existingItem,
+          quantity: newQuantity,
+        };
         return newItems;
       } else {
         // Add new item
-        return [...currentItems, { product, quantity, size, color }];
+        const maxQuantity = product.comingSoon
+          ? preorderCap
+          : Math.max(product.stock, 0);
+        if (!product.comingSoon && maxQuantity === 0) {
+          return currentItems;
+        }
+        const initialQuantity =
+          maxQuantity > 0 ? Math.min(quantity, maxQuantity) : quantity;
+        return [...currentItems, { product, quantity: initialQuantity, size, color }];
       }
     });
   };
@@ -81,13 +105,26 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
 
     setItems((currentItems) =>
-      currentItems.map((item) =>
-        item.product.id === productId &&
-        item.size === size &&
-        item.color === color
-          ? { ...item, quantity }
-          : item
-      )
+      currentItems.map((item) => {
+        if (
+          item.product.id === productId &&
+          item.size === size &&
+          item.color === color
+        ) {
+          const maxQuantity = item.product.comingSoon
+            ? 10
+            : Math.max(item.product.stock, 0);
+          const clampedQuantity =
+            maxQuantity > 0 ? Math.min(quantity, maxQuantity) : quantity;
+
+          return {
+            ...item,
+            quantity: clampedQuantity,
+          };
+        }
+
+        return item;
+      })
     );
   };
 

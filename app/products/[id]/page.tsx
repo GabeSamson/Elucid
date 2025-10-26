@@ -83,31 +83,50 @@ export default function ProductPage() {
   }, [product, selectedSize, selectedColor]);
 
   const currentStock = currentVariant ? currentVariant.stock : product?.stock || 0;
+  const isComingSoon = product?.comingSoon ?? false;
+  const releaseDate = product?.releaseDate ? new Date(product.releaseDate) : null;
+  const releaseLabel = releaseDate
+    ? releaseDate.toLocaleDateString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      })
+    : null;
+  const preorderCap = 10;
+  const effectiveStock = isComingSoon ? Math.max(currentStock, preorderCap) : currentStock;
+  const isOutOfStock = !isComingSoon && effectiveStock === 0;
 
   // Get available colors for selected size
   const availableColors = useMemo(() => {
-    if (!product?.variants || !selectedSize) return product?.colors.map((c) => c.name) || [];
-    const colorsWithStock = product.variants
-      .filter((v) => v.size === selectedSize && v.stock > 0)
-      .map((v) => v.color);
-    return colorsWithStock;
-  }, [product, selectedSize]);
+    if (!product?.variants || !selectedSize) {
+      return product?.colors.map((c) => c.name) || [];
+    }
+    const relevantVariants = product.variants.filter((v) =>
+      v.size === selectedSize && (isComingSoon || v.stock > 0)
+    );
+    return Array.from(new Set(relevantVariants.map((v) => v.color)));
+  }, [product, selectedSize, isComingSoon]);
 
   // Get available sizes for selected color
   const availableSizes = useMemo(() => {
-    if (!product?.variants || !selectedColor) return product?.sizes || [];
-    const sizesWithStock = product.variants
-      .filter((v) => v.color === selectedColor && v.stock > 0)
-      .map((v) => v.size);
-    return sizesWithStock;
-  }, [product, selectedColor]);
+    if (!product?.variants || !selectedColor) {
+      return product?.sizes || [];
+    }
+    const relevantVariants = product.variants.filter((v) =>
+      v.color === selectedColor && (isComingSoon || v.stock > 0)
+    );
+    return Array.from(new Set(relevantVariants.map((v) => v.size)));
+  }, [product, selectedColor, isComingSoon]);
 
   const handleAddToCart = () => {
     if (!product) return;
 
+    const limit = isComingSoon ? preorderCap : effectiveStock || preorderCap;
+    const clampedQuantity = Math.max(1, Math.min(quantity, limit));
+
     addToCart(
       product,
-      quantity,
+      clampedQuantity,
       product.sizes && product.sizes.length > 0 ? selectedSize : undefined,
       product.colors && product.colors.length > 0 ? selectedColor || undefined : undefined
     );
@@ -246,8 +265,18 @@ const discountPercent = hasDiscount
                       </span>
                     </>
                   )}
+                  {isComingSoon && (
+                    <span className="px-3 py-1 border border-charcoal/30 text-xs uppercase tracking-wider text-charcoal/80 rounded-full">
+                      Pre-order
+                    </span>
+                  )}
                 </div>
-                {currentStock <= 5 && currentStock > 0 && (
+                {isComingSoon && releaseLabel && (
+                  <p className="text-sm text-charcoal/70">
+                    Expected to ship {releaseLabel}
+                  </p>
+                )}
+                {!isComingSoon && currentStock <= 5 && currentStock > 0 && (
                   <p className="text-sm text-charcoal-light">
                     Only {currentStock} left in stock
                   </p>
@@ -305,6 +334,17 @@ const discountPercent = hasDiscount
               )}
 
               {/* Quantity */}
+              {isComingSoon && (
+                <div className="mb-6 rounded-lg border border-charcoal/20 bg-cream-dark px-4 py-3 text-sm text-charcoal">
+                  <p className="uppercase tracking-[0.35em] text-xs text-charcoal/70 mb-1">
+                    Coming Soon
+                  </p>
+                  <p className="font-medium text-charcoal-dark">
+                    Pre-order now{releaseLabel ? ` · Ships ${releaseLabel}` : ''}
+                  </p>
+                </div>
+              )}
+
               <div className="mb-8">
                 <label className="block text-sm uppercase tracking-wider text-charcoal mb-3">
                   Quantity
@@ -320,8 +360,14 @@ const discountPercent = hasDiscount
                     {quantity}
                   </span>
                   <button
-                    onClick={() => setQuantity(Math.min(currentStock, quantity + 1))}
-                    disabled={quantity >= currentStock}
+                    onClick={() =>
+                      setQuantity(
+                        isComingSoon
+                          ? Math.min(preorderCap, quantity + 1)
+                          : Math.min(effectiveStock, quantity + 1)
+                      )
+                    }
+                    disabled={isComingSoon ? quantity >= preorderCap : quantity >= effectiveStock}
                     className="w-12 h-12 border border-charcoal/20 hover:border-charcoal transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     +
@@ -332,10 +378,10 @@ const discountPercent = hasDiscount
               {/* Add to Cart */}
               <button
                 onClick={handleAddToCart}
-                disabled={currentStock === 0}
+                disabled={isOutOfStock}
                 className="w-full py-4 bg-charcoal-dark text-cream-light hover:bg-charcoal transition-colors duration-300 tracking-wider text-sm uppercase disabled:opacity-50 disabled:cursor-not-allowed mb-4"
               >
-                {currentStock === 0 ? 'Out of Stock' : 'Add to Cart'}
+                {isOutOfStock ? 'Out of Stock' : isComingSoon ? 'Pre-order' : 'Add to Cart'}
               </button>
 
               {/* Additional Info */}

@@ -132,11 +132,24 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
                       {product.collection?.name || '-'}
                     </td>
                     <td className="py-3">
-                      <span className={`inline-block px-3 py-1.5 text-xs rounded-lg uppercase tracking-wider ${
-                        product.active ? 'bg-beige/30 text-charcoal-dark' : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {product.active ? 'Active' : 'Inactive'}
-                      </span>
+                      <div className="flex flex-col gap-1">
+                        <span
+                          className={`inline-block px-3 py-1.5 text-xs rounded-lg uppercase tracking-wider ${
+                            product.comingSoon
+                              ? 'bg-charcoal-dark text-cream'
+                              : product.active
+                              ? 'bg-beige/30 text-charcoal-dark'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}
+                        >
+                          {product.comingSoon ? 'Coming Soon' : product.active ? 'Active' : 'Inactive'}
+                        </span>
+                        {product.comingSoon && product.releaseDate && (
+                          <span className="text-xs text-charcoal/70">
+                            Launches {new Date(product.releaseDate).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="py-3">
                       <div className="flex flex-wrap gap-3">

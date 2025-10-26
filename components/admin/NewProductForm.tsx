@@ -14,6 +14,7 @@ interface ProductFormData {
   description: string;
   price: number;
   compareAtPrice?: number;
+  costPrice?: number;
   images: string[];
   sizes: string[];
   colors: Array<{ name: string; hexCode: string }>;
@@ -26,6 +27,9 @@ interface ProductFormData {
   collectionId?: string;
   featured: boolean;
   active: boolean;
+  includeShipping: boolean;
+  comingSoon: boolean;
+  releaseDate?: string | null;
 }
 
 interface NewProductFormProps {

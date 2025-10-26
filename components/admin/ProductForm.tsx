@@ -32,6 +32,8 @@ interface ProductFormData {
   featured: boolean;
   active: boolean;
   includeShipping: boolean;
+  comingSoon: boolean;
+  releaseDate?: string | null;
 }
 
 interface ProductFormProps {
@@ -53,6 +55,7 @@ export default function ProductForm({
     handleSubmit,
     formState: { errors, isSubmitting },
     control,
+    watch,
   } = useForm<ProductFormData>({
     defaultValues: {
       name: initialData?.name || '',
@@ -62,22 +65,29 @@ export default function ProductForm({
       costPrice: initialData?.costPrice,
       images: initialData?.images || [],
       sizes: initialData?.sizes || [],
-    colors: initialData?.colors || [],
-    variants: initialData?.variants || [],
-    collectionId: initialData?.collectionId,
-    featured: initialData?.featured ?? false,
-    active: initialData?.active ?? true,
-    colorImages: initialData?.colorImages || {},
-  },
-});
+      colors: initialData?.colors || [],
+      variants: initialData?.variants || [],
+      collectionId: initialData?.collectionId,
+      featured: initialData?.featured ?? false,
+      active: initialData?.active ?? true,
+      includeShipping: initialData?.includeShipping ?? true,
+      comingSoon: initialData?.comingSoon ?? false,
+      releaseDate: initialData?.releaseDate ?? null,
+      colorImages: initialData?.colorImages || {},
+    },
+  });
 
-const [images, setImages] = useState<string[]>(initialData?.images || []);
-const [sizes, setSizes] = useState<string[]>(initialData?.sizes || []);
-const [colors, setColors] = useState<ColorOption[]>(initialData?.colors || []);
-const [variants, setVariants] = useState<ProductVariant[]>(initialData?.variants || []);
-const [colorImages, setColorImages] = useState<Record<string, string[]>>(
-  initialData?.colorImages || {}
-);
+  const [images, setImages] = useState<string[]>(initialData?.images || []);
+  const [sizes, setSizes] = useState<string[]>(initialData?.sizes || []);
+  const [colors, setColors] = useState<ColorOption[]>(initialData?.colors || []);
+  const [variants, setVariants] = useState<ProductVariant[]>(initialData?.variants || []);
+  const [colorImages, setColorImages] = useState<Record<string, string[]>>(
+    initialData?.colorImages || {}
+  );
+  const [comingSoonDate, setComingSoonDate] = useState<string>(
+    initialData?.releaseDate ? initialData.releaseDate.slice(0, 10) : ''
+  );
+  const watchedComingSoon = watch('comingSoon', initialData?.comingSoon ?? false);
 
   // Size management
   const [newSize, setNewSize] = useState('');
@@ -164,6 +174,12 @@ useEffect(() => {
   });
 }, [colors]);
 
+  useEffect(() => {
+    if (!watchedComingSoon) {
+      setComingSoonDate('');
+    }
+  }, [watchedComingSoon]);
+
   const updateVariantStock = (size: string, color: string, stock: number) => {
     setVariants(
       variants.map((v) =>
@@ -181,6 +197,11 @@ useEffect(() => {
   };
 
   const handleFormSubmit = async (data: ProductFormData) => {
+    const normalizedReleaseDate =
+      data.comingSoon && comingSoonDate
+        ? new Date(comingSoonDate).toISOString()
+        : null;
+
     await onSubmit({
       ...data,
       images,
@@ -188,6 +209,7 @@ useEffect(() => {
       sizes,
       colors,
       variants,
+      releaseDate: normalizedReleaseDate,
     });
   };
 
@@ -375,7 +397,48 @@ useEffect(() => {
                 </label>
               )}
             />
+
+            <Controller
+              control={control}
+              name="comingSoon"
+              defaultValue={initialData?.comingSoon ?? false}
+              render={({ field }) => (
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={field.value}
+                    onChange={(event) => field.onChange(event.target.checked)}
+                    className="w-4 h-4 rounded border-charcoal/30 text-charcoal focus:ring-charcoal"
+                  />
+                  <span className="text-sm text-charcoal">
+                    Coming soon / pre-order
+                  </span>
+                </label>
+              )}
+            />
           </div>
+
+          {watchedComingSoon && (
+            <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] sm:items-end">
+              <div>
+                <label className="block text-sm font-medium text-charcoal mb-2">
+                  Release date (optional)
+                </label>
+                <input
+                  type="date"
+                  value={comingSoonDate}
+                  onChange={(event) => setComingSoonDate(event.target.value)}
+                  className="input-modern"
+                />
+                <p className="text-xs text-charcoal/60 mt-1">
+                  Shown on the product page and used to label the drop.
+                </p>
+              </div>
+              <div className="rounded-lg border border-charcoal/15 bg-white p-4 text-sm text-charcoal/70">
+                Customers will see a <strong>Pre-order</strong> button and a &ldquo;Coming Soon&rdquo; tag.
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

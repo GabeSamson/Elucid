@@ -31,6 +31,8 @@ export interface Product {
   featured: boolean;
   active: boolean;
   includeShipping: boolean;
+  comingSoon: boolean;
+  releaseDate?: string | null;
   createdAt: string;
   updatedAt: string;
 }

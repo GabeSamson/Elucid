@@ -31,6 +31,8 @@ export async function POST(request: NextRequest) {
       active,
       includeShipping,
       colorImages,
+      comingSoon,
+      releaseDate,
     } = body;
 
     const toBoolean = (value: unknown, fallback: boolean) => {
@@ -76,6 +78,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const normalizedComingSoon = toBoolean(comingSoon, false);
+    const parsedReleaseDateRaw =
+      releaseDate === undefined || releaseDate === null || releaseDate === ''
+        ? null
+        : new Date(releaseDate);
+    const parsedReleaseDate =
+      parsedReleaseDateRaw && !Number.isNaN(parsedReleaseDateRaw.getTime())
+        ? parsedReleaseDateRaw
+        : null;
+
     const imagePayload = normalizeProductImageInput(images, colorImages);
 
     // Create product with variants
@@ -98,6 +110,8 @@ export async function POST(request: NextRequest) {
         featured: normalizedFeatured,
         active: normalizedActive,
         includeShipping: normalizedIncludeShipping,
+        comingSoon: normalizedComingSoon,
+        releaseDate: normalizedComingSoon ? parsedReleaseDate : null,
         variants: {
           create: variants?.map((v: any) => ({
             size: v.size,

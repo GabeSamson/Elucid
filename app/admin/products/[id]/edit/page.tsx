@@ -38,6 +38,7 @@ export default async function EditProductPage({
     description: product.description,
     price: product.price,
     compareAtPrice: product.compareAtPrice || undefined,
+    costPrice: product.costPrice || undefined,
     images: imagePayload.defaultImages,
     colorImages: imagePayload.colorImages,
     sizes: JSON.parse(product.sizes),
@@ -52,6 +53,8 @@ export default async function EditProductPage({
     featured: product.featured,
     active: product.active,
     includeShipping: product.includeShipping,
+    comingSoon: product.comingSoon,
+    releaseDate: product.releaseDate ? product.releaseDate.toISOString() : null,
   };
 
   return (

@@ -57,6 +57,8 @@ model Product {
   featured        Boolean   @default(false)
   active          Boolean   @default(true)
   includeShipping Boolean   @default(true) @map("include_shipping")
+  comingSoon      Boolean   @default(false) @map("coming_soon")
+  releaseDate     DateTime? @map("release_date")
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 

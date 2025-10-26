@@ -86,6 +86,8 @@ export async function PUT(
       active,
       includeShipping,
       colorImages,
+      comingSoon,
+      releaseDate,
     } = body;
 
     const toBoolean = (value: unknown, fallback: boolean) => {
@@ -130,6 +132,16 @@ export async function PUT(
       );
     }
 
+    const normalizedComingSoon = toBoolean(comingSoon, false);
+    const parsedReleaseDateRaw =
+      releaseDate === undefined || releaseDate === null || releaseDate === ''
+        ? null
+        : new Date(releaseDate);
+    const parsedReleaseDate =
+      parsedReleaseDateRaw && !Number.isNaN(parsedReleaseDateRaw.getTime())
+        ? parsedReleaseDateRaw
+        : null;
+
     const imagePayload = normalizeProductImageInput(images, colorImages);
 
     // Delete existing variants and create new ones
@@ -158,6 +170,8 @@ export async function PUT(
         featured: normalizedFeatured,
         active: normalizedActive,
         includeShipping: normalizedIncludeShipping,
+        comingSoon: normalizedComingSoon,
+        releaseDate: normalizedComingSoon ? parsedReleaseDate : null,
         variants: {
           create: variants?.map((v: any) => ({
             size: v.size,
