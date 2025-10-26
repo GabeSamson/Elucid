@@ -38,11 +38,6 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
     orderBy: { createdAt: 'desc' },
   });
 
-  const totalInventoryValue = products.reduce((sum, product) => {
-    return sum + product.price * product.stock;
-  }, 0);
-  const totalUnits = products.reduce((sum, product) => sum + product.stock, 0);
-
   return (
     <div>
       <div className="flex justify-between items-center mb-8">
@@ -53,25 +48,6 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
         >
           Add Product
         </Link>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 mb-8">
-        <div className="rounded-2xl border border-charcoal/10 bg-cream p-5">
-          <p className="text-xs uppercase tracking-wider text-charcoal/50">
-            Inventory value
-          </p>
-          <p className="mt-2 text-2xl font-semibold text-charcoal">
-            {formatCurrency(totalInventoryValue)}
-          </p>
-        </div>
-        <div className="rounded-2xl border border-charcoal/10 bg-cream p-5">
-          <p className="text-xs uppercase tracking-wider text-charcoal/50">
-            Units on hand
-          </p>
-          <p className="mt-2 text-2xl font-semibold text-charcoal">
-            {totalUnits}
-          </p>
-        </div>
       </div>
 
       <div className="bg-cream-light p-6">

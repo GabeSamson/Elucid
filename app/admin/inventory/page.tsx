@@ -133,6 +133,7 @@ export default function AdminInventoryPage() {
   const totalItems = variants.length;
   const outOfStock = variants.filter((v) => v.stock === 0).length;
   const lowStock = variants.filter((v) => v.stock > 0 && v.stock <= 5).length;
+  const totalUnits = variants.reduce((sum, v) => sum + v.stock, 0);
   const totalValue = variants.reduce((sum, v) => sum + v.stock * v.product.price, 0);
 
   return (
@@ -150,6 +151,41 @@ export default function AdminInventoryPage() {
         >
           Export to CSV
         </button>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-2xl border border-charcoal/10 bg-cream p-5">
+          <p className="text-xs uppercase tracking-wider text-charcoal/50">
+            Total inventory value
+          </p>
+          <p className="mt-2 text-2xl font-semibold text-charcoal">
+            {formatCurrency(totalValue)}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-charcoal/10 bg-cream p-5">
+          <p className="text-xs uppercase tracking-wider text-charcoal/50">
+            Units on hand
+          </p>
+          <p className="mt-2 text-2xl font-semibold text-charcoal">
+            {totalUnits}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-charcoal/10 bg-cream p-5">
+          <p className="text-xs uppercase tracking-wider text-charcoal/50">
+            Low stock variants
+          </p>
+          <p className="mt-2 text-2xl font-semibold text-charcoal">
+            {lowStock}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-charcoal/10 bg-cream p-5">
+          <p className="text-xs uppercase tracking-wider text-charcoal/50">
+            Out of stock variants
+          </p>
+          <p className="mt-2 text-2xl font-semibold text-charcoal">
+            {outOfStock}
+          </p>
+        </div>
       </div>
 
       {feedback && (
