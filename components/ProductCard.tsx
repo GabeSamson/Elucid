@@ -32,7 +32,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
     >
       <Link href={`/products/${product.id}`}>
         {/* Product Info */}
-        <div className="space-y-2 mb-4 md:mb-0 md:mt-6">
+        <div className="mb-4 flex min-h-[118px] flex-col gap-2 md:mb-0 md:mt-6">
           <div className="flex items-center justify-between">
             <h3 className="font-serif text-xl md:text-2xl text-charcoal-dark">
               {product.name}
@@ -61,16 +61,18 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
             )}
           </div>
 
-          {product.collection && (
-            <p className="text-charcoal-light text-sm uppercase tracking-wider">
-              {product.collection.name}
-            </p>
-          )}
-          {isComingSoon && (
-            <p className="text-xs uppercase tracking-wider text-charcoal/50">
-              {releaseLabel ? `Ships ${releaseLabel}` : 'Pre-order now'}
-            </p>
-          )}
+          <div className="space-y-1">
+            {product.collection && (
+              <p className="text-charcoal-light text-sm uppercase tracking-wider">
+                {product.collection.name}
+              </p>
+            )}
+            {isComingSoon && (
+              <p className="text-xs uppercase tracking-wider text-charcoal/50">
+                {releaseLabel ? `Ships ${releaseLabel}` : 'Pre-order now'}
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Product Image */}

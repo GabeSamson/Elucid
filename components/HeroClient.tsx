@@ -93,7 +93,8 @@ export default function HeroClient({
 
   return (
     <section
-      className="relative flex min-h-screen min-h-[100dvh] items-center justify-center overflow-hidden bg-charcoal-dark pb-12 pt-12 sm:pt-20"
+      className="relative flex min-h-screen min-h-[100dvh] items-center justify-center overflow-hidden bg-charcoal-dark pb-16 pt-24 sm:pt-28"
+      style={{ paddingTop: 'max(6rem, calc(env(safe-area-inset-top) + 4rem))' }}
       data-nav-tone="dark"
     >
       <div className="absolute inset-0 film-grain opacity-20" />
@@ -103,14 +104,14 @@ export default function HeroClient({
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, ease: "easeOut" }}
-          className="mb-10 sm:mb-14 flex justify-center"
+          className="mb-12 sm:mb-14 flex justify-center"
         >
           <img
             src="/logo.svg"
             alt="Elucid LDN"
             draggable="false"
             onContextMenu={(e) => e.preventDefault()}
-            className="w-[68vw] max-w-[300px] sm:w-60 sm:max-w-none md:w-80 lg:w-[520px] xl:w-[640px] drop-shadow-2xl invert brightness-0 contrast-200 select-none pointer-events-none transform -translate-x-[14px]"
+            className="w-[78vw] max-w-[340px] sm:w-64 sm:max-w-none md:w-80 lg:w-[520px] xl:w-[640px] drop-shadow-2xl invert brightness-0 contrast-200 select-none pointer-events-none transform -translate-x-[10px]"
           />
         </motion.div>
 
