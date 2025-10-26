@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 
 interface HeroClientProps {
-  heading?: string | null;
+  heading?: string;
   subheading?: string | null;
   ctaLabel: string;
   ctaHref: string;

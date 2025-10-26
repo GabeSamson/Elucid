@@ -3,7 +3,6 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
-import { usePathname } from "next/navigation";
 import AuthModal from "./AuthModal";
 import CartModal from "./CartModal";
 import { useCart } from "@/contexts/CartContext";
@@ -14,26 +13,8 @@ export default function Navigation() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
   const [isLandscape, setIsLandscape] = useState(true);
-  const [hasScrolled, setHasScrolled] = useState(false);
   const { data: session, status } = useSession();
   const { totalItems, openCart } = useCart();
-  const pathname = usePathname();
-
-  useEffect(() => {
-    if (pathname !== "/") {
-      setHasScrolled(true);
-      return;
-    }
-
-    const handleScroll = () => {
-      setHasScrolled(window.scrollY > 0);
-    };
-
-    handleScroll();
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [pathname]);
 
   useEffect(() => {
     const checkOrientation = () => {
@@ -54,8 +35,6 @@ export default function Navigation() {
     await signOut({ redirect: false });
   };
 
-  const showSolidBackground = pathname !== "/" || hasScrolled;
-
   return (
     <>
       <motion.nav
@@ -63,11 +42,7 @@ export default function Navigation() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
         style={{ paddingTop: 'max(3rem, env(safe-area-inset-top))' }}
-        className={`fixed top-0 left-0 right-0 z-50 px-4 pb-4 md:px-6 md:py-6 transition-colors duration-300 ${
-          showSolidBackground
-            ? "bg-charcoal-dark/90 backdrop-blur-sm border-b border-charcoal/40 shadow-lg"
-            : "bg-transparent"
-        }`}
+        className="fixed top-0 left-0 right-0 z-50 px-4 pb-4 md:px-6 md:py-6 transition-colors duration-300 bg-charcoal-dark/90 backdrop-blur-sm border-b border-charcoal/40 shadow-lg"
       >
         {/* Desktop Navigation */}
         <div className={`${isLandscape ? 'grid' : 'hidden'} grid-cols-3 max-w-7xl mx-auto items-center w-full gap-4`}>

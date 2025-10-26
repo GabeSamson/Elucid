@@ -14,7 +14,7 @@ export default async function Hero() {
     },
   });
 
-  const heading = config?.heroHeading?.trim() || null;
+  const heading = config?.heroHeading?.trim() || undefined;
   const subheading = config?.heroSubheading ?? null;
   const customContent = config?.customContent ?? null;
 
