@@ -15,6 +15,7 @@ export default function Navigation() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
   const [isLandscape, setIsLandscape] = useState(true);
+  const [hasScrolled, setHasScrolled] = useState(false);
   const { data: session, status } = useSession();
   const { totalItems, openCart } = useCart();
   const pathname = usePathname();
@@ -23,13 +24,17 @@ export default function Navigation() {
     // Keep light-on-dark treatment for the landing hero, switch to dark text elsewhere.
     if (pathname !== "/") {
       setIsDark(true);
+      setHasScrolled(true);
       return;
     }
+
+    setHasScrolled(false);
 
     const handleScroll = () => {
       const scrollPosition = window.scrollY;
       const viewportHeight = window.innerHeight;
 
+      setHasScrolled(scrollPosition > 0);
       setIsDark(scrollPosition > viewportHeight - 100);
     };
 
@@ -58,7 +63,7 @@ export default function Navigation() {
     await signOut({ redirect: false });
   };
 
-  const showSolidBackground = pathname !== "/" || isDark;
+  const showSolidBackground = pathname !== "/" || hasScrolled;
 
   return (
     <>
