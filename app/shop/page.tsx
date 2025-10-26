@@ -73,6 +73,11 @@ export default function ShopPage() {
     }
   };
 
+  const activeCollectionName =
+    activeCollection === ""
+      ? "All"
+      : collections.find((collection) => collection.id === activeCollection)?.name ?? "All";
+
   return (
     <main className="min-h-screen bg-cream">
       <Suspense fallback={<div className="h-20" />}>
@@ -89,7 +94,7 @@ export default function ShopPage() {
             className="mb-16 text-center md:text-left"
           >
             <h1 className="font-serif text-5xl md:text-7xl text-charcoal-dark mb-4">
-              Shop All
+              {`Shop ${activeCollectionName}`}
             </h1>
             <p className="text-charcoal-light text-lg max-w-2xl">
               Subtitle here

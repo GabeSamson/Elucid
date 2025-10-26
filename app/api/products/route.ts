@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     const limit = searchParams.get('limit');
     const sort = searchParams.get('sort') || 'createdAt';
     const order = searchParams.get('order') || 'desc';
-    const search = searchParams.get('search');
+    const search = (searchParams.get('search') || '').trim();
 
     const filters: any[] = [];
 
@@ -19,11 +19,18 @@ export async function GET(request: NextRequest) {
     }
 
     if (search) {
-      filters.push({
-        OR: [
-          { name: { contains: search, mode: 'insensitive' } },
-          { description: { contains: search, mode: 'insensitive' } },
-        ],
+      const terms = search
+        .split(/\s+/)
+        .map((term) => term.trim())
+        .filter(Boolean);
+
+      terms.forEach((term) => {
+        filters.push({
+          OR: [
+            { name: { contains: term, mode: 'insensitive' } },
+            { description: { contains: term, mode: 'insensitive' } },
+          ],
+        });
       });
     }
 
