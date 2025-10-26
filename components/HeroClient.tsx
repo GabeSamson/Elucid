@@ -110,7 +110,7 @@ export default function HeroClient({
             alt="Elucid LDN"
             draggable="false"
             onContextMenu={(e) => e.preventDefault()}
-            className="w-48 sm:w-60 md:w-80 lg:w-[520px] xl:w-[640px] drop-shadow-2xl invert brightness-0 contrast-200 select-none pointer-events-none transform -translate-x-[14px]"
+            className="w-[68vw] max-w-[300px] sm:w-60 sm:max-w-none md:w-80 lg:w-[520px] xl:w-[640px] drop-shadow-2xl invert brightness-0 contrast-200 select-none pointer-events-none transform -translate-x-[14px]"
           />
         </motion.div>
 
