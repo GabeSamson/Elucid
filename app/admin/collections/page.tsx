@@ -101,6 +101,7 @@ export default async function AdminCollectionsPage({ searchParams }: AdminCollec
         <div className="rounded-lg border border-beige bg-beige/20 px-4 py-3 text-sm text-charcoal">
           {success === "collection-created" && "New collection created successfully."}
           {success === "collection-deleted" && "Collection deleted successfully."}
+          {success === "collection-updated" && "Collection updated successfully."}
         </div>
       )}
 
@@ -113,6 +114,8 @@ export default async function AdminCollectionsPage({ searchParams }: AdminCollec
           {error === "missing-collection" && "We couldn't identify which collection to delete."}
           {error === "delete-failed" &&
             "Unable to delete this collection. Ensure it is not linked to products and try again."}
+          {error === "collection-not-found" &&
+            "We couldn't find that collection. It may have been removed already."}
         </div>
       )}
 
@@ -199,6 +202,12 @@ export default async function AdminCollectionsPage({ searchParams }: AdminCollec
                   )}
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
+                  <Link
+                    href={`/admin/collections/${collection.id}`}
+                    className="rounded-lg border border-charcoal/20 px-4 py-2 text-xs uppercase tracking-wider text-charcoal hover:border-charcoal transition-colors"
+                  >
+                    Edit
+                  </Link>
                   <Link
                     href={`/collections/${collection.slug}`}
                     className="rounded-lg border border-charcoal/20 px-4 py-2 text-xs uppercase tracking-wider text-charcoal hover:border-charcoal transition-colors"

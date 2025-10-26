@@ -1,14 +1,26 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import ImageUploader from '@/components/admin/ImageUploader';
 
-export default function CollectionHeroUploader() {
-  const [image, setImage] = useState<string | null>(null);
+interface CollectionHeroUploaderProps {
+  defaultImageUrl?: string | null;
+  inputName?: string;
+}
+
+export default function CollectionHeroUploader({
+  defaultImageUrl = null,
+  inputName = 'imageUrl',
+}: CollectionHeroUploaderProps) {
+  const [image, setImage] = useState<string | null>(defaultImageUrl);
+
+  useEffect(() => {
+    setImage(defaultImageUrl ?? null);
+  }, [defaultImageUrl]);
 
   return (
     <div className="space-y-3">
-      <input type="hidden" name="imageUrl" value={image ?? ''} />
+      <input type="hidden" name={inputName} value={image ?? ''} />
       <ImageUploader
         images={image ? [image] : []}
         onChange={(next) => setImage(next[0] ?? null)}
