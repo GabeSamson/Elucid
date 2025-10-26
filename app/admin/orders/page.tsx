@@ -31,14 +31,6 @@ interface Order {
   isInPerson: boolean;
 }
 
-interface ProfitPeriod {
-  revenue: number;
-  cost: number;
-  profit: number;
-}
-
-type ProfitResponse = Record<'day' | 'week' | 'month' | 'year' | 'lifetime', ProfitPeriod>;
-
 type OrderFilter = 'needs' | 'completed' | 'cancelled' | 'all';
 
 const NEEDS_FULFILLMENT: OrderStatus[] = ['PENDING', 'PROCESSING'];
@@ -49,15 +41,11 @@ export default function AdminOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
-  const [profits, setProfits] = useState<ProfitResponse | null>(null);
-  const [profitsLoading, setProfitsLoading] = useState(true);
-  const [profitsError, setProfitsError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<OrderFilter>('needs');
   const [trackingInput, setTrackingInput] = useState('');
 
   useEffect(() => {
     fetchOrders();
-    fetchProfits();
   }, []);
 
   useEffect(() => {
@@ -87,27 +75,6 @@ export default function AdminOrdersPage() {
       console.error('Error fetching orders:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchProfits = async () => {
-    setProfitsLoading(true);
-    setProfitsError(null);
-    try {
-      const res = await fetch('/api/admin/orders/profits', {
-        cache: 'no-store',
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to load profits');
-      }
-      setProfits(data.periods as ProfitResponse);
-    } catch (error) {
-      console.error('Error fetching profits:', error);
-      setProfitsError('Unable to load profit summary');
-      setProfits(null);
-    } finally {
-      setProfitsLoading(false);
     }
   };
 
@@ -183,19 +150,11 @@ export default function AdminOrdersPage() {
     }
   }, [activeFilter, orders, needsFulfillmentOrders, completedOrders, cancelledOrders]);
 
-  const filterButtons: Array<{ key: OrderFilter; label: string; count: number }> = [
+  const filterOptions: Array<{ key: OrderFilter; label: string; count: number }> = [
     { key: 'needs', label: 'Needs Shipping', count: needsFulfillmentOrders.length },
     { key: 'completed', label: 'Completed', count: completedOrders.length },
     { key: 'cancelled', label: 'Cancelled', count: cancelledOrders.length },
     { key: 'all', label: 'All Orders', count: orders.length },
-  ];
-
-  const profitCards: Array<{ key: keyof ProfitResponse; label: string; helper: string }> = [
-    { key: 'day', label: 'Today', helper: 'Since midnight' },
-    { key: 'week', label: 'This Week', helper: 'From Monday' },
-    { key: 'month', label: 'This Month', helper: 'Calendar month' },
-    { key: 'year', label: 'This Year', helper: `${new Date().getFullYear()} totals` },
-    { key: 'lifetime', label: 'Lifetime', helper: 'All recorded orders' },
   ];
 
   if (loading) {
@@ -213,60 +172,26 @@ export default function AdminOrdersPage() {
           >
             Refresh Orders
           </button>
-          <button
-            onClick={fetchProfits}
-            className="px-4 py-2 text-sm border border-charcoal-dark text-charcoal-dark rounded-lg hover:bg-charcoal-dark hover:text-cream transition-colors"
-          >
-            Refresh Profit
-          </button>
         </div>
       </div>
 
-      <div className="bg-cream-light p-6 mb-8">
-        <h2 className="font-serif text-2xl text-charcoal-dark mb-4">Profit Snapshot</h2>
-        {profitsLoading ? (
-          <p className="text-charcoal-light text-sm">Calculating profits…</p>
-        ) : profitsError ? (
-          <p className="text-sm text-red-700">{profitsError}</p>
-        ) : profits ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            {profitCards.map(({ key, label, helper }) => {
-              const period = profits[key];
-              return (
-                <div key={key} className="bg-cream shadow-sm border border-charcoal/10 p-4 rounded-lg">
-                  <div className="text-xs uppercase tracking-wider text-charcoal-light">{label}</div>
-                  <div className="text-2xl font-serif text-charcoal-dark mt-1">
-                    {formatCurrency(period.profit)}
-                  </div>
-                  <div className="text-xs text-charcoal/70 mt-3">
-                    {helper}
-                    <br />
-                    Revenue {formatCurrency(period.revenue)} · Costs {formatCurrency(period.cost)}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <p className="text-charcoal-light text-sm">No profit data available yet.</p>
-        )}
-      </div>
-
       <div className="bg-cream-light p-6">
-        <div className="flex flex-wrap items-center gap-2 mb-6">
-          {filterButtons.map(({ key, label, count }) => (
-            <button
-              key={key}
-              onClick={() => setActiveFilter(key)}
-              className={`px-4 py-2 rounded-full text-sm border transition-colors ${
-                activeFilter === key
-                  ? 'bg-charcoal-dark text-cream border-charcoal-dark'
-                  : 'border-charcoal/20 text-charcoal hover:border-charcoal/60'
-              }`}
-            >
-              {label} ({count})
-            </button>
-          ))}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
+          <label htmlFor="order-filter" className="text-sm uppercase tracking-wider text-charcoal-light">
+            Filter Orders
+          </label>
+          <select
+            id="order-filter"
+            value={activeFilter}
+            onChange={(event) => setActiveFilter(event.target.value as OrderFilter)}
+            className="select-modern-sm sm:w-60"
+          >
+            {filterOptions.map(({ key, label, count }) => (
+              <option key={key} value={key}>
+                {label} ({count})
+              </option>
+            ))}
+          </select>
         </div>
 
         {filteredOrders.length === 0 ? (
