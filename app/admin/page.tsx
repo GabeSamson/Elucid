@@ -8,11 +8,12 @@ export default async function AdminDashboard() {
   const [totalProducts, totalOrders, pendingOrders, totalRevenue, recentOrders] = await Promise.all([
     prisma.product.count(),
     prisma.order.count(),
-    prisma.order.count({ where: { status: 'PENDING' } }),
+    prisma.order.count({ where: { status: { in: ['PENDING', 'PROCESSING'] } } }),
     prisma.order.aggregate({ _sum: { total: true } }),
     prisma.order.findMany({
       take: 10,
       orderBy: { createdAt: 'desc' },
+      where: { status: { in: ['PENDING', 'PROCESSING'] } },
       include: { items: true },
     }),
   ]);
@@ -43,7 +44,7 @@ export default async function AdminDashboard() {
 
         <div className="bg-cream-light p-6">
           <div className="text-sm uppercase tracking-wider text-charcoal-light mb-2">
-            Pending Orders
+            Orders Awaiting Shipment
           </div>
           <div className="text-3xl font-serif text-charcoal-dark">
             {pendingOrders}
@@ -62,10 +63,10 @@ export default async function AdminDashboard() {
 
       {/* Recent Orders */}
       <div className="bg-cream-light p-6">
-        <h2 className="font-serif text-2xl text-charcoal-dark mb-4">Recent Orders</h2>
+        <h2 className="font-serif text-2xl text-charcoal-dark mb-4">Needs Fulfillment</h2>
 
         {recentOrders.length === 0 ? (
-          <p className="text-charcoal-light">No orders yet</p>
+          <p className="text-charcoal-light">All caught up — no unshipped orders right now.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
