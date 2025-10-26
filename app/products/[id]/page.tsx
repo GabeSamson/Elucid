@@ -179,9 +179,9 @@ const discountPercent = hasDiscount
   const audienceLabelMap: Record<Product['targetAudience'], string> = {
     MALE: 'Men',
     FEMALE: 'Women',
-    UNISEX: 'Everyone',
+    UNISEX: 'Unisex',
   };
-  const audienceLabel = audienceLabelMap[product.targetAudience] ?? 'Everyone';
+  const audienceLabel = audienceLabelMap[product.targetAudience] ?? 'Unisex';
 
   return (
     <main className="min-h-screen bg-cream">
