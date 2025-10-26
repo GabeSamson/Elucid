@@ -134,7 +134,7 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
                     <td className="py-3">
                       <div className="flex flex-col gap-1">
                         <span
-                          className={`inline-block px-3 py-1.5 text-xs rounded-lg uppercase tracking-wider ${
+                          className={`inline-flex w-fit items-center px-3 py-1.5 text-xs rounded-lg uppercase tracking-wider ${
                             product.comingSoon
                               ? 'bg-charcoal-dark text-cream'
                               : product.active
