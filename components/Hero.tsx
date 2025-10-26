@@ -14,7 +14,7 @@ export default async function Hero() {
     },
   });
 
-  const heading = config?.heroHeading ?? "Elucid LDN";
+  const heading = config?.heroHeading?.trim() || null;
   const subheading = config?.heroSubheading ?? null;
   const customContent = config?.customContent ?? null;
 

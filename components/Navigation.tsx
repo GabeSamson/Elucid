@@ -10,7 +10,6 @@ import { useCart } from "@/contexts/CartContext";
 import Link from "next/link";
 
 export default function Navigation() {
-  const [isDark, setIsDark] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
@@ -21,21 +20,13 @@ export default function Navigation() {
   const pathname = usePathname();
 
   useEffect(() => {
-    // Keep light-on-dark treatment for the landing hero, switch to dark text elsewhere.
     if (pathname !== "/") {
-      setIsDark(true);
       setHasScrolled(true);
       return;
     }
 
-    setHasScrolled(false);
-
     const handleScroll = () => {
-      const scrollPosition = window.scrollY;
-      const viewportHeight = window.innerHeight;
-
-      setHasScrolled(scrollPosition > 0);
-      setIsDark(scrollPosition > viewportHeight - 100);
+      setHasScrolled(window.scrollY > 0);
     };
 
     handleScroll();
@@ -74,32 +65,24 @@ export default function Navigation() {
         style={{ paddingTop: 'max(3rem, env(safe-area-inset-top))' }}
         className={`fixed top-0 left-0 right-0 z-50 px-4 pb-4 md:px-6 md:py-6 transition-colors duration-300 ${
           showSolidBackground
-            ? "bg-cream/95 backdrop-blur-sm border-b border-charcoal/10 shadow-sm"
+            ? "bg-charcoal-dark/90 backdrop-blur-sm border-b border-charcoal/40 shadow-lg"
             : "bg-transparent"
         }`}
       >
         {/* Desktop Navigation */}
         <div className={`${isLandscape ? 'grid' : 'hidden'} grid-cols-3 max-w-7xl mx-auto items-center w-full gap-4`}>
-          <Link href="/" className={`text-sm font-light tracking-wider uppercase transition-colors duration-300 ${
-            isDark ? "text-charcoal-dark hover:text-charcoal" : "text-cream-light hover:text-cream"
-          }`}>
+          <Link href="/" className="text-sm font-light tracking-wider uppercase transition-colors duration-300 text-cream-light hover:text-cream">
             Elucid LDN
           </Link>
 
           <div className="flex items-center justify-center gap-12">
-            <Link href="/shop" className={`transition-colors text-sm uppercase tracking-wider ${
-              isDark ? "text-charcoal/80 hover:text-charcoal-dark" : "text-cream-light/80 hover:text-cream-light"
-            }`}>
+            <Link href="/shop" className="transition-colors text-sm uppercase tracking-wider text-cream-light/80 hover:text-cream-light">
               Shop
             </Link>
-            <Link href="/collections" className={`transition-colors text-sm uppercase tracking-wider ${
-              isDark ? "text-charcoal/80 hover:text-charcoal-dark" : "text-cream-light/80 hover:text-cream-light"
-            }`}>
+            <Link href="/collections" className="transition-colors text-sm uppercase tracking-wider text-cream-light/80 hover:text-cream-light">
               Collections
             </Link>
-            <Link href="/about" className={`transition-colors text-sm uppercase tracking-wider ${
-              isDark ? "text-charcoal/80 hover:text-charcoal-dark" : "text-cream-light/80 hover:text-cream-light"
-            }`}>
+            <Link href="/about" className="transition-colors text-sm uppercase tracking-wider text-cream-light/80 hover:text-cream-light">
               About
             </Link>
           </div>
@@ -107,27 +90,19 @@ export default function Navigation() {
           <div className="flex items-center justify-end gap-6">
             {status === "authenticated" && session?.user ? (
               <div className="flex items-center gap-4">
-                <Link href="/account" className={`transition-colors text-sm uppercase tracking-wider ${
-                  isDark ? "text-charcoal/80 hover:text-charcoal-dark" : "text-cream-light/80 hover:text-cream-light"
-                }`}>
+                <Link href="/account" className="transition-colors text-sm uppercase tracking-wider text-cream-light/80 hover:text-cream-light">
                   {session.user.name || "Account"}
                 </Link>
-                <button onClick={handleSignOut} className={`transition-colors text-sm uppercase tracking-wider ${
-                  isDark ? "text-charcoal/80 hover:text-charcoal-dark" : "text-cream-light/80 hover:text-cream-light"
-                }`}>
+                <button onClick={handleSignOut} className="transition-colors text-sm uppercase tracking-wider text-cream-light/80 hover:text-cream-light">
                   Sign Out
                 </button>
               </div>
             ) : (
-              <button onClick={() => openAuthModal('signin')} className={`transition-colors text-sm uppercase tracking-wider ${
-                isDark ? "text-charcoal/80 hover:text-charcoal-dark" : "text-cream-light/80 hover:text-cream-light"
-              }`}>
+              <button onClick={() => openAuthModal('signin')} className="transition-colors text-sm uppercase tracking-wider text-cream-light/80 hover:text-cream-light">
                 Sign In
               </button>
             )}
-            <button onClick={openCart} className={`transition-colors text-sm uppercase tracking-wider ${
-              isDark ? "text-charcoal/80 hover:text-charcoal-dark" : "text-cream-light/80 hover:text-cream-light"
-            }`}>
+            <button onClick={openCart} className="transition-colors text-sm uppercase tracking-wider text-cream-light/80 hover:text-cream-light">
               Cart ({totalItems})
             </button>
           </div>
@@ -135,23 +110,17 @@ export default function Navigation() {
 
         {/* Mobile Navigation */}
         <div className={`${isLandscape ? 'hidden' : 'flex'} w-full items-center justify-between`}>
-          <Link href="/" className={`text-xs font-light tracking-wide uppercase transition-colors duration-300 ${
-            isDark ? "text-charcoal-dark hover:text-charcoal" : "text-cream-light hover:text-cream"
-          }`}>
+          <Link href="/" className="text-xs font-light tracking-wide uppercase transition-colors duration-300 text-cream-light hover:text-cream">
             Elucid LDN
           </Link>
 
           <div className="flex items-center gap-4">
-            <button onClick={openCart} className={`transition-colors text-xs uppercase tracking-wide ${
-              isDark ? "text-charcoal/80 hover:text-charcoal-dark" : "text-cream-light/80 hover:text-cream-light"
-            }`}>
+            <button onClick={openCart} className="transition-colors text-xs uppercase tracking-wide text-cream-light/80 hover:text-cream-light">
               Cart ({totalItems})
             </button>
             <button
               onClick={() => setMobileMenuOpen(true)}
-              className={`p-2 transition-colors ${
-                isDark ? "text-charcoal-dark" : "text-cream-light"
-              }`}
+              className="p-2 transition-colors text-cream-light"
               aria-label="Open menu"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

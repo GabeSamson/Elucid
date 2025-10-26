@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 
 interface HeroClientProps {
-  heading: string;
+  heading?: string | null;
   subheading?: string | null;
   ctaLabel: string;
   ctaHref: string;
@@ -100,14 +100,14 @@ export default function HeroClient({
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, ease: "easeOut" }}
-          className="mb-10 sm:mb-14"
+          className="mb-10 sm:mb-14 flex justify-center"
         >
           <img
             src="/logo.svg"
             alt="Elucid LDN"
             draggable="false"
             onContextMenu={(e) => e.preventDefault()}
-            className="mx-auto w-48 sm:w-60 md:w-80 lg:w-[520px] xl:w-[640px] drop-shadow-2xl invert brightness-0 contrast-200 select-none pointer-events-none"
+            className="w-48 sm:w-60 md:w-80 lg:w-[520px] xl:w-[640px] drop-shadow-2xl invert brightness-0 contrast-200 select-none pointer-events-none transform -translate-x-[6px]"
           />
         </motion.div>
 
@@ -117,9 +117,11 @@ export default function HeroClient({
           transition={{ duration: 0.9, delay: 0.1 }}
           className="space-y-6"
         >
-          <h1 className="font-serif text-3xl text-cream-light md:text-5xl lg:text-6xl">
-            {heading}
-          </h1>
+          {heading && (
+            <h1 className="font-serif text-3xl text-cream-light md:text-5xl lg:text-6xl">
+              {heading}
+            </h1>
+          )}
           {subheading && (
             <p className="text-cream-light/70 text-base md:text-lg font-light tracking-[0.35em] uppercase">
               {subheading}
