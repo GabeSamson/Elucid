@@ -15,26 +15,95 @@ function toDatetimeLocalValue(date?: Date | null): string {
 async function updateHomepageSettingsAction(formData: FormData) {
   "use server";
 
-  const heroHeading = formData.get("heroHeading")?.toString().trim() || null;
-  const heroSubheading = formData.get("heroSubheading")?.toString().trim() || null;
-  const customContent = formData.get("customContent")?.toString().trim() || null;
-  const heroCtaLabel = formData.get("heroCtaLabel")?.toString().trim() || null;
-  const heroCtaHref = formData.get("heroCtaHref")?.toString().trim() || null;
-  const featuredCollectionId = formData.get("featuredCollectionId")?.toString().trim() || null;
+  const existingConfig = await prisma.homepageConfig.findUnique({
+    where: { id: "main" },
+  });
 
-  const featuredTitle = formData.get("featuredTitle")?.toString().trim() || null;
-  const featuredSubtitle = formData.get("featuredSubtitle")?.toString().trim() || null;
-  const featuredDescription = formData.get("featuredDescription")?.toString().trim() || null;
-  const writingSection = formData.get("writingSection")?.toString().trim() || null;
+  const normalizeText = (value: FormDataEntryValue | null | undefined) => {
+    if (value === null || value === undefined) return null;
+    const trimmed = value.toString().trim();
+    return trimmed === "" ? null : trimmed;
+  };
 
-  const showCountdown = formData.get("showCountdown") === "on";
-  const countdownLabel = showCountdown
-    ? formData.get("countdownLabel")?.toString().trim() || null
-    : null;
-  const countdownTargetRaw = showCountdown
-    ? formData.get("countdownTarget")?.toString().trim()
-    : null;
-  const countdownTarget = countdownTargetRaw ? new Date(countdownTargetRaw) : null;
+  const normalizeRichText = (value: FormDataEntryValue | null | undefined) => {
+    if (value === null || value === undefined) return null;
+    const raw = value.toString();
+    return raw.trim() === "" ? null : raw;
+  };
+
+  const formContext = formData.get("formContext")?.toString() ?? null;
+
+  const includesHeroFields =
+    formContext === "hero" ||
+    ["heroHeading", "heroSubheading", "customContent", "heroCtaLabel", "heroCtaHref", "featuredCollectionId", "showCountdown", "countdownLabel", "countdownTarget"].some((field) =>
+      formData.has(field)
+    );
+  const includesFeaturedFields =
+    formContext === "featured" ||
+    ["featuredTitle", "featuredSubtitle", "featuredDescription"].some((field) =>
+      formData.has(field)
+    );
+  const includesWritingFields =
+    formContext === "writing" || formData.has("writingSection");
+
+  const heroHeading = includesHeroFields
+    ? normalizeText(formData.get("heroHeading"))
+    : existingConfig?.heroHeading ?? null;
+  const heroSubheading = includesHeroFields
+    ? normalizeText(formData.get("heroSubheading"))
+    : existingConfig?.heroSubheading ?? null;
+  const customContent = includesHeroFields
+    ? normalizeText(formData.get("customContent"))
+    : existingConfig?.customContent ?? null;
+  const heroCtaLabel = includesHeroFields
+    ? normalizeText(formData.get("heroCtaLabel"))
+    : existingConfig?.heroCtaLabel ?? null;
+  const heroCtaHref = includesHeroFields
+    ? normalizeText(formData.get("heroCtaHref"))
+    : existingConfig?.heroCtaHref ?? null;
+  const featuredCollectionId = includesHeroFields
+    ? normalizeText(formData.get("featuredCollectionId"))
+    : existingConfig?.featuredCollectionId ?? null;
+
+  const featuredTitle = includesFeaturedFields
+    ? normalizeText(formData.get("featuredTitle"))
+    : existingConfig?.featuredTitle ?? null;
+  const featuredSubtitle = includesFeaturedFields
+    ? normalizeText(formData.get("featuredSubtitle"))
+    : existingConfig?.featuredSubtitle ?? null;
+  const featuredDescription = includesFeaturedFields
+    ? normalizeText(formData.get("featuredDescription"))
+    : existingConfig?.featuredDescription ?? null;
+
+  const writingSection = includesWritingFields
+    ? normalizeRichText(formData.get("writingSection"))
+    : existingConfig?.writingSection ?? null;
+
+  const showCountdown = includesHeroFields
+    ? formData.get("showCountdown") === "on"
+    : existingConfig?.showCountdown ?? false;
+
+  let countdownLabel = includesHeroFields
+    ? normalizeText(formData.get("countdownLabel"))
+    : existingConfig?.countdownLabel ?? null;
+
+  let countdownTarget: Date | null;
+  if (includesHeroFields) {
+    const countdownTargetRaw = normalizeText(formData.get("countdownTarget"));
+    if (countdownTargetRaw) {
+      const parsed = new Date(countdownTargetRaw);
+      countdownTarget = Number.isNaN(parsed.getTime()) ? null : parsed;
+    } else {
+      countdownTarget = null;
+    }
+  } else {
+    countdownTarget = existingConfig?.countdownTarget ?? null;
+  }
+
+  if (!showCountdown) {
+    countdownLabel = null;
+    countdownTarget = null;
+  }
 
   let finalCtaHref = heroCtaHref || null;
   if (featuredCollectionId) {
@@ -135,6 +204,7 @@ export default async function AdminHomepagePage({ searchParams }: AdminHomepageP
           </header>
 
           <form action={updateHomepageSettingsAction} className="space-y-5">
+            <input type="hidden" name="formContext" value="hero" />
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <label className="mb-2 block text-sm font-medium text-charcoal">Headline</label>
@@ -296,6 +366,7 @@ export default async function AdminHomepagePage({ searchParams }: AdminHomepageP
           </header>
 
           <form action={updateHomepageSettingsAction} className="space-y-5">
+            <input type="hidden" name="formContext" value="featured" />
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <label className="mb-2 block text-sm font-medium text-charcoal">Title</label>
@@ -361,6 +432,7 @@ export default async function AdminHomepagePage({ searchParams }: AdminHomepageP
           </header>
 
           <form action={updateHomepageSettingsAction} className="space-y-5">
+            <input type="hidden" name="formContext" value="writing" />
             <WritingSectionEditor initialContent={homepageConfig?.writingSection ?? null} />
 
             <div className="flex flex-wrap justify-end gap-3">
