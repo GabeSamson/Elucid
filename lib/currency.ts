@@ -14,16 +14,27 @@ const DEFAULT_SYMBOLS: SymbolMap = {
   JPY: '¥',
 };
 
+// Default exchange rates (relative to GBP = 1)
+// These are approximate rates and should be updated via NEXT_PUBLIC_CURRENCY_RATES env var
+const DEFAULT_RATES: RatesMap = {
+  'GBP': 1.00,
+  'USD': 1.27,
+  'EUR': 1.16,
+  'CAD': 1.73,
+  'AUD': 1.92,
+  'JPY': 189.50,
+};
+
 const parseRatesFromEnv = (): RatesMap => {
   try {
     if (!process.env.NEXT_PUBLIC_CURRENCY_RATES) {
-      return {};
+      return { ...DEFAULT_RATES };
     }
 
     const parsed = JSON.parse(process.env.NEXT_PUBLIC_CURRENCY_RATES);
 
     if (typeof parsed !== 'object' || parsed === null) {
-      return {};
+      return { ...DEFAULT_RATES };
     }
 
     return Object.entries(parsed as Record<string, unknown>).reduce<RatesMap>(
@@ -36,11 +47,11 @@ const parseRatesFromEnv = (): RatesMap => {
         acc[upper] = numeric;
         return acc;
       },
-      {},
+      { ...DEFAULT_RATES },
     );
   } catch (error) {
     console.warn('Failed to parse NEXT_PUBLIC_CURRENCY_RATES. Falling back to defaults.', error);
-    return {};
+    return { ...DEFAULT_RATES };
   }
 };
 
@@ -141,6 +152,19 @@ export interface FormatCurrencyOptions {
   maximumFractionDigits?: number;
 }
 
+// Get appropriate locale for currency formatting
+const getLocaleForCurrency = (currency: string): string => {
+  const localeMap: Record<string, string> = {
+    'GBP': 'en-GB',
+    'USD': 'en-US',
+    'EUR': 'de-DE',
+    'CAD': 'en-CA',
+    'AUD': 'en-AU',
+    'JPY': 'ja-JP',
+  };
+  return localeMap[currency.toUpperCase()] || 'en-GB';
+};
+
 export const formatCurrency = (
   amount: number,
   options?: FormatCurrencyOptions,
@@ -156,7 +180,8 @@ export const formatCurrency = (
   }
 
   try {
-    const formatter = new Intl.NumberFormat(settings.locale, {
+    const locale = getLocaleForCurrency(targetCurrency);
+    const formatter = new Intl.NumberFormat(locale, {
       style: 'currency',
       currency: targetCurrency,
       ...(options?.minimumFractionDigits !== undefined

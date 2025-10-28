@@ -448,14 +448,16 @@ const discountPercent = hasDiscount
                 {!purchasingEnabled ? 'Purchasing Disabled' : isOutOfStock ? 'Out of Stock' : isComingSoon ? 'Pre-order' : 'Add to Cart'}
               </button>
 
-              {/* Buy Now Button */}
-              <button
-                onClick={handleBuyNow}
-                disabled={isOutOfStock || !purchasingEnabled}
-                className="w-full py-4 border-2 border-charcoal-dark text-charcoal-dark hover:bg-charcoal-dark hover:text-cream transition-colors duration-300 tracking-wider text-sm uppercase disabled:opacity-50 disabled:cursor-not-allowed mb-4"
-              >
-                Buy Now
-              </button>
+              {/* Buy Now Button - Only show for non-preorder products */}
+              {!isComingSoon && (
+                <button
+                  onClick={handleBuyNow}
+                  disabled={isOutOfStock || !purchasingEnabled}
+                  className="w-full py-4 border-2 border-charcoal-dark text-charcoal-dark hover:bg-charcoal-dark hover:text-cream transition-colors duration-300 tracking-wider text-sm uppercase disabled:opacity-50 disabled:cursor-not-allowed mb-4"
+                >
+                  Buy Now
+                </button>
+              )}
 
               {/* Additional Info */}
               <div className="mt-8 pt-8 border-t border-charcoal/10 space-y-4 text-sm text-charcoal-light">
