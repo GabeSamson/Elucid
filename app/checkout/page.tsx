@@ -55,6 +55,7 @@ export default function CheckoutPage() {
           name: buyNowProduct.productName,
           price: buyNowProduct.productPrice,
           images: buyNowProduct.productImage ? [buyNowProduct.productImage] : [],
+          includeShipping: buyNowProduct.includeShipping ?? true,
         },
         quantity: buyNowProduct.quantity,
         size: buyNowProduct.size,
