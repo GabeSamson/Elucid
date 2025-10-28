@@ -97,7 +97,13 @@ export function CurrencyProvider({ children, userId, initialCurrency }: Currency
 export function useCurrency() {
   const context = useContext(CurrencyContext);
   if (context === undefined) {
-    throw new Error('useCurrency must be used within a CurrencyProvider');
+    // Return default values for SSR instead of throwing
+    // This allows components to render during SSR with default currency
+    return {
+      currency: 'GBP',
+      setCurrency: async () => {},
+      isLoading: true,
+    };
   }
   return context;
 }
