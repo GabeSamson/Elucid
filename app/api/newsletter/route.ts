@@ -47,12 +47,12 @@ export async function POST(request: NextRequest) {
     if (existing) {
       if (existing.verified) {
         return NextResponse.json(
-        { message: 'You are already subscribed to the newsletter.', alreadySubscribed: true },
-        { status: 200 }
-      );
-    } else {
-      await prisma.newsletter.update({
-        where: { email: normalizedEmail },
+          { message: 'You are already subscribed to the newsletter.', alreadySubscribed: true },
+          { status: 200 }
+        );
+      } else {
+        await prisma.newsletter.update({
+          where: { email: normalizedEmail },
           data: {
             verified: true,
             active: true,
