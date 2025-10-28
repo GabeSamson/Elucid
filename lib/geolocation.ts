@@ -14,22 +14,31 @@ const COUNTRY_CURRENCY_MAP: Record<string, string> = {
   PT: 'EUR',
   FI: 'EUR',
   GR: 'EUR',
+  SE: 'SEK',
+  NO: 'NOK',
+  DK: 'DKK',
+  CH: 'CHF',
 
   // Americas
   US: 'USD',
   CA: 'CAD',
-  MX: 'USD',
-  BR: 'USD',
+  MX: 'MXN',
+  BR: 'BRL',
   AR: 'USD',
 
   // Asia-Pacific
   AU: 'AUD',
-  NZ: 'AUD',
+  NZ: 'NZD',
   JP: 'JPY',
-  CN: 'USD',
-  HK: 'USD',
-  SG: 'USD',
-  IN: 'USD',
+  CN: 'CNY',
+  HK: 'HKD',
+  SG: 'SGD',
+  IN: 'INR',
+  KR: 'KRW',
+
+  // Middle East & Africa
+  AE: 'AED',
+  ZA: 'ZAR',
 
   // Default fallback
   DEFAULT: 'GBP',
@@ -88,7 +97,12 @@ export function getCurrencyForCountry(countryCode: string): string {
  * Gets all supported currencies
  */
 export function getSupportedCurrencies(): string[] {
-  return ['GBP', 'USD', 'EUR', 'CAD', 'AUD', 'JPY'];
+  return [
+    'GBP', 'USD', 'EUR', 'CAD', 'AUD', 'JPY',
+    'CHF', 'CNY', 'INR', 'NZD', 'SGD', 'HKD',
+    'KRW', 'SEK', 'NOK', 'DKK', 'MXN', 'BRL',
+    'ZAR', 'AED'
+  ];
 }
 
 /**

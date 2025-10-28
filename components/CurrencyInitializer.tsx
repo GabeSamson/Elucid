@@ -3,6 +3,7 @@
 import { useSession } from 'next-auth/react';
 import { CurrencyProvider } from '@/contexts/CurrencyContext';
 import { ReactNode, useEffect, useState } from 'react';
+import { updateLiveRates } from '@/lib/currency';
 
 interface CurrencyInitializerProps {
   children: ReactNode;
@@ -12,6 +13,26 @@ export function CurrencyInitializer({ children }: CurrencyInitializerProps) {
   const { data: session, status } = useSession();
   const [userCurrency, setUserCurrency] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
+
+  // Fetch live currency rates on mount
+  useEffect(() => {
+    const fetchLiveRates = async () => {
+      try {
+        const res = await fetch('/api/currency/rates');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.rates) {
+            updateLiveRates(data.rates);
+            console.log('Live currency rates loaded:', data.source);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch live currency rates:', error);
+      }
+    };
+
+    fetchLiveRates();
+  }, []);
 
   useEffect(() => {
     const fetchUserCurrency = async () => {

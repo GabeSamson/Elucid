@@ -9,13 +9,27 @@ const DEFAULT_SYMBOLS: SymbolMap = {
   GBP: '£',
   USD: '$',
   EUR: '€',
-  CAD: '$',
-  AUD: '$',
+  CAD: 'CA$',
+  AUD: 'A$',
   JPY: '¥',
+  CHF: 'CHF',
+  CNY: '¥',
+  INR: '₹',
+  NZD: 'NZ$',
+  SGD: 'S$',
+  HKD: 'HK$',
+  KRW: '₩',
+  SEK: 'kr',
+  NOK: 'kr',
+  DKK: 'kr',
+  MXN: '$',
+  BRL: 'R$',
+  ZAR: 'R',
+  AED: 'د.إ',
 };
 
 // Default exchange rates (relative to GBP = 1)
-// These are approximate rates and should be updated via NEXT_PUBLIC_CURRENCY_RATES env var
+// These are fallback rates - live rates are fetched from API
 const DEFAULT_RATES: RatesMap = {
   'GBP': 1.00,
   'USD': 1.27,
@@ -23,36 +37,62 @@ const DEFAULT_RATES: RatesMap = {
   'CAD': 1.73,
   'AUD': 1.92,
   'JPY': 189.50,
+  'CHF': 1.12,
+  'CNY': 9.18,
+  'INR': 106.50,
+  'NZD': 2.10,
+  'SGD': 1.70,
+  'HKD': 9.90,
+  'KRW': 1720.00,
+  'SEK': 13.20,
+  'NOK': 13.80,
+  'DKK': 8.65,
+  'MXN': 24.50,
+  'BRL': 6.35,
+  'ZAR': 22.80,
+  'AED': 4.67,
 };
+
+// Store live rates fetched from API
+let liveRates: RatesMap | null = null;
 
 const parseRatesFromEnv = (): RatesMap => {
   try {
-    if (!process.env.NEXT_PUBLIC_CURRENCY_RATES) {
-      return { ...DEFAULT_RATES };
+    // First, check if we have live rates
+    if (liveRates) {
+      return { ...liveRates };
     }
 
-    const parsed = JSON.parse(process.env.NEXT_PUBLIC_CURRENCY_RATES);
+    // Then check environment variable
+    if (process.env.NEXT_PUBLIC_CURRENCY_RATES) {
+      const parsed = JSON.parse(process.env.NEXT_PUBLIC_CURRENCY_RATES);
 
-    if (typeof parsed !== 'object' || parsed === null) {
-      return { ...DEFAULT_RATES };
+      if (typeof parsed === 'object' && parsed !== null) {
+        return Object.entries(parsed as Record<string, unknown>).reduce<RatesMap>(
+          (acc, [currency, value]) => {
+            const upper = currency.toUpperCase();
+            const numeric = Number(value);
+            if (Number.isFinite(numeric) && numeric > 0) {
+              acc[upper] = numeric;
+            }
+            return acc;
+          },
+          { ...DEFAULT_RATES },
+        );
+      }
     }
 
-    return Object.entries(parsed as Record<string, unknown>).reduce<RatesMap>(
-      (acc, [currency, value]) => {
-        const upper = currency.toUpperCase();
-        const numeric = Number(value);
-        if (!Number.isFinite(numeric) || numeric <= 0) {
-          return acc;
-        }
-        acc[upper] = numeric;
-        return acc;
-      },
-      { ...DEFAULT_RATES },
-    );
+    return { ...DEFAULT_RATES };
   } catch (error) {
-    console.warn('Failed to parse NEXT_PUBLIC_CURRENCY_RATES. Falling back to defaults.', error);
+    console.warn('Failed to parse currency rates. Falling back to defaults.', error);
     return { ...DEFAULT_RATES };
   }
+};
+
+// Function to update live rates (called by client-side code)
+export const updateLiveRates = (rates: RatesMap) => {
+  liveRates = rates;
+  cachedSettings = null; // Clear cache to force rebuild with new rates
 };
 
 interface CurrencySettings {
@@ -161,6 +201,20 @@ const getLocaleForCurrency = (currency: string): string => {
     'CAD': 'en-CA',
     'AUD': 'en-AU',
     'JPY': 'ja-JP',
+    'CHF': 'de-CH',
+    'CNY': 'zh-CN',
+    'INR': 'en-IN',
+    'NZD': 'en-NZ',
+    'SGD': 'en-SG',
+    'HKD': 'zh-HK',
+    'KRW': 'ko-KR',
+    'SEK': 'sv-SE',
+    'NOK': 'nb-NO',
+    'DKK': 'da-DK',
+    'MXN': 'es-MX',
+    'BRL': 'pt-BR',
+    'ZAR': 'en-ZA',
+    'AED': 'ar-AE',
   };
   return localeMap[currency.toUpperCase()] || 'en-GB';
 };

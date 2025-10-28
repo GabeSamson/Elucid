@@ -32,7 +32,8 @@ export async function POST(request: NextRequest) {
       : defaultCurrency;
 
     // Zero-decimal currencies (no minor units, e.g., 1 JPY = 1, not 100)
-    const zeroDecimalCurrencies = ['JPY', 'KRW', 'VND', 'CLP', 'ISK', 'TWD'];
+    // These currencies don't have fractional units in Stripe
+    const zeroDecimalCurrencies = ['JPY', 'KRW', 'VND', 'CLP', 'ISK', 'TWD', 'UGX', 'RWF', 'XAF', 'XOF'];
     const isZeroDecimal = zeroDecimalCurrencies.includes(activeCurrency);
 
     const toMinorUnits = (amount: number) => {
