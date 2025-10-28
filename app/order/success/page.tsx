@@ -7,6 +7,8 @@ import { useCart } from "@/contexts/CartContext";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 
+export const dynamic = 'force-dynamic';
+
 function OrderSuccessContent() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('session_id');

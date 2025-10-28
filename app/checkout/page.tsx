@@ -10,6 +10,8 @@ import Footer from "@/components/Footer";
 import { formatCurrency, getShippingFee, getFreeShippingThreshold } from "@/lib/currency";
 import { useCurrency } from "@/contexts/CurrencyContext";
 
+export const dynamic = 'force-dynamic';
+
 type DiscountType = 'PERCENTAGE' | 'FIXED';
 
 interface AppliedPromo {

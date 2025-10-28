@@ -12,6 +12,8 @@ import { useCurrency } from "@/contexts/CurrencyContext";
 import { getSupportedCurrencies } from "@/lib/geolocation";
 import { useCurrencyFormat } from "@/hooks/useCurrencyFormat";
 
+export const dynamic = 'force-dynamic';
+
 export default function AccountPage() {
   return (
     <Suspense fallback={<AccountPageLoading />}>
