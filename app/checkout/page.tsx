@@ -21,7 +21,7 @@ interface AppliedPromo {
   minimumOrderValue?: number | null;
 }
 
-export default function CheckoutPage() {
+function CheckoutPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isBuyNow = searchParams.get('buyNow') === 'true';
@@ -620,5 +620,23 @@ useEffect(() => {
 
       <Footer />
     </main>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen bg-cream">
+        <Navigation />
+        <div className="pt-32 pb-20 px-6">
+          <div className="max-w-7xl mx-auto text-center">
+            <p className="text-charcoal-light">Loading checkout...</p>
+          </div>
+        </div>
+        <Footer />
+      </main>
+    }>
+      <CheckoutPageContent />
+    </Suspense>
   );
 }
