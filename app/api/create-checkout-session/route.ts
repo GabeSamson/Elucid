@@ -31,7 +31,15 @@ export async function POST(request: NextRequest) {
       ? userCurrency.toUpperCase()
       : defaultCurrency;
 
-    const toMinorUnits = (amount: number) => Math.round(convertFromBase(amount, activeCurrency) * 100);
+    // Zero-decimal currencies (no minor units, e.g., 1 JPY = 1, not 100)
+    const zeroDecimalCurrencies = ['JPY', 'KRW', 'VND', 'CLP', 'ISK', 'TWD'];
+    const isZeroDecimal = zeroDecimalCurrencies.includes(activeCurrency);
+
+    const toMinorUnits = (amount: number) => {
+      const converted = convertFromBase(amount, activeCurrency);
+      // For zero-decimal currencies, don't multiply by 100
+      return Math.round(isZeroDecimal ? converted : converted * 100);
+    };
 
     const discountValue = Math.max(0, Number(discount) || 0);
     let couponId: string | null = null;
