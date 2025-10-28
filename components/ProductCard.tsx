@@ -4,6 +4,10 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { Product } from "@/types/product.types";
 import { useCurrencyFormat } from "@/hooks/useCurrencyFormat";
+import {
+  getProductCompareAtPriceInCurrency,
+  getProductPriceInCurrency,
+} from "@/lib/productPricing";
 
 interface ProductCardProps {
   product: Product;
@@ -11,8 +15,10 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, index = 0 }: ProductCardProps) {
-  const { formatCurrency } = useCurrencyFormat();
-  const hasDiscount = product.compareAtPrice && product.compareAtPrice > product.price;
+  const { formatCurrency, currency } = useCurrencyFormat();
+  const displayPrice = getProductPriceInCurrency(product, currency);
+  const comparePrice = getProductCompareAtPriceInCurrency(product, currency);
+  const hasDiscount = comparePrice !== null && comparePrice > displayPrice;
   const isComingSoon = product.comingSoon;
   const releaseDate = product.releaseDate ? new Date(product.releaseDate) : null;
   const releaseLabel = releaseDate
@@ -84,11 +90,11 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
 
           <div className="flex items-center gap-3">
             <p className="text-charcoal-dark font-medium text-sm md:text-base">
-              {formatCurrency(product.price)}
+              {formatCurrency(displayPrice, { convert: false })}
             </p>
-            {hasDiscount && product.compareAtPrice !== undefined && product.compareAtPrice !== null && (
+            {hasDiscount && comparePrice !== null && (
               <p className="text-charcoal-light line-through text-xs md:text-sm">
-                {formatCurrency(product.compareAtPrice)}
+                {formatCurrency(comparePrice, { convert: false })}
               </p>
             )}
           </div>

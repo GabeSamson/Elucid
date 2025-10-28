@@ -2,6 +2,31 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getFallbackImages, parseProductImages } from '@/lib/productImages';
 
+const parsePriceOverrides = (raw: string | null): Record<string, number> => {
+  if (!raw) return {};
+
+  try {
+    const data = JSON.parse(raw);
+    if (!data || typeof data !== 'object') return {};
+
+    return Object.entries(data as Record<string, unknown>).reduce<Record<string, number>>(
+      (acc, [currency, value]) => {
+        if (typeof currency !== 'string') return acc;
+        const code = currency.toUpperCase();
+        const numeric = typeof value === 'number' ? value : parseFloat(String(value));
+        if (Number.isFinite(numeric)) {
+          acc[code] = numeric;
+        }
+        return acc;
+      },
+      {},
+    );
+  } catch (error) {
+    console.warn('Failed to parse priceOverrides', error);
+    return {};
+  }
+};
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -36,6 +61,7 @@ export async function GET(
       sizes: JSON.parse(product.sizes || '[]'),
       colors: JSON.parse(product.colors || '[]'),
       variants: product.variants,
+      priceOverrides: parsePriceOverrides(product.priceOverrides),
     };
 
     return NextResponse.json({ product: productWithParsedArrays }, { status: 200 });

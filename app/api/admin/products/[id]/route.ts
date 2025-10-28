@@ -7,6 +7,34 @@ import {
   parseProductImages,
   serializeProductImages,
 } from '@/lib/productImages';
+import { getSupportedCurrencies } from '@/lib/geolocation';
+import { getBaseCurrency } from '@/lib/currency';
+
+const SUPPORTED_CURRENCIES = new Set(getSupportedCurrencies());
+
+const normalizePriceOverrides = (input: unknown, baseCurrency: string) => {
+  const overrides: Record<string, number> = {};
+
+  if (input && typeof input === 'object') {
+    const entries =
+      input instanceof Map ? input.entries() : Object.entries(input as Record<string, unknown>);
+
+    for (const [currency, value] of entries) {
+      if (typeof currency !== 'string') continue;
+      const code = currency.trim().toUpperCase();
+      if (!code || code === baseCurrency || !SUPPORTED_CURRENCIES.has(code)) continue;
+
+      const numeric =
+        typeof value === 'string' ? parseFloat(value) : typeof value === 'number' ? value : null;
+
+      if (numeric === null || Number.isNaN(numeric) || numeric <= 0) continue;
+
+      overrides[code] = Number(numeric.toFixed(2));
+    }
+  }
+
+  return overrides;
+};
 
 // GET /api/admin/products/[id] - Get single product for editing
 export async function GET(
@@ -39,12 +67,35 @@ export async function GET(
 
     // Parse JSON fields
     const imagePayload = parseProductImages(product.images);
+    let parsedOverrides: Record<string, number> = {};
+    if (product.priceOverrides) {
+      try {
+        const raw = JSON.parse(product.priceOverrides);
+        if (raw && typeof raw === 'object') {
+          parsedOverrides = Object.entries(raw as Record<string, unknown>).reduce<Record<string, number>>(
+            (acc, [currency, value]) => {
+              if (typeof currency !== 'string') return acc;
+              const code = currency.toUpperCase();
+              const numeric = typeof value === 'number' ? value : parseFloat(String(value));
+              if (Number.isFinite(numeric)) {
+                acc[code] = numeric;
+              }
+              return acc;
+            },
+            {},
+          );
+        }
+      } catch (error) {
+        console.warn('Failed to parse priceOverrides for product', product.id, error);
+      }
+    }
     const productData = {
       ...product,
       images: imagePayload.defaultImages,
       colorImages: imagePayload.colorImages,
       sizes: JSON.parse(product.sizes),
       colors: JSON.parse(product.colors),
+      priceOverrides: parsedOverrides,
     };
 
     return NextResponse.json({ product: productData });
@@ -89,6 +140,7 @@ export async function PUT(
       comingSoon,
       releaseDate,
       targetAudience,
+      priceOverrides,
     } = body;
 
     const toBoolean = (value: unknown, fallback: boolean) => {
@@ -144,6 +196,8 @@ export async function PUT(
         : null;
 
     const imagePayload = normalizeProductImageInput(images, colorImages);
+    const baseCurrency = getBaseCurrency();
+    const normalizedOverrides = normalizePriceOverrides(priceOverrides, baseCurrency);
     const allowedAudiences = new Set<ProductAudience>([
       ProductAudience.MALE,
       ProductAudience.FEMALE,
@@ -183,6 +237,10 @@ export async function PUT(
         comingSoon: normalizedComingSoon,
         releaseDate: normalizedComingSoon ? parsedReleaseDate : null,
         targetAudience: normalizedTargetAudience,
+        priceOverrides:
+          Object.keys(normalizedOverrides).length > 0
+            ? JSON.stringify(normalizedOverrides)
+            : null,
         variants: {
           create: variants?.map((v: any) => ({
             size: v.size,
@@ -198,9 +256,14 @@ export async function PUT(
       },
     });
 
+    const productResponse = {
+      ...product,
+      priceOverrides: normalizedOverrides,
+    };
+
     return NextResponse.json({
       success: true,
-      product,
+      product: productResponse,
     });
   } catch (error) {
     console.error('Update product error:', error);

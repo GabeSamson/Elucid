@@ -6,6 +6,34 @@ import {
   serializeProductImages,
 } from '@/lib/productImages';
 import { ProductAudience } from '@prisma/client';
+import { getSupportedCurrencies } from '@/lib/geolocation';
+import { getBaseCurrency } from '@/lib/currency';
+
+const SUPPORTED_CURRENCIES = new Set(getSupportedCurrencies());
+
+const normalizePriceOverrides = (input: unknown, baseCurrency: string) => {
+  const overrides: Record<string, number> = {};
+
+  if (input && typeof input === 'object') {
+    const entries =
+      input instanceof Map ? input.entries() : Object.entries(input as Record<string, unknown>);
+
+    for (const [currency, value] of entries) {
+      if (typeof currency !== 'string') continue;
+      const code = currency.trim().toUpperCase();
+      if (!code || code === baseCurrency || !SUPPORTED_CURRENCIES.has(code)) continue;
+
+      const numeric =
+        typeof value === 'string' ? parseFloat(value) : typeof value === 'number' ? value : null;
+
+      if (numeric === null || Number.isNaN(numeric) || numeric <= 0) continue;
+
+      overrides[code] = Number(numeric.toFixed(2));
+    }
+  }
+
+  return overrides;
+};
 
 // POST /api/admin/products - Create new product
 export async function POST(request: NextRequest) {
@@ -35,6 +63,7 @@ export async function POST(request: NextRequest) {
       comingSoon,
       releaseDate,
       targetAudience,
+      priceOverrides,
     } = body;
 
     const toBoolean = (value: unknown, fallback: boolean) => {
@@ -91,6 +120,8 @@ export async function POST(request: NextRequest) {
         : null;
 
     const imagePayload = normalizeProductImageInput(images, colorImages);
+    const baseCurrency = getBaseCurrency();
+    const normalizedOverrides = normalizePriceOverrides(priceOverrides, baseCurrency);
     const allowedAudiences = new Set<ProductAudience>([
       ProductAudience.MALE,
       ProductAudience.FEMALE,
@@ -124,6 +155,10 @@ export async function POST(request: NextRequest) {
         comingSoon: normalizedComingSoon,
         releaseDate: normalizedComingSoon ? parsedReleaseDate : null,
         targetAudience: normalizedTargetAudience,
+        priceOverrides:
+          Object.keys(normalizedOverrides).length > 0
+            ? JSON.stringify(normalizedOverrides)
+            : null,
         variants: {
           create: variants?.map((v: any) => ({
             size: v.size,
@@ -139,9 +174,14 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    const productResponse = {
+      ...product,
+      priceOverrides: normalizedOverrides,
+    };
+
     return NextResponse.json({
       success: true,
-      product,
+      product: productResponse,
     });
   } catch (error) {
     console.error('Create product error:', error);

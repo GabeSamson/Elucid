@@ -4,10 +4,17 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/contexts/CartContext";
 import Link from "next/link";
 import { useCurrencyFormat } from "@/hooks/useCurrencyFormat";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { getProductPriceInCurrency } from "@/lib/productPricing";
 
 export default function CartModal() {
   const { items, removeFromCart, updateQuantity, totalPrice, isCartOpen, closeCart } = useCart();
   const { formatCurrency } = useCurrencyFormat();
+  const { currency } = useCurrency();
+  const subtotalDisplay = items.reduce((sum, item) => {
+    const price = getProductPriceInCurrency(item.product, currency);
+    return sum + price * item.quantity;
+  }, 0);
 
   return (
     <AnimatePresence>
@@ -87,6 +94,8 @@ export default function CartModal() {
                       ? preorderCap
                       : Math.max(item.product.stock, 0);
 
+                    const unitPrice = getProductPriceInCurrency(item.product, currency);
+
                     return (
                       <div key={itemKey} className="flex gap-4 pb-6 border-b border-charcoal/10 last:border-0">
                         {/* Product Image */}
@@ -125,7 +134,7 @@ export default function CartModal() {
                           )}
 
                           <p className="text-charcoal-dark font-medium mb-3">
-                            {formatCurrency(item.product.price)}
+                            {formatCurrency(unitPrice, { convert: false })}
                           </p>
 
                           {/* Quantity Controls */}
@@ -179,7 +188,7 @@ export default function CartModal() {
                     Subtotal
                   </span>
                   <span className="text-2xl font-medium text-charcoal-dark">
-                    {formatCurrency(totalPrice)}
+                    {formatCurrency(subtotalDisplay, { convert: false })}
                   </span>
                 </div>
 

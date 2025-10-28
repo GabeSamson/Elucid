@@ -8,6 +8,7 @@ import { useSession } from "next-auth/react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { formatCurrency, getShippingFee, getFreeShippingThreshold } from "@/lib/currency";
+import { getProductPriceInBaseCurrency, getProductPriceInCurrency } from "@/lib/productPricing";
 import { useCurrency } from "@/contexts/CurrencyContext";
 
 type DiscountType = 'PERCENTAGE' | 'FIXED';
@@ -218,6 +219,7 @@ useEffect(() => {
               item.color && item.product.colorImages
                 ? item.product.colorImages[item.color]?.[0]
                 : undefined;
+            const unitPriceBase = getProductPriceInBaseCurrency(item.product, currency);
 
             return {
               productId: item.product.id,
@@ -226,7 +228,7 @@ useEffect(() => {
               quantity: item.quantity,
               size: item.size,
               color: item.color,
-              priceAtPurchase: item.product.price,
+              priceAtPurchase: unitPriceBase,
             };
           }),
           email: formData.email,
@@ -552,6 +554,8 @@ useEffect(() => {
                       : undefined;
                   const displayImage =
                     colorSpecificImage || (item.product.images && item.product.images[0]) || null;
+                  const unitPriceDisplay = getProductPriceInCurrency(item.product, currency);
+                  const linePriceDisplay = unitPriceDisplay * item.quantity;
 
                   return (
                     <div key={index} className="flex gap-4 pb-4 border-b border-charcoal/10">
@@ -577,7 +581,7 @@ useEffect(() => {
                           Qty: {item.quantity}
                         </p>
                         <p className="text-charcoal-dark font-medium mt-2">
-                          {formatCurrency(item.product.price * item.quantity)}
+                          {formatCurrency(linePriceDisplay, { currency, convert: false })}
                         </p>
                       </div>
                     </div>

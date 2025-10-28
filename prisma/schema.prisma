@@ -49,6 +49,7 @@ model Product {
   name            String
   description     String
   price           Float
+  priceOverrides  String?   @map("price_overrides") // JSON map of currency -> price overrides
   compareAtPrice  Float?    @map("compare_at_price")
   costPrice       Float?    @map("cost_price") // Cost to manufacture/buy
   images          String    @default("[]") // JSON array as string

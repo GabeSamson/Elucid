@@ -2,6 +2,8 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Product, CartItem } from "@/types/product.types";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { getProductPriceInBaseCurrency } from "@/lib/productPricing";
 
 interface CartContextType {
   items: CartItem[];
@@ -19,6 +21,7 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
+  const { currency } = useCurrency();
   const [items, setItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
 
@@ -136,10 +139,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const closeCart = () => setIsCartOpen(false);
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  const totalPrice = items.reduce(
-    (sum, item) => sum + item.product.price * item.quantity,
-    0
-  );
+  const totalPrice = items.reduce((sum, item) => {
+    const unitPrice = getProductPriceInBaseCurrency(item.product, currency);
+    return sum + unitPrice * item.quantity;
+  }, 0);
 
   return (
     <CartContext.Provider

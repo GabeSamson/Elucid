@@ -19,6 +19,7 @@ export interface Product {
   name: string;
   description: string;
   price: number;
+  priceOverrides?: Record<string, number>;
   compareAtPrice?: number | null;
   images: string[];
   colorImages: Record<string, string[]>;

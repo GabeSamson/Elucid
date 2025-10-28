@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import ImageUploader from './ImageUploader';
-import { getCurrencySymbol } from '@/lib/currency';
+import { getBaseCurrency, getCurrencySymbol } from '@/lib/currency';
+import { getSupportedCurrencies } from '@/lib/geolocation';
 
 interface ColorOption {
   name: string;
@@ -35,6 +36,7 @@ interface ProductFormData {
   comingSoon: boolean;
   targetAudience: 'MALE' | 'FEMALE' | 'UNISEX';
   releaseDate?: string | null;
+  priceOverrides?: Record<string, number>;
 }
 
 interface ProductFormProps {
@@ -51,6 +53,25 @@ export default function ProductForm({
   isEditing = false,
 }: ProductFormProps) {
   const currencySymbol = getCurrencySymbol();
+  const baseCurrency = getBaseCurrency();
+  const overrideCurrencies = getSupportedCurrencies().filter(
+    (code) => code !== baseCurrency,
+  );
+
+  const initialOverrides = initialData?.priceOverrides || {};
+  const [customPricingEnabled, setCustomPricingEnabled] = useState(
+    Object.keys(initialOverrides).length > 0,
+  );
+  const [overrideInputs, setOverrideInputs] = useState<Record<string, string>>(() => {
+    const initial: Record<string, string> = {};
+    overrideCurrencies.forEach((currency) => {
+      const value = initialOverrides?.[currency];
+      if (value !== undefined && value !== null) {
+        initial[currency] = String(value);
+      }
+    });
+    return initial;
+  });
   const {
     register,
     handleSubmit,
@@ -90,6 +111,27 @@ export default function ProductForm({
     initialData?.releaseDate ? initialData.releaseDate.slice(0, 10) : ''
   );
   const watchedComingSoon = watch('comingSoon', initialData?.comingSoon ?? false);
+
+  const handleOverrideChange = (currency: string, value: string) => {
+    setOverrideInputs((prev) => {
+      if (!value.trim()) {
+        const { [currency]: _removed, ...rest } = prev;
+        return rest;
+      }
+
+      return {
+        ...prev,
+        [currency]: value,
+      };
+    });
+  };
+
+  const toggleCustomPricing = (enabled: boolean) => {
+    setCustomPricingEnabled(enabled);
+    if (!enabled) {
+      setOverrideInputs({});
+    }
+  };
 
   // Size management
   const [newSize, setNewSize] = useState('');
@@ -204,6 +246,22 @@ useEffect(() => {
         ? new Date(comingSoonDate).toISOString()
         : null;
 
+    const overrides = customPricingEnabled
+      ? Object.entries(overrideInputs).reduce<Record<string, number>>((acc, [currency, value]) => {
+          const trimmed = value.trim();
+          if (!trimmed) {
+            return acc;
+          }
+
+          const numeric = parseFloat(trimmed);
+          if (!Number.isNaN(numeric) && numeric > 0) {
+            acc[currency] = Number(numeric.toFixed(2));
+          }
+
+          return acc;
+        }, {})
+      : {};
+
     await onSubmit({
       ...data,
       images,
@@ -212,6 +270,7 @@ useEffect(() => {
       colors,
       variants,
       releaseDate: normalizedReleaseDate,
+      priceOverrides: Object.keys(overrides).length > 0 ? overrides : undefined,
     });
   };
 
@@ -321,6 +380,78 @@ useEffect(() => {
                 Your cost to manufacture/buy
               </p>
             </div>
+          </div>
+
+          {/* Currency Overrides */}
+          <div className="border border-charcoal/10 bg-cream-light p-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h3 className="text-sm font-medium text-charcoal uppercase tracking-wider">
+                  Custom currency pricing
+                </h3>
+                <p className="text-xs text-charcoal/60">
+                  Base currency: {baseCurrency}. Override automatic conversion for selected currencies.
+                </p>
+              </div>
+              <label className="flex items-center gap-2 text-sm text-charcoal cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={customPricingEnabled}
+                  onChange={(event) => toggleCustomPricing(event.target.checked)}
+                  className="w-4 h-4 rounded border-charcoal/30 text-charcoal focus:ring-charcoal"
+                />
+                Enable overrides
+              </label>
+            </div>
+
+            {customPricingEnabled ? (
+              <>
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {overrideCurrencies.map((currency) => {
+                    const symbol = getCurrencySymbol(currency);
+                    const value = overrideInputs[currency] || '';
+
+                    return (
+                      <div key={currency}>
+                        <label className="block text-xs font-medium text-charcoal mb-1 uppercase tracking-wider">
+                          {currency}
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-charcoal/60 z-10">
+                            {symbol}
+                          </span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={value}
+                            onChange={(event) => handleOverrideChange(currency, event.target.value)}
+                            placeholder="Leave blank"
+                            className="input-modern pl-8 pr-16"
+                          />
+                          {value && (
+                            <button
+                              type="button"
+                              onClick={() => handleOverrideChange(currency, '')}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-charcoal/60 hover:text-charcoal transition-colors"
+                            >
+                              Clear
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-charcoal/60 mt-3">
+                  Values are stored in their native currency. Leave a field empty to use live conversion instead.
+                </p>
+              </>
+            ) : (
+              <p className="mt-3 text-xs text-charcoal/60">
+                Enable overrides to set fixed prices for currencies other than {baseCurrency}.
+              </p>
+            )}
           </div>
 
           {/* Collection */}

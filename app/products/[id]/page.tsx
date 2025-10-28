@@ -10,12 +10,18 @@ import { Product } from "@/types/product.types";
 import ColorSelector from "@/components/ColorSelector";
 import { getFreeShippingThreshold } from "@/lib/currency";
 import { useCurrencyFormat } from "@/hooks/useCurrencyFormat";
+import {
+  getProductCompareAtPriceInCurrency,
+  getProductPriceInBaseCurrency,
+  getProductPriceInCurrency,
+  hasPriceOverrideForCurrency,
+} from "@/lib/productPricing";
 
 export default function ProductPage() {
   const params = useParams();
   const id = params.id as string;
   const { addToCart, openCart } = useCart();
-  const { formatCurrency } = useCurrencyFormat();
+  const { formatCurrency, currency } = useCurrencyFormat();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -159,10 +165,12 @@ export default function ProductPage() {
     const clampedQuantity = Math.max(1, Math.min(quantity, limit));
 
     // Store buy now data in sessionStorage and redirect to checkout
+    const unitPriceBase = getProductPriceInBaseCurrency(product, currency);
+
     const buyNowData = {
       productId: product.id,
       productName: product.name,
-      productPrice: product.price,
+      productPrice: unitPriceBase,
       productImage: displayImages.length > 0 ? displayImages[0] : null,
       includeShipping: product.includeShipping,
       colorImages: product.colorImages || null,
@@ -212,10 +220,13 @@ export default function ProductPage() {
     );
   }
 
-  const hasDiscount = product.compareAtPrice && product.compareAtPrice > product.price;
-const discountPercent = hasDiscount
-  ? Math.round(((product.compareAtPrice! - product.price) / product.compareAtPrice!) * 100)
-  : 0;
+  const displayPrice = product ? getProductPriceInCurrency(product, currency) : 0;
+  const comparePrice = product ? getProductCompareAtPriceInCurrency(product, currency) : null;
+  const hasDiscount = comparePrice !== null && comparePrice > displayPrice;
+  const discountPercent = hasDiscount && comparePrice
+    ? Math.round(((comparePrice - displayPrice) / comparePrice) * 100)
+    : 0;
+  const overrideActive = product ? hasPriceOverrideForCurrency(product, currency) : false;
   const freeShippingThreshold = getFreeShippingThreshold();
   const audienceLabelMap: Record<Product['targetAudience'], string> = {
     MALE: 'Men',
@@ -307,12 +318,12 @@ const discountPercent = hasDiscount
               <div className="mb-8">
                 <div className="flex items-center gap-4 mb-2">
                   <p className="text-3xl text-charcoal-dark font-medium">
-                    {formatCurrency(product.price)}
+                    {formatCurrency(displayPrice, { convert: false })}
                   </p>
-                  {hasDiscount && product.compareAtPrice !== undefined && product.compareAtPrice !== null && (
+                  {hasDiscount && comparePrice !== null && (
                     <>
                       <p className="text-xl text-charcoal-light line-through">
-                        {formatCurrency(product.compareAtPrice)}
+                        {formatCurrency(comparePrice, { convert: false })}
                       </p>
                       <span className="px-3 py-1 bg-charcoal-dark text-cream-light text-sm uppercase tracking-wider">
                         {discountPercent}% Off
@@ -325,6 +336,11 @@ const discountPercent = hasDiscount
                     </span>
                   )}
                 </div>
+                {overrideActive && (
+                  <p className="text-xs uppercase tracking-wider text-charcoal/60">
+                    Set price for {currency?.toUpperCase()}
+                  </p>
+                )}
                 {isComingSoon && releaseLabel && (
                   <p className="text-sm text-charcoal/70">
                     Expected to ship {releaseLabel}

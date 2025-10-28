@@ -33,6 +33,28 @@ export default async function EditProductPage({
 
   // Parse JSON fields and format data for form
   const imagePayload = parseProductImages(product.images);
+  let priceOverrides: Record<string, number> = {};
+  if (product.priceOverrides) {
+    try {
+      const raw = JSON.parse(product.priceOverrides);
+      if (raw && typeof raw === 'object') {
+        priceOverrides = Object.entries(raw as Record<string, unknown>).reduce<Record<string, number>>(
+          (acc, [currency, value]) => {
+            if (typeof currency !== 'string') return acc;
+            const code = currency.toUpperCase();
+            const numeric = typeof value === 'number' ? value : parseFloat(String(value));
+            if (Number.isFinite(numeric)) {
+              acc[code] = numeric;
+            }
+            return acc;
+          },
+          {},
+        );
+      }
+    } catch (error) {
+      console.warn('Failed to parse price overrides for product', product.id, error);
+    }
+  }
   const initialData = {
     name: product.name,
     description: product.description,
@@ -56,6 +78,7 @@ export default async function EditProductPage({
     comingSoon: product.comingSoon,
     releaseDate: product.releaseDate ? product.releaseDate.toISOString() : null,
     targetAudience: product.targetAudience || 'UNISEX',
+    priceOverrides,
   };
 
   return (

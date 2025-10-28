@@ -31,6 +31,7 @@ interface ProductFormData {
   comingSoon: boolean;
   targetAudience: 'MALE' | 'FEMALE' | 'UNISEX';
   releaseDate?: string | null;
+  priceOverrides?: Record<string, number>;
 }
 
 interface NewProductFormProps {
