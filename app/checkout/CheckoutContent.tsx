@@ -7,9 +7,10 @@ import { useCart } from "@/contexts/CartContext";
 import { useSession } from "next-auth/react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import { formatCurrency, getShippingFee, getFreeShippingThreshold } from "@/lib/currency";
+import { getShippingFee, getFreeShippingThreshold } from "@/lib/currency";
 import { getProductPriceInBaseCurrency, getProductPriceInCurrency } from "@/lib/productPricing";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { useCurrencyFormat } from "@/hooks/useCurrencyFormat";
 
 type DiscountType = 'PERCENTAGE' | 'FIXED';
 
@@ -29,6 +30,7 @@ function CheckoutPageContent() {
   const { items: cartItems, totalPrice: cartTotal, clearCart } = useCart();
   const { data: session, status } = useSession();
   const { currency } = useCurrency();
+  const { formatCurrency } = useCurrencyFormat();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [promoInput, setPromoInput] = useState("");
@@ -581,7 +583,7 @@ useEffect(() => {
                           Qty: {item.quantity}
                         </p>
                         <p className="text-charcoal-dark font-medium mt-2">
-                          {formatCurrency(linePriceDisplay, { currency, convert: false })}
+                          {formatCurrency(linePriceDisplay, { convert: false })}
                         </p>
                       </div>
                     </div>
