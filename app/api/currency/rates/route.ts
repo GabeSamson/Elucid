@@ -5,96 +5,81 @@ let cachedRates: Record<string, number> | null = null;
 let lastFetch: number = 0;
 const CACHE_DURATION = 60 * 60 * 1000; // 1 hour in milliseconds
 
+const SUPPORTED_CODES = [
+  'GBP', 'USD', 'EUR', 'CAD', 'AUD', 'JPY', 'CHF', 'CNY', 'INR', 'NZD',
+  'SGD', 'HKD', 'KRW', 'SEK', 'NOK', 'DKK', 'MXN', 'BRL', 'ZAR', 'AED',
+];
+
 export async function GET() {
   try {
     const now = Date.now();
 
     // Return cached rates if still valid
     if (cachedRates && (now - lastFetch) < CACHE_DURATION) {
-      return NextResponse.json({ rates: cachedRates, cached: true });
+      return NextResponse.json({ rates: cachedRates, cached: true, source: 'cache' });
     }
 
-    // Fetch live rates from exchangerate-api.io (free tier: 1,500 requests/month)
-    // Alternative: fixer.io, currencyapi.com, or exchangeratesapi.io
-    const baseCurrency = process.env.NEXT_PUBLIC_BASE_CURRENCY || 'GBP';
-    const apiKey = process.env.EXCHANGE_RATE_API_KEY;
+    const baseCurrency = (process.env.NEXT_PUBLIC_BASE_CURRENCY || 'GBP').toUpperCase();
+    const symbols = Array.from(new Set([...SUPPORTED_CODES, baseCurrency])).join(',');
 
-    if (!apiKey) {
-      console.warn('EXCHANGE_RATE_API_KEY not set, using fallback rates');
-      return NextResponse.json({
-        rates: getDefaultRates(),
-        cached: false,
-        source: 'fallback'
-      });
-    }
-
-    // Using exchangerate-api.io
+    // Using exchangerate.host (free, no API key, generous limits)
     const response = await fetch(
-      `https://v6.exchangerate-api.com/v6/${apiKey}/latest/${baseCurrency}`,
-      { next: { revalidate: 3600 } } // Cache for 1 hour
+      `https://api.exchangerate.host/latest?base=${baseCurrency}&symbols=${symbols}`,
+      { next: { revalidate: 3600 } } // Cache externally for 1 hour
     );
 
     if (!response.ok) {
-      throw new Error('Failed to fetch exchange rates');
+      throw new Error(`Failed to fetch exchange rates (status ${response.status})`);
     }
 
     const data = await response.json();
 
-    if (data.result !== 'success') {
-      throw new Error('Exchange rate API returned error');
+    if (data.success === false || !data.rates) {
+      throw new Error('Exchange rate API returned an error response');
     }
 
-    // Extract rates
-    const rates = {
-      GBP: data.conversion_rates.GBP || 1,
-      USD: data.conversion_rates.USD,
-      EUR: data.conversion_rates.EUR,
-      CAD: data.conversion_rates.CAD,
-      AUD: data.conversion_rates.AUD,
-      JPY: data.conversion_rates.JPY,
-      CHF: data.conversion_rates.CHF,
-      CNY: data.conversion_rates.CNY,
-      INR: data.conversion_rates.INR,
-      NZD: data.conversion_rates.NZD,
-      SGD: data.conversion_rates.SGD,
-      HKD: data.conversion_rates.HKD,
-      KRW: data.conversion_rates.KRW,
-      SEK: data.conversion_rates.SEK,
-      NOK: data.conversion_rates.NOK,
-      DKK: data.conversion_rates.DKK,
-      MXN: data.conversion_rates.MXN,
-      BRL: data.conversion_rates.BRL,
-      ZAR: data.conversion_rates.ZAR,
-      AED: data.conversion_rates.AED,
-    };
+    const fallbackRates = getDefaultRates();
+    const rates: Record<string, number> = {};
 
-    // Cache the rates
+    for (const code of SUPPORTED_CODES) {
+      if (code === baseCurrency) {
+        rates[code] = 1;
+        continue;
+      }
+
+      const rate = data.rates[code];
+      rates[code] = typeof rate === 'number' ? rate : fallbackRates[code];
+    }
+
+    // Ensure base currency is present
+    rates[baseCurrency] = rates[baseCurrency] || 1;
+
     cachedRates = rates;
     lastFetch = now;
 
     return NextResponse.json({
       rates,
       cached: false,
-      timestamp: new Date(data.time_last_update_unix * 1000).toISOString(),
-      source: 'live'
+      timestamp: data.date ? new Date(data.date).toISOString() : undefined,
+      source: 'live',
+      provider: 'exchangerate.host',
     });
 
   } catch (error) {
     console.error('Error fetching currency rates:', error);
 
-    // Return cached rates if available, otherwise fallback
     if (cachedRates) {
       return NextResponse.json({
         rates: cachedRates,
         cached: true,
-        source: 'cached-fallback'
+        source: 'cached-fallback',
       });
     }
 
     return NextResponse.json({
       rates: getDefaultRates(),
       cached: false,
-      source: 'error-fallback'
+      source: 'error-fallback',
     });
   }
 }

@@ -1,16 +1,33 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import AuthModal from "./AuthModal";
 
 export default function Newsletter() {
-  const [email, setEmail] = useState("");
+  const { data: session, status } = useSession();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [alreadySubscribed, setAlreadySubscribed] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [pendingSubscription, setPendingSubscription] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const closeAuthModal = () => {
+    setAuthModalOpen(false);
+    setPendingSubscription(false);
+  };
+
+  const subscribeWithAccountEmail = useCallback(async () => {
+    const email = session?.user?.email;
+
+    if (!email) {
+      setError('We could not find an email associated with your account.');
+      setPendingSubscription(false);
+      return;
+    }
+
     setError("");
     setMessage("");
     setLoading(true);
@@ -25,8 +42,15 @@ export default function Newsletter() {
       const data = await res.json();
 
       if (res.ok) {
-        setMessage("Thanks for subscribing!");
-        setEmail("");
+        setMessage(data.message || 'Thanks for subscribing!');
+        setAlreadySubscribed(false);
+      } else if (
+        typeof data.error === 'string' &&
+        data.error.toLowerCase().includes('already subscribed')
+      ) {
+        setMessage(data.error);
+        setAlreadySubscribed(true);
+        setError("");
       } else {
         setError(data.error || 'Failed to subscribe');
       }
@@ -34,7 +58,35 @@ export default function Newsletter() {
       setError('An unexpected error occurred');
     } finally {
       setLoading(false);
+      setPendingSubscription(false);
     }
+  }, [session?.user?.email]);
+
+  useEffect(() => {
+    if (status === "authenticated" && pendingSubscription) {
+      setAuthModalOpen(false);
+      subscribeWithAccountEmail();
+    }
+  }, [status, pendingSubscription, subscribeWithAccountEmail]);
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      setAuthModalOpen(false);
+    }
+  }, [status]);
+
+  const handleSubscribe = () => {
+    if (alreadySubscribed) {
+      return;
+    }
+
+    if (status !== "authenticated") {
+      setPendingSubscription(true);
+      setAuthModalOpen(true);
+      return;
+    }
+
+    subscribeWithAccountEmail();
   };
 
   return (
@@ -53,24 +105,15 @@ export default function Newsletter() {
             Subscribe to receive updates on new releases, exclusive drops, and stories from the streets of London.
           </p>
 
-          <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4 max-w-xl mx-auto mb-4">
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
-              required
-              disabled={loading}
-              className="flex-1 px-6 py-4 bg-cream border border-charcoal/20 focus:border-charcoal focus:outline-none transition-colors disabled:opacity-50"
-            />
+          <div className="flex flex-col sm:flex-row gap-4 max-w-xl mx-auto mb-4 justify-center">
             <button
-              type="submit"
-              disabled={loading}
+              onClick={handleSubscribe}
+              disabled={loading || status === "loading" || alreadySubscribed}
               className="px-10 py-4 bg-charcoal-dark text-cream-light hover:bg-charcoal transition-colors duration-300 tracking-wider text-sm uppercase disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Subscribing...' : 'Subscribe'}
+              {loading ? 'Subscribing...' : alreadySubscribed ? 'Already Subscribed' : 'Subscribe'}
             </button>
-          </form>
+          </div>
 
           {message && (
             <p className="text-charcoal-dark text-sm">
@@ -85,6 +128,12 @@ export default function Newsletter() {
           )}
         </motion.div>
       </div>
+
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={closeAuthModal}
+        initialMode="signin"
+      />
     </section>
   );
 }
