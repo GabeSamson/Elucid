@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { randomBytes } from 'crypto';
+import { sendNewsletterVerificationEmail } from '@/lib/email/sendNewsletterVerificationEmail';
 
 const newsletterSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -26,24 +28,50 @@ export async function POST(request: NextRequest) {
     });
 
     if (existing) {
-      return NextResponse.json(
-        { error: 'This email is already subscribed' },
-        { status: 400 }
-      );
+      if (existing.verified) {
+        return NextResponse.json(
+          { error: 'This email is already subscribed and verified' },
+          { status: 400 }
+        );
+      } else {
+        // Resend verification email
+        const newToken = randomBytes(32).toString('hex');
+        await prisma.newsletter.update({
+          where: { email },
+          data: { verificationToken: newToken },
+        });
+        await sendNewsletterVerificationEmail({
+          to: email,
+          verificationToken: newToken,
+        });
+        return NextResponse.json(
+          { message: 'A verification email has been sent to your email address' },
+          { status: 200 }
+        );
+      }
     }
 
-    // Insert new subscriber
+    // Generate verification token
+    const verificationToken = randomBytes(32).toString('hex');
+
+    // Insert new subscriber (unverified)
     await prisma.newsletter.create({
       data: {
         email,
         active: true,
+        verified: false,
+        verificationToken,
       },
     });
 
-    // TODO: Send welcome email
+    // Send verification email
+    await sendNewsletterVerificationEmail({
+      to: email,
+      verificationToken,
+    });
 
     return NextResponse.json(
-      { message: 'Successfully subscribed to newsletter' },
+      { message: 'Please check your email to verify your subscription' },
       { status: 201 }
     );
   } catch (error) {

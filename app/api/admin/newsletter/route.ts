@@ -10,7 +10,9 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Only fetch verified subscribers
     const subscribers = await prisma.newsletter.findMany({
+      where: { verified: true },
       orderBy: { createdAt: 'desc' },
     });
 

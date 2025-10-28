@@ -49,6 +49,8 @@ export default function WorkspacePage() {
   const [personalTasks, setPersonalTasks] = useState<PersonalTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'calendar' | 'team-tasks' | 'personal-tasks'>('calendar');
+  const [showAllCompleted, setShowAllCompleted] = useState(false);
+  const [sortBy, setSortBy] = useState<'priority' | 'dueDate' | 'createdAt'>('priority');
 
   // Modals
   const [showEventModal, setShowEventModal] = useState(false);
@@ -60,6 +62,7 @@ export default function WorkspacePage() {
 
   // Form states
   const [eventForm, setEventForm] = useState({ title: '', description: '', startDate: '', endDate: '' });
+  const [singleDateMode, setSingleDateMode] = useState(false);
   const [teamTaskForm, setTeamTaskForm] = useState({ title: '', description: '', priority: 'medium' as 'low' | 'medium' | 'high', dueDate: '' });
   const [personalTaskForm, setPersonalTaskForm] = useState({ title: '', description: '', priority: 'medium' as 'low' | 'medium' | 'high', dueDate: '' });
 
@@ -68,15 +71,23 @@ export default function WorkspacePage() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [showAllCompleted, sortBy]);
 
   const loadData = async () => {
     setLoading(true);
     try {
+      const params = new URLSearchParams();
+      if (showAllCompleted) {
+        params.set('showAllCompleted', 'true');
+      }
+      if (sortBy) {
+        params.set('sortBy', sortBy);
+      }
+
       const [eventsRes, teamTasksRes, personalTasksRes] = await Promise.all([
         fetch('/api/admin/workspace/calendar'),
-        fetch('/api/admin/workspace/team-tasks'),
-        fetch('/api/workspace/personal-tasks'),
+        fetch(`/api/admin/workspace/team-tasks?${params.toString()}`),
+        fetch(`/api/workspace/personal-tasks?${params.toString()}`),
       ]);
 
       const [eventsData, teamTasksData, personalTasksData] = await Promise.all([
@@ -99,15 +110,21 @@ export default function WorkspacePage() {
   const openEventModal = (event?: CalendarEvent) => {
     if (event) {
       setEditingEvent(event);
+      const startDateStr = event.startDate.split('T')[0];
+      const endDateStr = event.endDate.split('T')[0];
+      const isSingleDate = startDateStr === endDateStr;
+
       setEventForm({
         title: event.title,
         description: event.description || '',
-        startDate: event.startDate.split('T')[0],
-        endDate: event.endDate.split('T')[0],
+        startDate: startDateStr,
+        endDate: endDateStr,
       });
+      setSingleDateMode(isSingleDate);
     } else {
       setEditingEvent(null);
       setEventForm({ title: '', description: '', startDate: '', endDate: '' });
+      setSingleDateMode(false);
     }
     setShowEventModal(true);
   };
@@ -118,10 +135,15 @@ export default function WorkspacePage() {
     setFeedback(null);
 
     try {
+      // If single date mode, set endDate to startDate
+      const formData = singleDateMode
+        ? { ...eventForm, endDate: eventForm.startDate }
+        : eventForm;
+
       const method = editingEvent ? 'PATCH' : 'POST';
       const body = editingEvent
-        ? { id: editingEvent.id, ...eventForm }
-        : eventForm;
+        ? { id: editingEvent.id, ...formData }
+        : formData;
 
       const res = await fetch('/api/admin/workspace/calendar', {
         method,
@@ -358,25 +380,57 @@ export default function WorkspacePage() {
 
       {/* Tabs */}
       <div className="border-b border-charcoal/20">
-        <div className="flex gap-4">
-          <button
-            onClick={() => setActiveTab('calendar')}
-            className={`px-4 py-2 border-b-2 transition-colors ${activeTab === 'calendar' ? 'border-charcoal-dark text-charcoal-dark' : 'border-transparent text-charcoal/60 hover:text-charcoal'}`}
-          >
-            Calendar ({events.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('team-tasks')}
-            className={`px-4 py-2 border-b-2 transition-colors ${activeTab === 'team-tasks' ? 'border-charcoal-dark text-charcoal-dark' : 'border-transparent text-charcoal/60 hover:text-charcoal'}`}
-          >
-            Team Tasks ({teamTasks.filter(t => !t.completed).length})
-          </button>
-          <button
-            onClick={() => setActiveTab('personal-tasks')}
-            className={`px-4 py-2 border-b-2 transition-colors ${activeTab === 'personal-tasks' ? 'border-charcoal-dark text-charcoal-dark' : 'border-transparent text-charcoal/60 hover:text-charcoal'}`}
-          >
-            My Tasks ({personalTasks.filter(t => !t.completed).length})
-          </button>
+        <div className="flex items-center justify-between">
+          <div className="flex gap-4">
+            <button
+              onClick={() => setActiveTab('calendar')}
+              className={`px-4 py-2 border-b-2 transition-colors ${activeTab === 'calendar' ? 'border-charcoal-dark text-charcoal-dark' : 'border-transparent text-charcoal/60 hover:text-charcoal'}`}
+            >
+              Calendar ({events.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('team-tasks')}
+              className={`px-4 py-2 border-b-2 transition-colors ${activeTab === 'team-tasks' ? 'border-charcoal-dark text-charcoal-dark' : 'border-transparent text-charcoal/60 hover:text-charcoal'}`}
+            >
+              Team Tasks ({teamTasks.filter(t => !t.completed).length})
+            </button>
+            <button
+              onClick={() => setActiveTab('personal-tasks')}
+              className={`px-4 py-2 border-b-2 transition-colors ${activeTab === 'personal-tasks' ? 'border-charcoal-dark text-charcoal-dark' : 'border-transparent text-charcoal/60 hover:text-charcoal'}`}
+            >
+              My Tasks ({personalTasks.filter(t => !t.completed).length})
+            </button>
+          </div>
+
+          {/* Sort and Filter Controls (only visible on task tabs) */}
+          {(activeTab === 'team-tasks' || activeTab === 'personal-tasks') && (
+            <div className="flex items-center gap-4">
+              {/* Sort Dropdown */}
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-charcoal">Sort by:</label>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as 'priority' | 'dueDate' | 'createdAt')}
+                  className="px-3 py-2 text-sm border border-charcoal/20 focus:border-charcoal focus:outline-none bg-white cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%236B6560%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem] bg-[right_0.5rem_center] bg-no-repeat pr-10"
+                >
+                  <option value="priority">Priority</option>
+                  <option value="dueDate">Due Date</option>
+                  <option value="createdAt">Date Created</option>
+                </select>
+              </div>
+
+              {/* Show Completed Toggle */}
+              <label className="flex items-center gap-2 px-4 py-2 text-sm text-charcoal cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showAllCompleted}
+                  onChange={(e) => setShowAllCompleted(e.target.checked)}
+                  className="w-4 h-4 rounded border-charcoal/30 text-charcoal focus:ring-charcoal"
+                />
+                <span>Show all completed</span>
+              </label>
+            </div>
+          )}
         </div>
       </div>
 
@@ -582,9 +636,26 @@ export default function WorkspacePage() {
                   className="w-full px-3 py-2 border border-charcoal/20 focus:border-charcoal focus:outline-none"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+
+              {/* Single Date Toggle */}
+              <div>
+                <label className="flex items-center gap-2 text-sm text-charcoal cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={singleDateMode}
+                    onChange={(e) => setSingleDateMode(e.target.checked)}
+                    className="w-4 h-4 rounded border-charcoal/30 text-charcoal focus:ring-charcoal"
+                  />
+                  <span>Single date event</span>
+                </label>
+                <p className="text-xs text-charcoal/60 mt-1 ml-6">
+                  {singleDateMode ? 'Event occurs on one day only' : 'Event spans multiple days'}
+                </p>
+              </div>
+
+              <div className={`grid ${singleDateMode ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'} gap-4`}>
                 <div>
-                  <label className="block text-sm text-charcoal mb-1">Start Date *</label>
+                  <label className="block text-sm text-charcoal mb-1">{singleDateMode ? 'Date' : 'Start Date'} *</label>
                   <input
                     type="date"
                     value={eventForm.startDate}
@@ -593,16 +664,18 @@ export default function WorkspacePage() {
                     className="w-full px-3 py-2 border border-charcoal/20 focus:border-charcoal focus:outline-none"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm text-charcoal mb-1">End Date *</label>
-                  <input
-                    type="date"
-                    value={eventForm.endDate}
-                    onChange={(e) => setEventForm({ ...eventForm, endDate: e.target.value })}
-                    required
-                    className="w-full px-3 py-2 border border-charcoal/20 focus:border-charcoal focus:outline-none"
-                  />
-                </div>
+                {!singleDateMode && (
+                  <div>
+                    <label className="block text-sm text-charcoal mb-1">End Date *</label>
+                    <input
+                      type="date"
+                      value={eventForm.endDate}
+                      onChange={(e) => setEventForm({ ...eventForm, endDate: e.target.value })}
+                      required
+                      className="w-full px-3 py-2 border border-charcoal/20 focus:border-charcoal focus:outline-none"
+                    />
+                  </div>
+                )}
               </div>
               <div className="flex gap-3 justify-end">
                 <button
@@ -652,13 +725,13 @@ export default function WorkspacePage() {
                   className="w-full px-3 py-2 border border-charcoal/20 focus:border-charcoal focus:outline-none"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm text-charcoal mb-1">Priority</label>
                   <select
                     value={teamTaskForm.priority}
                     onChange={(e) => setTeamTaskForm({ ...teamTaskForm, priority: e.target.value as 'low' | 'medium' | 'high' })}
-                    className="w-full px-3 py-2 border border-charcoal/20 focus:border-charcoal focus:outline-none"
+                    className="w-full px-3 py-2 border border-charcoal/20 focus:border-charcoal focus:outline-none appearance-none bg-white cursor-pointer bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%236B6560%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem] bg-[right_0.5rem_center] bg-no-repeat pr-10"
                   >
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
@@ -723,13 +796,13 @@ export default function WorkspacePage() {
                   className="w-full px-3 py-2 border border-charcoal/20 focus:border-charcoal focus:outline-none"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm text-charcoal mb-1">Priority</label>
                   <select
                     value={personalTaskForm.priority}
                     onChange={(e) => setPersonalTaskForm({ ...personalTaskForm, priority: e.target.value as 'low' | 'medium' | 'high' })}
-                    className="w-full px-3 py-2 border border-charcoal/20 focus:border-charcoal focus:outline-none"
+                    className="w-full px-3 py-2 border border-charcoal/20 focus:border-charcoal focus:outline-none appearance-none bg-white cursor-pointer bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%236B6560%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem] bg-[right_0.5rem_center] bg-no-repeat pr-10"
                   >
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>

@@ -8,12 +8,14 @@ import Footer from "@/components/Footer";
 import { useCart } from "@/contexts/CartContext";
 import { Product } from "@/types/product.types";
 import ColorSelector from "@/components/ColorSelector";
-import { formatCurrency, getFreeShippingThreshold } from "@/lib/currency";
+import { getFreeShippingThreshold } from "@/lib/currency";
+import { useCurrencyFormat } from "@/hooks/useCurrencyFormat";
 
 export default function ProductPage() {
   const params = useParams();
   const id = params.id as string;
   const { addToCart, openCart } = useCart();
+  const { formatCurrency } = useCurrencyFormat();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -21,9 +23,11 @@ export default function ProductPage() {
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  const [purchasingEnabled, setPurchasingEnabled] = useState(true);
 
   useEffect(() => {
     fetchProduct();
+    fetchPurchasingStatus();
   }, [id]);
 
   const fetchProduct = async () => {
@@ -48,6 +52,20 @@ export default function ProductPage() {
       setError(true);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchPurchasingStatus = async () => {
+    try {
+      const res = await fetch('/api/config/purchasing-enabled');
+      const data = await res.json();
+      if (res.ok) {
+        setPurchasingEnabled(data.purchasingEnabled ?? true);
+      }
+    } catch (error) {
+      console.error('Error fetching purchasing status:', error);
+      // Default to enabled on error
+      setPurchasingEnabled(true);
     }
   };
 
@@ -132,6 +150,27 @@ export default function ProductPage() {
     );
 
     openCart();
+  };
+
+  const handleBuyNow = () => {
+    if (!product) return;
+
+    const limit = isComingSoon ? preorderCap : effectiveStock || preorderCap;
+    const clampedQuantity = Math.max(1, Math.min(quantity, limit));
+
+    // Store buy now data in sessionStorage and redirect to checkout
+    const buyNowData = {
+      productId: product.id,
+      productName: product.name,
+      productPrice: product.price,
+      productImage: displayImages.length > 0 ? displayImages[0] : null,
+      quantity: clampedQuantity,
+      size: product.sizes && product.sizes.length > 0 ? selectedSize : undefined,
+      color: product.colors && product.colors.length > 0 ? selectedColor || undefined : undefined,
+    };
+
+    sessionStorage.setItem('buyNowProduct', JSON.stringify(buyNowData));
+    window.location.href = '/checkout?buyNow=true';
   };
 
   if (loading) {
@@ -389,12 +428,31 @@ const discountPercent = hasDiscount
               </div>
 
               {/* Add to Cart */}
+              {!purchasingEnabled && (
+                <div className="mb-4 rounded-lg border border-charcoal/20 bg-cream-dark px-4 py-3 text-sm text-charcoal">
+                  <p className="font-medium text-charcoal-dark">
+                    Purchasing is temporarily disabled
+                  </p>
+                  <p className="text-charcoal/70 mt-1">
+                    We're currently not accepting new orders. Please check back soon!
+                  </p>
+                </div>
+              )}
               <button
                 onClick={handleAddToCart}
-                disabled={isOutOfStock}
-                className="w-full py-4 bg-charcoal-dark text-cream-light hover:bg-charcoal transition-colors duration-300 tracking-wider text-sm uppercase disabled:opacity-50 disabled:cursor-not-allowed mb-4"
+                disabled={isOutOfStock || !purchasingEnabled}
+                className="w-full py-4 bg-charcoal-dark text-cream-light hover:bg-charcoal transition-colors duration-300 tracking-wider text-sm uppercase disabled:opacity-50 disabled:cursor-not-allowed mb-3"
               >
-                {isOutOfStock ? 'Out of Stock' : isComingSoon ? 'Pre-order' : 'Add to Cart'}
+                {!purchasingEnabled ? 'Purchasing Disabled' : isOutOfStock ? 'Out of Stock' : isComingSoon ? 'Pre-order' : 'Add to Cart'}
+              </button>
+
+              {/* Buy Now Button */}
+              <button
+                onClick={handleBuyNow}
+                disabled={isOutOfStock || !purchasingEnabled}
+                className="w-full py-4 border-2 border-charcoal-dark text-charcoal-dark hover:bg-charcoal-dark hover:text-cream transition-colors duration-300 tracking-wider text-sm uppercase disabled:opacity-50 disabled:cursor-not-allowed mb-4"
+              >
+                Buy Now
               </button>
 
               {/* Additional Info */}

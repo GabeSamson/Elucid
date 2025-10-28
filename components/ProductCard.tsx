@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Product } from "@/types/product.types";
-import { formatCurrency } from "@/lib/currency";
+import { useCurrencyFormat } from "@/hooks/useCurrencyFormat";
 
 interface ProductCardProps {
   product: Product;
@@ -11,6 +11,7 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, index = 0 }: ProductCardProps) {
+  const { formatCurrency } = useCurrencyFormat();
   const hasDiscount = product.compareAtPrice && product.compareAtPrice > product.price;
   const isComingSoon = product.comingSoon;
   const releaseDate = product.releaseDate ? new Date(product.releaseDate) : null;
@@ -65,7 +66,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
         {/* Product Info */}
         <div className="mt-4 flex min-h-[118px] flex-col gap-2 md:mt-6">
           <div className="flex items-center justify-between">
-            <h3 className="font-serif text-xl md:text-2xl text-charcoal-dark">
+            <h3 className="font-serif text-lg md:text-2xl text-charcoal-dark">
               {product.name}
             </h3>
             {isComingSoon ? (
@@ -82,11 +83,11 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
           </div>
 
           <div className="flex items-center gap-3">
-            <p className="text-charcoal-dark font-medium">
+            <p className="text-charcoal-dark font-medium text-sm md:text-base">
               {formatCurrency(product.price)}
             </p>
             {hasDiscount && product.compareAtPrice !== undefined && product.compareAtPrice !== null && (
-              <p className="text-charcoal-light line-through text-sm">
+              <p className="text-charcoal-light line-through text-xs md:text-sm">
                 {formatCurrency(product.compareAtPrice)}
               </p>
             )}
@@ -94,7 +95,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
 
           <div className="space-y-1">
             {product.collection && (
-              <p className="text-charcoal-light text-sm uppercase tracking-wider">
+              <p className="text-charcoal-light text-xs md:text-sm uppercase tracking-wider">
                 {product.collection.name}
               </p>
             )}

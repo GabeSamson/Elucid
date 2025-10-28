@@ -49,6 +49,15 @@ interface AnalyticsData {
   locations: Array<{ country: string; count: number; revenue: number }>;
 }
 
+interface TrafficAnalyticsData {
+  totalViews: number;
+  viewsByPath: Array<{ path: string; count: number }>;
+  viewsByReferrer: Array<{ referrer: string; count: number }>;
+  viewsByUtmSource: Array<{ utmSource: string; count: number }>;
+  viewsByCountry: Array<{ country: string; count: number }>;
+  dailyViews: Array<{ date: string; count: number }>;
+}
+
 const STATUS_COLORS: { [key: string]: string } = {
   PENDING: '#fbbf24',
   PROCESSING: '#60a5fa',
@@ -63,7 +72,9 @@ function AdminAnalyticsContent() {
   const productId = searchParams.get('product');
 
   const [data, setData] = useState<AnalyticsData | null>(null);
+  const [trafficData, setTrafficData] = useState<TrafficAnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [trafficLoading, setTrafficLoading] = useState(true);
   const [timeRange, setTimeRange] = useState(30);
   const [resetting, setResetting] = useState(false);
   const [resetStatus, setResetStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -71,6 +82,7 @@ function AdminAnalyticsContent() {
 
   useEffect(() => {
     fetchAnalytics();
+    fetchTrafficAnalytics();
   }, [timeRange, productId]);
 
   const fetchAnalytics = async () => {
@@ -91,6 +103,24 @@ function AdminAnalyticsContent() {
       console.error('Error fetching analytics:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchTrafficAnalytics = async () => {
+    setTrafficLoading(true);
+    try {
+      const params = new URLSearchParams({ days: String(timeRange) });
+      const res = await fetch(`/api/analytics/stats?${params.toString()}`, {
+        cache: 'no-store',
+      });
+      const trafficAnalyticsData = await res.json();
+      if (res.ok) {
+        setTrafficData(trafficAnalyticsData);
+      }
+    } catch (error) {
+      console.error('Error fetching traffic analytics:', error);
+    } finally {
+      setTrafficLoading(false);
     }
   };
 
@@ -297,6 +327,227 @@ function AdminAnalyticsContent() {
             </div>
           </div>
         </div>
+      </section>
+
+      {/* Traffic Analytics Section */}
+      <section>
+        <div className="mb-6">
+          <h2 className="font-serif text-3xl text-charcoal-dark mb-2">Traffic Analytics</h2>
+          <p className="text-charcoal/60 text-sm">Monitor site traffic, referrers, and visitor behavior</p>
+        </div>
+
+        {trafficLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-charcoal/60 text-lg">Loading traffic data...</div>
+          </div>
+        ) : trafficData ? (
+          <>
+            {/* Traffic Summary */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <div className="bg-cream-light p-6 rounded-lg border border-charcoal/20 shadow-sm hover:shadow-md transition-shadow">
+                <div className="text-xs uppercase tracking-wider text-charcoal/60 mb-2">Total Page Views</div>
+                <div className="text-3xl font-serif text-charcoal-dark">
+                  {trafficData.totalViews.toLocaleString()}
+                </div>
+              </div>
+
+              <div className="bg-cream-light p-6 rounded-lg border border-charcoal/20 shadow-sm hover:shadow-md transition-shadow">
+                <div className="text-xs uppercase tracking-wider text-charcoal/60 mb-2">Unique Pages</div>
+                <div className="text-3xl font-serif text-charcoal-dark">
+                  {trafficData.viewsByPath.length}
+                </div>
+              </div>
+
+              <div className="bg-cream-light p-6 rounded-lg border border-charcoal/20 shadow-sm hover:shadow-md transition-shadow">
+                <div className="text-xs uppercase tracking-wider text-charcoal/60 mb-2">Referral Sources</div>
+                <div className="text-3xl font-serif text-charcoal-dark">
+                  {trafficData.viewsByReferrer.length}
+                </div>
+              </div>
+
+              <div className="bg-cream-light p-6 rounded-lg border border-charcoal/20 shadow-sm hover:shadow-md transition-shadow">
+                <div className="text-xs uppercase tracking-wider text-charcoal/60 mb-2">Countries</div>
+                <div className="text-3xl font-serif text-charcoal-dark">
+                  {trafficData.viewsByCountry.length}
+                </div>
+              </div>
+            </div>
+
+            {/* Daily Page Views Chart */}
+            <div className="bg-white p-8 rounded-lg border border-charcoal/10 shadow-md mb-8">
+              <h3 className="font-serif text-xl text-charcoal mb-6">Page Views Over Time</h3>
+              {trafficData.dailyViews.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={trafficData.dailyViews}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#D4C9BA" />
+                    <XAxis
+                      dataKey="date"
+                      stroke="#2B2826"
+                      tick={{ fill: '#6B6560' }}
+                      tickFormatter={(value) => new Date(value).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' })}
+                    />
+                    <YAxis stroke="#2B2826" tick={{ fill: '#6B6560' }} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#F5F3EE',
+                        border: '1px solid #D4C9BA',
+                        borderRadius: '8px',
+                      }}
+                      labelFormatter={(value) => new Date(value).toLocaleDateString()}
+                      formatter={(value: number) => [value, 'Page Views']}
+                    />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="count"
+                      stroke="#2B2826"
+                      strokeWidth={2}
+                      dot={{ fill: '#2B2826', r: 4 }}
+                      activeDot={{ r: 6 }}
+                      name="Page Views"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="text-charcoal/60 text-center py-12">No traffic data for this period</div>
+              )}
+            </div>
+
+            {/* Traffic Breakdown Tables */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              {/* Top Pages */}
+              <div className="bg-white p-6 rounded-lg border border-charcoal/10 shadow-sm">
+                <h3 className="font-serif text-xl text-charcoal mb-4">Top Pages</h3>
+                {trafficData.viewsByPath.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-charcoal/10">
+                          <th className="text-left py-2 px-4 text-xs uppercase tracking-wider text-charcoal/60">Path</th>
+                          <th className="text-right py-2 px-4 text-xs uppercase tracking-wider text-charcoal/60">Views</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {trafficData.viewsByPath.map((item, index) => (
+                          <tr key={index} className="border-b border-charcoal/10 last:border-0">
+                            <td className="py-2 px-4 text-sm text-charcoal font-mono truncate max-w-xs">
+                              {item.path}
+                            </td>
+                            <td className="py-2 px-4 text-sm text-charcoal text-right font-medium">
+                              {item.count}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-sm text-charcoal/60">No page data available</p>
+                )}
+              </div>
+
+              {/* Top Referrers */}
+              <div className="bg-white p-6 rounded-lg border border-charcoal/10 shadow-sm">
+                <h3 className="font-serif text-xl text-charcoal mb-4">Top Referrers</h3>
+                {trafficData.viewsByReferrer.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-charcoal/10">
+                          <th className="text-left py-2 px-4 text-xs uppercase tracking-wider text-charcoal/60">Source</th>
+                          <th className="text-right py-2 px-4 text-xs uppercase tracking-wider text-charcoal/60">Views</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {trafficData.viewsByReferrer.map((item, index) => (
+                          <tr key={index} className="border-b border-charcoal/10 last:border-0">
+                            <td className="py-2 px-4 text-sm text-charcoal font-mono truncate max-w-xs" title={item.referrer || ''}>
+                              {item.referrer || 'Direct'}
+                            </td>
+                            <td className="py-2 px-4 text-sm text-charcoal text-right font-medium">
+                              {item.count}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-sm text-charcoal/60">No referrer data available</p>
+                )}
+              </div>
+            </div>
+
+            {/* UTM and Country Tables */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* UTM Sources */}
+              <div className="bg-white p-6 rounded-lg border border-charcoal/10 shadow-sm">
+                <h3 className="font-serif text-xl text-charcoal mb-4">UTM Sources</h3>
+                {trafficData.viewsByUtmSource.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-charcoal/10">
+                          <th className="text-left py-2 px-4 text-xs uppercase tracking-wider text-charcoal/60">Source</th>
+                          <th className="text-right py-2 px-4 text-xs uppercase tracking-wider text-charcoal/60">Views</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {trafficData.viewsByUtmSource.map((item, index) => (
+                          <tr key={index} className="border-b border-charcoal/10 last:border-0">
+                            <td className="py-2 px-4 text-sm text-charcoal">
+                              {item.utmSource}
+                            </td>
+                            <td className="py-2 px-4 text-sm text-charcoal text-right font-medium">
+                              {item.count}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-sm text-charcoal/60">No UTM campaign data available</p>
+                )}
+              </div>
+
+              {/* Traffic by Country */}
+              <div className="bg-white p-6 rounded-lg border border-charcoal/10 shadow-sm">
+                <h3 className="font-serif text-xl text-charcoal mb-4">Traffic by Country</h3>
+                {trafficData.viewsByCountry.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-charcoal/10">
+                          <th className="text-left py-2 px-4 text-xs uppercase tracking-wider text-charcoal/60">Country</th>
+                          <th className="text-right py-2 px-4 text-xs uppercase tracking-wider text-charcoal/60">Views</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {trafficData.viewsByCountry.map((item, index) => (
+                          <tr key={index} className="border-b border-charcoal/10 last:border-0">
+                            <td className="py-2 px-4 text-sm text-charcoal">
+                              {item.country}
+                            </td>
+                            <td className="py-2 px-4 text-sm text-charcoal text-right font-medium">
+                              {item.count}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-sm text-charcoal/60">No country data available</p>
+                )}
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-charcoal/60">No traffic data available</div>
+          </div>
+        )}
       </section>
 
       {/* Variant Performance Section */}

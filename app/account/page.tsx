@@ -8,7 +8,9 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import AuthModal from "@/components/AuthModal";
 import { Order } from "@/types/product.types";
-import { formatCurrency } from "@/lib/currency";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { getSupportedCurrencies } from "@/lib/geolocation";
+import { useCurrencyFormat } from "@/hooks/useCurrencyFormat";
 
 export default function AccountPage() {
   return (
@@ -21,10 +23,13 @@ export default function AccountPage() {
 function AccountPageContent() {
   const { data: session, status } = useSession();
   const searchParams = useSearchParams();
+  const { currency, setCurrency } = useCurrency();
+  const { formatCurrency } = useCurrencyFormat();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [currencyUpdating, setCurrencyUpdating] = useState(false);
   const signInMessage =
     searchParams.get('redirect') === '/checkout'
       ? 'Please sign in to continue to checkout.'
@@ -52,6 +57,22 @@ function AccountPageContent() {
       console.error('Error fetching orders:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCurrencyChange = async (newCurrency: string) => {
+    setCurrencyUpdating(true);
+    try {
+      await setCurrency(newCurrency);
+      // Refresh orders to show in new currency
+      if (status === "authenticated") {
+        await fetchOrders();
+      }
+    } catch (error) {
+      console.error('Failed to update currency:', error);
+      alert('Failed to update currency preference');
+    } finally {
+      setCurrencyUpdating(false);
     }
   };
 
@@ -175,6 +196,33 @@ function AccountPageContent() {
               </p>
               <p>
                 <span className="font-medium text-charcoal">Email:</span> {session?.user?.email}
+              </p>
+            </div>
+
+            {/* Currency Preference */}
+            <div className="mb-6 pb-6 border-b border-charcoal/10">
+              <h3 className="text-sm uppercase tracking-wider text-charcoal-dark mb-3 font-medium">
+                Currency Preference
+              </h3>
+              <div className="flex items-center gap-4">
+                <select
+                  value={currency}
+                  onChange={(e) => handleCurrencyChange(e.target.value)}
+                  disabled={currencyUpdating}
+                  className="select-modern-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {getSupportedCurrencies().map((curr) => (
+                    <option key={curr} value={curr}>
+                      {curr}
+                    </option>
+                  ))}
+                </select>
+                {currencyUpdating && (
+                  <span className="text-sm text-charcoal/60">Updating...</span>
+                )}
+              </div>
+              <p className="text-xs text-charcoal/60 mt-2">
+                All prices on the site will be displayed in your selected currency
               </p>
             </div>
 

@@ -14,6 +14,11 @@ export default function AdminNewsletterPage() {
   const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [deletingEmail, setDeletingEmail] = useState<string | null>(null);
+  const [showComposer, setShowComposer] = useState(false);
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailContent, setEmailContent] = useState('');
+  const [sending, setSending] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   const loadSubscribers = async () => {
     setLoading(true);
@@ -89,6 +94,56 @@ export default function AdminNewsletterPage() {
     window.URL.revokeObjectURL(url);
   };
 
+  const handleSendNewsletter = async () => {
+    if (!emailSubject.trim() || !emailContent.trim()) {
+      setFeedback({ type: 'error', message: 'Subject and content are required' });
+      return;
+    }
+
+    const activeSubscribers = subscribers.filter(sub => sub.active);
+    if (activeSubscribers.length === 0) {
+      setFeedback({ type: 'error', message: 'No active subscribers to send to' });
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Send newsletter to ${activeSubscribers.length} active subscriber(s)?`
+    );
+    if (!confirmed) return;
+
+    setSending(true);
+    setFeedback(null);
+
+    try {
+      const res = await fetch('/api/admin/newsletter/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subject: emailSubject,
+          content: emailContent,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to send newsletter');
+      }
+
+      setFeedback({
+        type: 'success',
+        message: `Newsletter sent to ${data.sentCount} subscriber(s)`,
+      });
+      setShowComposer(false);
+      setEmailSubject('');
+      setEmailContent('');
+    } catch (error: any) {
+      setFeedback({ type: 'error', message: error.message || 'Failed to send newsletter' });
+    } finally {
+      setSending(false);
+    }
+  };
+
   const activeCount = subscribers.filter(sub => sub.active).length;
 
   return (
@@ -97,16 +152,28 @@ export default function AdminNewsletterPage() {
         <div>
           <h1 className="font-serif text-4xl text-charcoal-dark mb-2">Newsletter Subscribers</h1>
           <p className="text-charcoal/60">
-            {subscribers.length} total • {activeCount} active
+            {subscribers.length} verified • {activeCount} active
+          </p>
+          <p className="text-charcoal/60 text-sm mt-1">
+            Only verified subscribers are shown
           </p>
         </div>
-        <button
-          onClick={exportToCSV}
-          disabled={subscribers.length === 0}
-          className="inline-flex items-center justify-center px-6 py-3 bg-charcoal text-cream uppercase tracking-wider text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Export to CSV
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setShowComposer(true)}
+            disabled={activeCount === 0}
+            className="inline-flex items-center justify-center px-6 py-3 bg-charcoal-dark text-cream hover:bg-charcoal uppercase tracking-wider text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Compose Email
+          </button>
+          <button
+            onClick={exportToCSV}
+            disabled={subscribers.length === 0}
+            className="inline-flex items-center justify-center px-6 py-3 bg-charcoal text-cream uppercase tracking-wider text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Export to CSV
+          </button>
+        </div>
       </div>
 
       {feedback && (
@@ -171,6 +238,93 @@ export default function AdminNewsletterPage() {
           </div>
         )}
       </div>
+
+      {/* Email Composer Modal */}
+      {showComposer && (
+        <div className="fixed inset-0 bg-charcoal-dark/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-cream max-w-4xl w-full max-h-[90vh] overflow-y-auto p-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="font-serif text-3xl text-charcoal-dark">Compose Newsletter</h2>
+              <button
+                onClick={() => setShowComposer(false)}
+                className="text-charcoal/60 hover:text-charcoal"
+              >
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm text-charcoal mb-2">Subject *</label>
+                <input
+                  type="text"
+                  value={emailSubject}
+                  onChange={(e) => setEmailSubject(e.target.value)}
+                  placeholder="Newsletter subject line"
+                  className="w-full px-4 py-2 border border-charcoal/20 focus:border-charcoal focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm text-charcoal mb-2">Content (HTML) *</label>
+                <textarea
+                  value={emailContent}
+                  onChange={(e) => setEmailContent(e.target.value)}
+                  placeholder="<h1>Welcome!</h1><p>Your newsletter content here...</p>"
+                  rows={12}
+                  className="w-full px-4 py-2 border border-charcoal/20 focus:border-charcoal focus:outline-none font-mono text-sm"
+                />
+                <p className="text-xs text-charcoal/60 mt-1">
+                  You can use HTML tags for formatting
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowPreview(!showPreview)}
+                className="px-6 py-3 border border-charcoal/20 text-charcoal hover:border-charcoal uppercase tracking-wider text-sm"
+              >
+                {showPreview ? 'Hide Preview' : 'Show Preview'}
+              </button>
+              <button
+                onClick={() => setShowComposer(false)}
+                className="px-6 py-3 border border-charcoal/20 text-charcoal hover:border-charcoal uppercase tracking-wider text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSendNewsletter}
+                disabled={sending || !emailSubject.trim() || !emailContent.trim()}
+                className="px-6 py-3 bg-charcoal-dark text-cream hover:bg-charcoal uppercase tracking-wider text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {sending ? 'Sending...' : `Send to ${activeCount} Subscriber(s)`}
+              </button>
+            </div>
+
+            {/* Email Preview */}
+            {showPreview && (
+              <div className="mt-6 border-t border-charcoal/20 pt-6">
+                <h3 className="font-serif text-xl text-charcoal-dark mb-4">Preview</h3>
+                <div className="bg-white p-6 border border-charcoal/20">
+                  <div className="mb-4 pb-4 border-b border-charcoal/10">
+                    <p className="text-sm text-charcoal/60">Subject:</p>
+                    <p className="text-lg font-medium text-charcoal-dark">
+                      {emailSubject || '(No subject)'}
+                    </p>
+                  </div>
+                  <div
+                    className="prose max-w-none"
+                    dangerouslySetInnerHTML={{ __html: emailContent }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

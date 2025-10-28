@@ -134,7 +134,7 @@ export const convertBetweenCurrencies = (
   return amountInBase * targetRate;
 };
 
-interface FormatCurrencyOptions {
+export interface FormatCurrencyOptions {
   currency?: string;
   convert?: boolean;
   minimumFractionDigits?: number;

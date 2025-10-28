@@ -45,6 +45,8 @@ async function updateHomepageSettingsAction(formData: FormData) {
     );
   const includesWritingFields =
     formContext === "writing" || formData.has("writingSection");
+  const includesPurchasingFields =
+    formContext === "purchasing" || formData.has("purchasingEnabled");
 
   const heroHeading = includesHeroFields
     ? normalizeText(formData.get("heroHeading"))
@@ -78,6 +80,10 @@ async function updateHomepageSettingsAction(formData: FormData) {
   const writingSection = includesWritingFields
     ? normalizeRichText(formData.get("writingSection"))
     : existingConfig?.writingSection ?? null;
+
+  const purchasingEnabled = includesPurchasingFields
+    ? formData.get("purchasingEnabled") === "on"
+    : existingConfig?.purchasingEnabled ?? true;
 
   const showCountdown = includesHeroFields
     ? formData.get("showCountdown") === "on"
@@ -133,6 +139,7 @@ async function updateHomepageSettingsAction(formData: FormData) {
       featuredSubtitle,
       featuredDescription,
       writingSection,
+      purchasingEnabled,
     },
     create: {
       id: "main",
@@ -149,6 +156,7 @@ async function updateHomepageSettingsAction(formData: FormData) {
       featuredSubtitle,
       featuredDescription,
       writingSection,
+      purchasingEnabled,
     },
   });
 
@@ -447,6 +455,46 @@ export default async function AdminHomepagePage({ searchParams }: AdminHomepageP
                 className="px-7 py-3 bg-charcoal text-cream rounded-lg hover:bg-charcoal/90 transition-colors"
               >
                 Save writing section
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <section className="mt-8 space-y-6 rounded-2xl border border-charcoal/10 bg-cream p-6">
+          <header>
+            <h2 className="text-xl font-semibold text-charcoal">Site Settings</h2>
+            <p className="text-sm text-charcoal/70">
+              Manage global site-wide settings and functionality.
+            </p>
+          </header>
+
+          <form action={updateHomepageSettingsAction} className="space-y-5">
+            <input type="hidden" name="formContext" value="purchasing" />
+
+            <fieldset className="space-y-3 rounded-xl border border-charcoal/10 bg-white px-5 py-4">
+              <legend className="px-2 text-sm font-semibold uppercase tracking-wider text-charcoal/70">
+                Purchasing
+              </legend>
+              <label className="flex items-center gap-3 text-sm text-charcoal">
+                <input
+                  type="checkbox"
+                  name="purchasingEnabled"
+                  defaultChecked={homepageConfig?.purchasingEnabled ?? true}
+                  className="h-4 w-4 rounded border-charcoal/30 text-charcoal focus:ring-charcoal"
+                />
+                Enable purchasing site-wide
+              </label>
+              <p className="text-xs text-charcoal/60">
+                When disabled, customers will not be able to add items to cart or make purchases. Use this for maintenance or when you need to temporarily disable sales.
+              </p>
+            </fieldset>
+
+            <div className="flex flex-wrap justify-end gap-3">
+              <button
+                type="submit"
+                className="px-7 py-3 bg-charcoal text-cream rounded-lg hover:bg-charcoal/90 transition-colors"
+              >
+                Save settings
               </button>
             </div>
           </form>

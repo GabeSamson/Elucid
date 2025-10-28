@@ -30,19 +30,47 @@ const ensureAdmin = async () => {
 };
 
 // GET - Fetch all team tasks
-export async function GET() {
+export async function GET(request: NextRequest) {
   const user = await ensureAdmin();
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
+    // Check if we should show all completed tasks
+    const { searchParams } = new URL(request.url);
+    const showAllCompleted = searchParams.get('showAllCompleted') === 'true';
+    const sortBy = searchParams.get('sortBy') || 'priority';
+
+    // Calculate cutoff time (24 hours ago)
+    const twentyFourHoursAgo = new Date();
+    twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+
+    // Build where clause based on showAllCompleted flag
+    const whereClause = showAllCompleted
+      ? {}
+      : {
+          OR: [
+            { completed: false },
+            { completedAt: null },
+            { completedAt: { gte: twentyFourHoursAgo } },
+          ],
+        };
+
+    // Build orderBy based on sortBy parameter
+    let orderBy: any = [{ completed: 'asc' }];
+
+    if (sortBy === 'priority') {
+      orderBy.push({ priority: 'desc' }, { dueDate: 'asc' });
+    } else if (sortBy === 'dueDate') {
+      orderBy.push({ dueDate: 'asc' }, { priority: 'desc' });
+    } else if (sortBy === 'createdAt') {
+      orderBy.push({ createdAt: 'asc' });
+    }
+
     const tasks = await prisma.teamTask.findMany({
-      orderBy: [
-        { completed: 'asc' },
-        { priority: 'desc' },
-        { dueDate: 'asc' },
-      ],
+      where: whereClause,
+      orderBy,
     });
 
     // Fetch assigned users
@@ -143,7 +171,11 @@ export async function PATCH(request: NextRequest) {
     const updateData: any = {};
     if (title !== undefined) updateData.title = title;
     if (description !== undefined) updateData.description = description;
-    if (completed !== undefined) updateData.completed = completed;
+    if (completed !== undefined) {
+      updateData.completed = completed;
+      // Set completedAt when marking as completed, clear it when uncompleting
+      updateData.completedAt = completed ? new Date() : null;
+    }
     if (priority !== undefined) updateData.priority = priority;
     if (assignedTo !== undefined) updateData.assignedTo = assignedTo;
     if (dueDate !== undefined) updateData.dueDate = dueDate ? new Date(dueDate) : null;

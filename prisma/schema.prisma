@@ -19,6 +19,8 @@ model User {
   verificationToken      String?   @map("verification_token")
   resetPasswordToken     String?   @map("reset_password_token")
   resetPasswordExpires   DateTime? @map("reset_password_expires")
+  preferredCurrency      String?   @default("GBP") @map("preferred_currency")
+  shippingAddress        String?   @map("shipping_address") // JSON as string
   createdAt              DateTime  @default(now()) @map("created_at")
   updatedAt              DateTime  @updatedAt @map("updated_at")
 
@@ -137,10 +139,12 @@ model OrderItem {
 }
 
 model Newsletter {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now()) @map("created_at")
+  id                 String   @id @default(uuid())
+  email              String   @unique
+  active             Boolean  @default(true)
+  verified           Boolean  @default(false)
+  verificationToken  String?  @unique @map("verification_token")
+  createdAt          DateTime @default(now()) @map("created_at")
 
   @@map("newsletter")
 }
@@ -196,6 +200,7 @@ model HomepageConfig {
   featuredSubtitle     String?     @map("featured_subtitle")
   featuredDescription  String?     @map("featured_description")
   writingSection       String?     @map("writing_section")
+  purchasingEnabled    Boolean     @default(true) @map("purchasing_enabled")
   createdAt            DateTime    @default(now()) @map("created_at")
   updatedAt            DateTime    @updatedAt @map("updated_at")
 
@@ -234,6 +239,7 @@ model TeamTask {
   title       String
   description String?
   completed   Boolean  @default(false)
+  completedAt DateTime? @map("completed_at")
   assignedTo  String?  @map("assigned_to") // User ID if assigned
   priority    String   @default("medium") // low, medium, high
   dueDate     DateTime? @map("due_date")
@@ -250,10 +256,47 @@ model PersonalTask {
   title       String
   description String?
   completed   Boolean  @default(false)
+  completedAt DateTime? @map("completed_at")
   priority    String   @default("medium") // low, medium, high
   dueDate     DateTime? @map("due_date")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@map("personal_tasks")
+}
+
+model PageView {
+  id          String   @id @default(uuid())
+  path        String
+  referrer    String?
+  utmSource   String?  @map("utm_source")
+  utmMedium   String?  @map("utm_medium")
+  utmCampaign String?  @map("utm_campaign")
+  country     String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("page_views")
+}
+
+model OrderReferral {
+  id          String   @id @default(uuid())
+  orderId     String   @map("order_id")
+  referrer    String?
+  utmSource   String?  @map("utm_source")
+  utmMedium   String?  @map("utm_medium")
+  utmCampaign String?  @map("utm_campaign")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("order_referrals")
+}
+
+model NewsletterEmail {
+  id          String   @id @default(uuid())
+  subject     String
+  content     String   // HTML content
+  sentCount   Int      @default(0) @map("sent_count")
+  sentBy      String   @map("sent_by") // User ID of sender
+  sentAt      DateTime @default(now()) @map("sent_at")
+
+  @@map("newsletter_emails")
 }

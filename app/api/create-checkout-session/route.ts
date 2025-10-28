@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { convertFromBase, getCurrencySettings } from '@/lib/currency';
+import { isSupportedCurrency } from '@/lib/geolocation';
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,10 +22,16 @@ export async function POST(request: NextRequest) {
       discount,
       promoCode,
       promoCodeId,
+      currency: userCurrency,
     } = body;
 
-    const { active } = getCurrencySettings();
-    const toMinorUnits = (amount: number) => Math.round(convertFromBase(amount, active) * 100);
+    // Use user's currency if provided and supported, otherwise fall back to environment setting
+    const { active: defaultCurrency } = getCurrencySettings();
+    const activeCurrency = userCurrency && isSupportedCurrency(userCurrency)
+      ? userCurrency.toUpperCase()
+      : defaultCurrency;
+
+    const toMinorUnits = (amount: number) => Math.round(convertFromBase(amount, activeCurrency) * 100);
 
     const discountValue = Math.max(0, Number(discount) || 0);
     let couponId: string | null = null;
@@ -32,7 +39,7 @@ export async function POST(request: NextRequest) {
     if (discountValue > 0) {
       const coupon = await stripe.coupons.create({
         amount_off: toMinorUnits(discountValue),
-        currency: active.toLowerCase(),
+        currency: activeCurrency.toLowerCase(),
         duration: 'once',
         name: promoCode || 'Checkout Discount',
       });
@@ -62,7 +69,7 @@ export async function POST(request: NextRequest) {
     const normalizedShipping = Number(shipping) || 0;
     const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = items.map((item: any) => ({
       price_data: {
-        currency: active.toLowerCase(),
+        currency: activeCurrency.toLowerCase(),
         product_data: {
           name: item.productName,
           images: getFullImageUrl(item.productImage),
@@ -76,7 +83,7 @@ export async function POST(request: NextRequest) {
     if (normalizedShipping > 0) {
       lineItems.push({
         price_data: {
-          currency: active.toLowerCase(),
+          currency: activeCurrency.toLowerCase(),
           product_data: {
             name: 'Shipping',
           },

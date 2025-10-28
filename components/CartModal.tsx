@@ -3,10 +3,11 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/contexts/CartContext";
 import Link from "next/link";
-import { formatCurrency } from "@/lib/currency";
+import { useCurrencyFormat } from "@/hooks/useCurrencyFormat";
 
 export default function CartModal() {
   const { items, removeFromCart, updateQuantity, totalPrice, isCartOpen, closeCart } = useCart();
+  const { formatCurrency } = useCurrencyFormat();
 
   return (
     <AnimatePresence>

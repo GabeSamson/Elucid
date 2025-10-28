@@ -8,6 +8,7 @@ import { useSession } from "next-auth/react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { formatCurrency, getShippingFee, getFreeShippingThreshold } from "@/lib/currency";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 type DiscountType = 'PERCENTAGE' | 'FIXED';
 
@@ -22,14 +23,48 @@ interface AppliedPromo {
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, totalPrice, clearCart } = useCart();
+  const searchParams = useSearchParams();
+  const isBuyNow = searchParams.get('buyNow') === 'true';
+  const { items: cartItems, totalPrice: cartTotal, clearCart } = useCart();
   const { data: session, status } = useSession();
+  const { currency } = useCurrency();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [promoInput, setPromoInput] = useState("");
   const [promoError, setPromoError] = useState<string | null>(null);
   const [appliedPromo, setAppliedPromo] = useState<AppliedPromo | null>(null);
   const [applyingPromo, setApplyingPromo] = useState(false);
+  const [saveAddress, setSaveAddress] = useState(false);
+  const [buyNowProduct, setBuyNowProduct] = useState<any>(null);
+
+  // Load Buy Now product from sessionStorage
+  useEffect(() => {
+    if (isBuyNow && typeof window !== 'undefined') {
+      const stored = sessionStorage.getItem('buyNowProduct');
+      if (stored) {
+        setBuyNowProduct(JSON.parse(stored));
+      }
+    }
+  }, [isBuyNow]);
+
+  // Use Buy Now product or cart items
+  const items = isBuyNow && buyNowProduct
+    ? [{
+        product: {
+          id: buyNowProduct.productId,
+          name: buyNowProduct.productName,
+          price: buyNowProduct.productPrice,
+          images: buyNowProduct.productImage ? [buyNowProduct.productImage] : [],
+        },
+        quantity: buyNowProduct.quantity,
+        size: buyNowProduct.size,
+        color: buyNowProduct.color,
+      }]
+    : cartItems;
+
+  const totalPrice = isBuyNow && buyNowProduct
+    ? buyNowProduct.productPrice * buyNowProduct.quantity
+    : cartTotal;
 
   const [formData, setFormData] = useState({
     email: session?.user?.email || "",
@@ -75,6 +110,37 @@ useEffect(() => {
     router.push('/account?redirect=/checkout');
   }
 }, [status, router]);
+
+// Fetch and pre-fill saved shipping address
+useEffect(() => {
+  const fetchSavedAddress = async () => {
+    if (status === 'authenticated' && session?.user?.id) {
+      try {
+        const res = await fetch('/api/user/profile');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.user?.shippingAddress) {
+            const savedAddress = JSON.parse(data.user.shippingAddress);
+            setFormData({
+              email: session.user.email || "",
+              name: session.user.name || "",
+              line1: savedAddress.line1 || "",
+              line2: savedAddress.line2 || "",
+              city: savedAddress.city || "",
+              state: savedAddress.state || "",
+              postalCode: savedAddress.postalCode || "",
+              country: savedAddress.country || "GB",
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch saved address:', error);
+      }
+    }
+  };
+
+  fetchSavedAddress();
+}, [status, session]);
 
 useEffect(() => {
   if (!appliedPromo) return;
@@ -179,6 +245,7 @@ useEffect(() => {
           promoCode: appliedPromo?.code ?? null,
           promoCodeId: appliedPromo?.id ?? null,
           total,
+          currency,
         }),
       });
 
@@ -186,6 +253,32 @@ useEffect(() => {
 
       if (!res.ok) {
         throw new Error(data.error || 'Failed to create checkout session');
+      }
+
+      // Save shipping address if checkbox is checked
+      if (saveAddress && session?.user?.id) {
+        try {
+          await fetch('/api/user/shipping-address', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              line1: formData.line1,
+              line2: formData.line2,
+              city: formData.city,
+              state: formData.state,
+              postalCode: formData.postalCode,
+              country: formData.country,
+            }),
+          });
+        } catch (error) {
+          console.error('Failed to save address:', error);
+          // Don't block checkout if address save fails
+        }
+      }
+
+      // Clear buyNow sessionStorage if this was a Buy Now checkout
+      if (isBuyNow && typeof window !== 'undefined') {
+        sessionStorage.removeItem('buyNowProduct');
       }
 
       // Redirect to Stripe Checkout using the session URL
@@ -362,6 +455,17 @@ useEffect(() => {
                       autoComplete="postal-code"
                       className="w-full px-4 py-3 bg-cream-light border border-charcoal/20 focus:border-charcoal focus:outline-none"
                     />
+
+                    {/* Save Address Checkbox */}
+                    <label className="flex items-center gap-2 text-sm text-charcoal cursor-pointer pt-2">
+                      <input
+                        type="checkbox"
+                        checked={saveAddress}
+                        onChange={(e) => setSaveAddress(e.target.checked)}
+                        className="w-4 h-4 rounded border-charcoal/30 text-charcoal focus:ring-charcoal"
+                      />
+                      <span>Save this address for next time</span>
+                    </label>
                   </div>
                 </div>
 
