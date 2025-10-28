@@ -43,8 +43,12 @@ export default function Newsletter() {
 
       if (res.ok) {
         setMessage(data.message || 'Thanks for subscribing!');
-        setAlreadySubscribed(false);
-      } else if (
+        setAlreadySubscribed(Boolean(data.alreadySubscribed));
+        setError("");
+        return;
+      }
+
+      if (
         typeof data.error === 'string' &&
         data.error.toLowerCase().includes('already subscribed')
       ) {
@@ -52,9 +56,11 @@ export default function Newsletter() {
         setAlreadySubscribed(true);
         setError("");
       } else {
+        setAlreadySubscribed(false);
         setError(data.error || 'Failed to subscribe');
       }
     } catch (err) {
+      setAlreadySubscribed(false);
       setError('An unexpected error occurred');
     } finally {
       setLoading(false);
@@ -76,6 +82,9 @@ export default function Newsletter() {
   }, [status]);
 
   const handleSubscribe = () => {
+    setMessage("");
+    setError("");
+
     if (alreadySubscribed) {
       return;
     }
