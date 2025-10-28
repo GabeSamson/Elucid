@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useEffect, useState, Suspense } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCart } from "@/contexts/CartContext";
 import { useSession } from "next-auth/react";
 import Navigation from "@/components/Navigation";
