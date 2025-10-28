@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { SessionProvider } from "next-auth/react";
 import { CartProvider } from "@/contexts/CartContext";
 import { CurrencyInitializer } from "./CurrencyInitializer";
@@ -10,7 +11,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <SessionProvider>
       <CurrencyInitializer>
         <CartProvider>
-          <PageViewTracker />
+          <Suspense fallback={null}>
+            <PageViewTracker />
+          </Suspense>
           {children}
         </CartProvider>
       </CurrencyInitializer>
