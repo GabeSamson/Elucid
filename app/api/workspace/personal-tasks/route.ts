@@ -51,18 +51,37 @@ export async function GET(request: NextRequest) {
     // Build orderBy based on sortBy parameter
     let orderBy: any = [{ completed: 'asc' }];
 
-    if (sortBy === 'priority') {
-      orderBy.push({ priority: 'desc' }, { dueDate: 'asc' });
-    } else if (sortBy === 'dueDate') {
-      orderBy.push({ dueDate: 'asc' }, { priority: 'desc' });
+    if (sortBy === 'dueDate') {
+      orderBy.push({ dueDate: 'asc' });
     } else if (sortBy === 'createdAt') {
       orderBy.push({ createdAt: 'asc' });
     }
 
-    const tasks = await prisma.personalTask.findMany({
+    let tasks = await prisma.personalTask.findMany({
       where: whereClause,
       orderBy,
     });
+
+    // For priority sorting, we need to sort in JavaScript since DB stores as string
+    if (sortBy === 'priority') {
+      const priorityOrder: Record<string, number> = { high: 3, medium: 2, low: 1 };
+      tasks = tasks.sort((a, b) => {
+        // First sort by completed status (already handled by DB)
+        if (a.completed !== b.completed) {
+          return a.completed ? 1 : -1;
+        }
+        // Then by priority (high to low)
+        const priorityDiff = priorityOrder[b.priority] - priorityOrder[a.priority];
+        if (priorityDiff !== 0) return priorityDiff;
+        // Then by due date (earliest first)
+        if (a.dueDate && b.dueDate) {
+          return a.dueDate.getTime() - b.dueDate.getTime();
+        }
+        if (a.dueDate) return -1;
+        if (b.dueDate) return 1;
+        return 0;
+      });
+    }
 
     const serializedTasks = tasks.map((task) => ({
       ...task,
