@@ -140,6 +140,14 @@ export async function POST(request: NextRequest) {
       sendOrderThankYouEmail({
         to: normalizedEmail,
         name,
+        items: order.items.map((item: any) => ({
+          productName: item.productName,
+          quantity: item.quantity,
+          size: item.size,
+          color: item.color,
+          priceAtPurchase: item.priceAtPurchase,
+        })),
+        total: order.total,
       }).catch((emailError) => {
         console.error('Failed to queue thank-you email:', emailError);
       });

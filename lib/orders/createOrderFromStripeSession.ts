@@ -247,6 +247,14 @@ export async function createOrderFromStripeSession(
       await sendOrderThankYouEmail({
         to: order.email,
         name: order.name,
+        items: order.items.map(item => ({
+          productName: item.productName,
+          quantity: item.quantity,
+          size: item.size,
+          color: item.color,
+          priceAtPurchase: item.priceAtPurchase,
+        })),
+        total: order.total,
       });
     } catch (emailError) {
       console.error('Failed to send thank-you email after Stripe checkout:', emailError);
