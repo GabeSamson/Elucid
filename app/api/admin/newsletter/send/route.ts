@@ -58,25 +58,41 @@ export async function POST(request: NextRequest) {
     // Initialize Resend
     const resend = new Resend(process.env.RESEND_API_KEY);
 
-    // Send newsletter to all subscribers
-    const emailPromises = subscribers.map(async (subscriber) => {
-      try {
-        const result = await resend.emails.send({
-          from: "Elucid LDN <hello@elucid.london>",
-          to: subscriber.email,
-          subject: subject,
-          html: content,
-        });
-        console.log(`Newsletter sent to ${subscriber.email}:`, result);
-        return result;
-      } catch (error) {
-        console.error(`Failed to send newsletter to ${subscriber.email}:`, error);
-        throw error;
-      }
-    });
+    // Send newsletter to all subscribers with rate limiting
+    // Resend free tier: 2 emails per second, so we send in batches with delays
+    const results = [];
+    const batchSize = 2;
+    const delayMs = 1100; // Slightly over 1 second to be safe
 
-    // Wait for all emails to send
-    const results = await Promise.all(emailPromises);
+    for (let i = 0; i < subscribers.length; i += batchSize) {
+      const batch = subscribers.slice(i, i + batchSize);
+
+      const batchPromises = batch.map(async (subscriber) => {
+        try {
+          const result = await resend.emails.send({
+            from: "Elucid LDN <hello@elucid.london>",
+            to: subscriber.email,
+            subject: subject,
+            html: content,
+          });
+          console.log(`Newsletter sent to ${subscriber.email}:`, result);
+          return result;
+        } catch (error) {
+          console.error(`Failed to send newsletter to ${subscriber.email}:`, error);
+          throw error;
+        }
+      });
+
+      const batchResults = await Promise.all(batchPromises);
+      results.push(...batchResults);
+
+      // Add delay between batches (except for the last batch)
+      if (i + batchSize < subscribers.length) {
+        console.log(`Sent batch ${Math.floor(i / batchSize) + 1}, waiting ${delayMs}ms before next batch...`);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    }
+
     console.log(`Successfully sent ${results.length} newsletters`);
 
     // Store newsletter record
