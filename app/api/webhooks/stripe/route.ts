@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createOrderFromStripeSession } from '@/lib/orders/createOrderFromStripeSession';
 
+// Stripe webhook handler
 export async function POST(request: NextRequest) {
   try {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
