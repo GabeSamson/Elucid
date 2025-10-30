@@ -59,17 +59,25 @@ export async function POST(request: NextRequest) {
     const resend = new Resend(process.env.RESEND_API_KEY);
 
     // Send newsletter to all subscribers
-    const emailPromises = subscribers.map((subscriber) =>
-      resend.emails.send({
-        from: "Elucid LDN <hello@elucid.london>",
-        to: subscriber.email,
-        subject: subject,
-        html: content,
-      })
-    );
+    const emailPromises = subscribers.map(async (subscriber) => {
+      try {
+        const result = await resend.emails.send({
+          from: "Elucid LDN <hello@elucid.london>",
+          to: subscriber.email,
+          subject: subject,
+          html: content,
+        });
+        console.log(`Newsletter sent to ${subscriber.email}:`, result);
+        return result;
+      } catch (error) {
+        console.error(`Failed to send newsletter to ${subscriber.email}:`, error);
+        throw error;
+      }
+    });
 
     // Wait for all emails to send
-    await Promise.all(emailPromises);
+    const results = await Promise.all(emailPromises);
+    console.log(`Successfully sent ${results.length} newsletters`);
 
     // Store newsletter record
     await prisma.newsletterEmail.create({
