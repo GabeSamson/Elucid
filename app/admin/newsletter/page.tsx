@@ -132,14 +132,18 @@ export default function AdminNewsletterPage() {
 
       setFeedback({
         type: 'success',
-        message: `Newsletter sent to ${data.sentCount} subscriber(s)`,
+        message: `Newsletter sent successfully to ${data.sentCount} subscriber(s)!`,
       });
-      setShowComposer(false);
-      setEmailSubject('');
-      setEmailContent('');
+
+      // Delay closing the modal to show success message
+      setTimeout(() => {
+        setShowComposer(false);
+        setEmailSubject('');
+        setEmailContent('');
+        setSending(false);
+      }, 2000);
     } catch (error: any) {
       setFeedback({ type: 'error', message: error.message || 'Failed to send newsletter' });
-    } finally {
       setSending(false);
     }
   };
@@ -246,14 +250,30 @@ export default function AdminNewsletterPage() {
             <div className="flex items-center justify-between mb-6">
               <h2 className="font-serif text-3xl text-charcoal-dark">Compose Newsletter</h2>
               <button
-                onClick={() => setShowComposer(false)}
-                className="text-charcoal/60 hover:text-charcoal"
+                onClick={() => {
+                  setShowComposer(false);
+                  setFeedback(null);
+                }}
+                disabled={sending}
+                className="text-charcoal/60 hover:text-charcoal disabled:opacity-50"
               >
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
+
+            {feedback && (
+              <div
+                className={`border px-4 py-3 text-sm mb-6 ${
+                  feedback.type === 'success'
+                    ? 'bg-beige/20 border-beige text-charcoal'
+                    : 'bg-cream-dark border-charcoal text-charcoal-dark'
+                }`}
+              >
+                {feedback.message}
+              </div>
+            )}
 
             <div className="space-y-4 mb-6">
               <div>
@@ -290,8 +310,12 @@ export default function AdminNewsletterPage() {
                 {showPreview ? 'Hide Preview' : 'Show Preview'}
               </button>
               <button
-                onClick={() => setShowComposer(false)}
-                className="px-6 py-3 border border-charcoal/20 text-charcoal hover:border-charcoal uppercase tracking-wider text-sm"
+                onClick={() => {
+                  setShowComposer(false);
+                  setFeedback(null);
+                }}
+                disabled={sending}
+                className="px-6 py-3 border border-charcoal/20 text-charcoal hover:border-charcoal uppercase tracking-wider text-sm disabled:opacity-50"
               >
                 Cancel
               </button>
