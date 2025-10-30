@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     // Send newsletter to all subscribers
     const emailPromises = subscribers.map((subscriber) =>
       resend.emails.send({
-        from: "Elucid LDN <noreply@elucid.uk>",
+        from: "Elucid LDN <hello@elucid.london>",
         to: subscriber.email,
         subject: subject,
         html: content,
