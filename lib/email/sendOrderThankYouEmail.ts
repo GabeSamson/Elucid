@@ -57,7 +57,7 @@ export async function sendOrderThankYouEmail({
         item.size ? `Size: ${item.size}` : null,
         item.color ? `Color: ${item.color}` : null,
       ].filter(Boolean).join(', ');
-      return `- ${item.productName} x${item.quantity}${specs ? ` (${specs})` : ''} - £${(item.priceAtPurchase * item.quantity / 100).toFixed(2)}`;
+      return `- ${item.productName} x${item.quantity}${specs ? ` (${specs})` : ''} - £${(item.priceAtPurchase * item.quantity).toFixed(2)}`;
     }).join('\n');
 
     const textBody = [
@@ -70,11 +70,11 @@ export async function sendOrderThankYouEmail({
       'Your Order:',
       itemsText,
       '',
-      `Subtotal: £${(subtotal / 100).toFixed(2)}`,
-      discount && discount > 0 ? `Discount: -£${(discount / 100).toFixed(2)}` : null,
-      `Shipping: £${(shipping / 100).toFixed(2)}`,
-      `Tax: £${(tax / 100).toFixed(2)}`,
-      `Total: £${(total / 100).toFixed(2)}`,
+      `Subtotal: £${subtotal.toFixed(2)}`,
+      discount && discount > 0 ? `Discount: -£${discount.toFixed(2)}` : null,
+      `Shipping: £${shipping.toFixed(2)}`,
+      `Tax: £${tax.toFixed(2)}`,
+      `Total: £${total.toFixed(2)}`,
       '',
       'We will let you know as soon as your order is on its way.',
       '',
@@ -101,7 +101,7 @@ export async function sendOrderThankYouEmail({
             </div>
           </td>
           <td style="padding: 12px 0; text-align: right; border-bottom: 1px solid #E8E5E0;">
-            £${((item.priceAtPurchase * item.quantity) / 100).toFixed(2)}
+            £${(item.priceAtPurchase * item.quantity).toFixed(2)}
           </td>
         </tr>
       `;
@@ -128,25 +128,25 @@ export async function sendOrderThankYouEmail({
             <table style="width: 100%; font-size: 14px;">
               <tr>
                 <td style="padding: 4px 0;">Subtotal:</td>
-                <td style="text-align: right;">£${(subtotal / 100).toFixed(2)}</td>
+                <td style="text-align: right;">£${subtotal.toFixed(2)}</td>
               </tr>
               ${discount && discount > 0 ? `
               <tr>
                 <td style="padding: 4px 0; color: #B5956D;">Discount:</td>
-                <td style="text-align: right; color: #B5956D;">-£${(discount / 100).toFixed(2)}</td>
+                <td style="text-align: right; color: #B5956D;">-£${discount.toFixed(2)}</td>
               </tr>
               ` : ''}
               <tr>
                 <td style="padding: 4px 0;">Shipping:</td>
-                <td style="text-align: right;">£${(shipping / 100).toFixed(2)}</td>
+                <td style="text-align: right;">£${shipping.toFixed(2)}</td>
               </tr>
               <tr>
                 <td style="padding: 4px 0;">Tax:</td>
-                <td style="text-align: right;">£${(tax / 100).toFixed(2)}</td>
+                <td style="text-align: right;">£${tax.toFixed(2)}</td>
               </tr>
               <tr style="font-weight: bold; font-size: 16px;">
                 <td style="padding: 12px 0 0 0;">Total:</td>
-                <td style="text-align: right; padding: 12px 0 0 0;">£${(total / 100).toFixed(2)}</td>
+                <td style="text-align: right; padding: 12px 0 0 0;">£${total.toFixed(2)}</td>
               </tr>
             </table>
           </div>
