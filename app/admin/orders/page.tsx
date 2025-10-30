@@ -351,11 +351,20 @@ export default function AdminOrdersPage() {
 
               <div className="pt-4 border-t">
                 <strong className="block mb-2">Items:</strong>
-                {selectedOrder.items.map((item, idx) => (
-                  <div key={idx} className="ml-4 mb-2">
-                    • {item.productName} x{item.quantity} - {formatCurrency(item.priceAtPurchase * item.quantity)}
-                  </div>
-                ))}
+                {selectedOrder.items.map((item, idx) => {
+                  const specs = [
+                    item.size ? `Size: ${item.size}` : null,
+                    item.color ? `Color: ${item.color}` : null,
+                  ].filter(Boolean).join(' • ');
+
+                  return (
+                    <div key={idx} className="ml-4 mb-2">
+                      • {item.productName} x{item.quantity}
+                      {specs && <span className="text-charcoal-light"> ({specs})</span>}
+                      <span className="ml-2">- {formatCurrency(item.priceAtPurchase * item.quantity)}</span>
+                    </div>
+                  );
+                })}
               </div>
 
               <div className="pt-4 border-t">
