@@ -20,11 +20,10 @@ export async function GET() {
     }
 
     const baseCurrency = (process.env.NEXT_PUBLIC_BASE_CURRENCY || 'GBP').toUpperCase();
-    const symbols = Array.from(new Set([...SUPPORTED_CODES, baseCurrency])).join(',');
 
-    // Using exchangerate.host (free, no API key, generous limits)
+    // Using exchangerate-api.com (free tier: 1500 requests/month, no API key needed)
     const response = await fetch(
-      `https://api.exchangerate.host/latest?base=${baseCurrency}&symbols=${symbols}`,
+      `https://open.er-api.com/v6/latest/${baseCurrency}`,
       { next: { revalidate: 3600 } } // Cache externally for 1 hour
     );
 
@@ -34,7 +33,7 @@ export async function GET() {
 
     const data = await response.json();
 
-    if (data.success === false || !data.rates) {
+    if (data.result !== 'success' || !data.rates) {
       throw new Error('Exchange rate API returned an error response');
     }
 
@@ -60,9 +59,9 @@ export async function GET() {
     return NextResponse.json({
       rates,
       cached: false,
-      timestamp: data.date ? new Date(data.date).toISOString() : undefined,
+      timestamp: data.time_last_update_utc || new Date().toISOString(),
       source: 'live',
-      provider: 'exchangerate.host',
+      provider: 'exchangerate-api.com',
     });
 
   } catch (error) {
