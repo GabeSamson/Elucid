@@ -20,6 +20,9 @@ function OrderSuccessContent() {
       return;
     }
 
+    // Clear cart immediately since payment succeeded
+    clearCart();
+
     let cancelled = false;
 
     const confirmOrder = async () => {
@@ -37,7 +40,6 @@ function OrderSuccessContent() {
 
         if (!cancelled) {
           setConfirmationState('success');
-          clearCart();
         }
       } catch (error) {
         console.error('Order confirmation failed:', error);
