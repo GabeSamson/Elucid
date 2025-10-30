@@ -6,7 +6,7 @@ import { createOrderFromStripeSession } from '@/lib/orders/createOrderFromStripe
 export async function POST(request: NextRequest) {
   try {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-      apiVersion: '2025-09-30.clover',
+      apiVersion: '2025-10-29.clover',
     });
     const body = await request.json();
     const sessionId: string | undefined = body?.sessionId;
