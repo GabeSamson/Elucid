@@ -89,6 +89,18 @@ export async function GET(
         console.warn('Failed to parse priceOverrides for product', product.id, error);
       }
     }
+    let parsedSizeDimensions: Record<string, string> | null = null;
+    if (product.sizeDimensions) {
+      try {
+        const raw = JSON.parse(product.sizeDimensions);
+        if (raw && typeof raw === 'object') {
+          parsedSizeDimensions = raw;
+        }
+      } catch (error) {
+        console.warn('Failed to parse sizeDimensions for product', product.id, error);
+      }
+    }
+
     const productData = {
       ...product,
       images: imagePayload.defaultImages,
@@ -96,6 +108,7 @@ export async function GET(
       sizes: JSON.parse(product.sizes),
       colors: JSON.parse(product.colors),
       priceOverrides: parsedOverrides,
+      sizeDimensions: parsedSizeDimensions,
     };
 
     return NextResponse.json({ product: productData });
@@ -142,6 +155,7 @@ export async function PUT(
       targetAudience,
       priceOverrides,
       madeIn,
+      sizeDimensions,
     } = body;
 
     const toBoolean = (value: unknown, fallback: boolean) => {
@@ -239,6 +253,7 @@ export async function PUT(
         releaseDate: normalizedComingSoon ? parsedReleaseDate : null,
         targetAudience: normalizedTargetAudience,
         madeIn: madeIn && typeof madeIn === 'string' && madeIn.trim() ? madeIn.trim() : null,
+        sizeDimensions: sizeDimensions && typeof sizeDimensions === 'object' && Object.keys(sizeDimensions).length > 0 ? JSON.stringify(sizeDimensions) : null,
         priceOverrides:
           Object.keys(normalizedOverrides).length > 0
             ? JSON.stringify(normalizedOverrides)

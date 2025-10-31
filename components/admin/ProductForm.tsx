@@ -38,6 +38,7 @@ interface ProductFormData {
   releaseDate?: string | null;
   priceOverrides?: Record<string, number>;
   madeIn?: string | null;
+  sizeDimensions?: Record<string, string> | null;
 }
 
 interface ProductFormProps {
@@ -119,6 +120,11 @@ export default function ProductForm({
   );
   const [madeInText, setMadeInText] = useState<string>(
     initialData?.madeIn || 'London'
+  );
+
+  // Size dimensions state
+  const [sizeDimensions, setSizeDimensions] = useState<Record<string, string>>(
+    initialData?.sizeDimensions || {}
   );
 
   const handleOverrideChange = (currency: string, value: string) => {
@@ -281,6 +287,7 @@ useEffect(() => {
       releaseDate: normalizedReleaseDate,
       priceOverrides: Object.keys(overrides).length > 0 ? overrides : undefined,
       madeIn: madeInEnabled ? madeInText.trim() : null,
+      sizeDimensions: Object.keys(sizeDimensions).length > 0 ? sizeDimensions : null,
     });
   };
 
@@ -693,6 +700,40 @@ useEffect(() => {
           )}
         </div>
       </div>
+
+      {/* Size Dimensions */}
+      {sizes.length > 0 && (
+        <div className="bg-cream p-6 rounded-lg border border-charcoal/20">
+          <h2 className="font-serif text-2xl text-charcoal mb-2">
+            Size Dimensions
+          </h2>
+          <p className="text-sm text-charcoal/70 mb-6">
+            Add measurements for each size (e.g., "Length: 28in, Width: 20in, Chest: 38in")
+          </p>
+
+          <div className="space-y-4">
+            {sizes.map((size) => (
+              <div key={size}>
+                <label className="block text-sm font-medium text-charcoal mb-2">
+                  {size} Dimensions
+                </label>
+                <input
+                  type="text"
+                  value={sizeDimensions[size] || ''}
+                  onChange={(e) =>
+                    setSizeDimensions((prev) => ({
+                      ...prev,
+                      [size]: e.target.value,
+                    }))
+                  }
+                  className="input-modern"
+                  placeholder="e.g., Length: 28in, Width: 20in, Chest: 38in"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Colors */}
       <div className="bg-cream p-6 rounded-lg border border-charcoal/20">

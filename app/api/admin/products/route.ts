@@ -65,6 +65,7 @@ export async function POST(request: NextRequest) {
       targetAudience,
       priceOverrides,
       madeIn,
+      sizeDimensions,
     } = body;
 
     const toBoolean = (value: unknown, fallback: boolean) => {
@@ -157,6 +158,7 @@ export async function POST(request: NextRequest) {
         releaseDate: normalizedComingSoon ? parsedReleaseDate : null,
         targetAudience: normalizedTargetAudience,
         madeIn: madeIn && typeof madeIn === 'string' && madeIn.trim() ? madeIn.trim() : null,
+        sizeDimensions: sizeDimensions && typeof sizeDimensions === 'object' && Object.keys(sizeDimensions).length > 0 ? JSON.stringify(sizeDimensions) : null,
         priceOverrides:
           Object.keys(normalizedOverrides).length > 0
             ? JSON.stringify(normalizedOverrides)

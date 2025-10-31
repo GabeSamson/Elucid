@@ -35,6 +35,7 @@ export interface Product {
   comingSoon: boolean;
   targetAudience: 'MALE' | 'FEMALE' | 'UNISEX';
   madeIn?: string | null;
+  sizeDimensions?: Record<string, string> | null;
   releaseDate?: string | null;
   createdAt: string;
   updatedAt: string;
