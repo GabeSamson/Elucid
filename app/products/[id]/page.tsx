@@ -30,6 +30,7 @@ export default function ProductPage() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [purchasingEnabled, setPurchasingEnabled] = useState(true);
+  const [detailsExpanded, setDetailsExpanded] = useState(false);
 
   useEffect(() => {
     fetchProduct();
@@ -367,6 +368,64 @@ export default function ProductPage() {
                   {product.description}
                 </p>
               </div>
+
+              {/* Product Details (Materials & Size Dimensions) */}
+              {(product.materials || (product.sizeDimensions && Object.keys(product.sizeDimensions).length > 0)) && (
+                <div className="mb-8 border-t border-b border-charcoal/10 py-6">
+                  <button
+                    onClick={() => setDetailsExpanded(!detailsExpanded)}
+                    className="w-full flex items-center justify-between text-left group"
+                  >
+                    <span className="text-sm uppercase tracking-wider text-charcoal font-medium">
+                      Product Details
+                    </span>
+                    <span className="text-charcoal-light group-hover:text-charcoal transition-colors">
+                      {detailsExpanded ? '−' : '+'}
+                    </span>
+                  </button>
+
+                  {detailsExpanded && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="mt-4 space-y-4"
+                    >
+                      {product.materials && (
+                        <div>
+                          <h4 className="text-xs uppercase tracking-wider text-charcoal/60 mb-1">
+                            Materials
+                          </h4>
+                          <p className="text-charcoal">
+                            {product.materials}
+                          </p>
+                        </div>
+                      )}
+
+                      {product.sizeDimensions && Object.keys(product.sizeDimensions).length > 0 && (
+                        <div>
+                          <h4 className="text-xs uppercase tracking-wider text-charcoal/60 mb-2">
+                            Size Guide
+                          </h4>
+                          <div className="space-y-2">
+                            {Object.entries(product.sizeDimensions).map(([size, dimensions]) => (
+                              <div key={size} className="flex gap-2">
+                                <span className="font-medium text-charcoal min-w-[3rem]">
+                                  {size}:
+                                </span>
+                                <span className="text-charcoal-light">
+                                  {dimensions}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+                </div>
+              )}
 
               {/* Size Selection */}
               {product.sizes && product.sizes.length > 0 && (
