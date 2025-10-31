@@ -58,6 +58,7 @@ model Product {
   sizes           String    @default("[]") // JSON array as string
   colors          String    @default("[]") // JSON array with name and hexCode: [{"name": "Navy Blue", "hexCode": "#001F3F"}]
   sizeDimensions  String?   @map("size_dimensions") // JSON map of size -> dimensions: {"S": "Length: 28in, Width: 20in"}
+  materials       String?   // Material specifications (e.g., "100% Cotton", "Organic Cotton Blend")
   featured        Boolean   @default(false)
   active          Boolean   @default(true)
   includeShipping Boolean   @default(true) @map("include_shipping")

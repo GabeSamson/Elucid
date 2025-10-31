@@ -36,6 +36,7 @@ export interface Product {
   targetAudience: 'MALE' | 'FEMALE' | 'UNISEX';
   madeIn?: string | null;
   sizeDimensions?: Record<string, string> | null;
+  materials?: string | null;
   releaseDate?: string | null;
   createdAt: string;
   updatedAt: string;

@@ -156,6 +156,7 @@ export async function PUT(
       priceOverrides,
       madeIn,
       sizeDimensions,
+      materials,
     } = body;
 
     const toBoolean = (value: unknown, fallback: boolean) => {
@@ -254,6 +255,7 @@ export async function PUT(
         targetAudience: normalizedTargetAudience,
         madeIn: madeIn && typeof madeIn === 'string' && madeIn.trim() ? madeIn.trim() : null,
         sizeDimensions: sizeDimensions && typeof sizeDimensions === 'object' && Object.keys(sizeDimensions).length > 0 ? JSON.stringify(sizeDimensions) : null,
+        materials: materials && typeof materials === 'string' && materials.trim() ? materials.trim() : null,
         priceOverrides:
           Object.keys(normalizedOverrides).length > 0
             ? JSON.stringify(normalizedOverrides)

@@ -39,6 +39,7 @@ interface ProductFormData {
   priceOverrides?: Record<string, number>;
   madeIn?: string | null;
   sizeDimensions?: Record<string, string> | null;
+  materials?: string | null;
 }
 
 interface ProductFormProps {
@@ -125,6 +126,11 @@ export default function ProductForm({
   // Size dimensions state
   const [sizeDimensions, setSizeDimensions] = useState<Record<string, string>>(
     initialData?.sizeDimensions || {}
+  );
+
+  // Materials state
+  const [materials, setMaterials] = useState<string>(
+    initialData?.materials || ''
   );
 
   const handleOverrideChange = (currency: string, value: string) => {
@@ -288,6 +294,7 @@ useEffect(() => {
       priceOverrides: Object.keys(overrides).length > 0 ? overrides : undefined,
       madeIn: madeInEnabled ? madeInText.trim() : null,
       sizeDimensions: Object.keys(sizeDimensions).length > 0 ? sizeDimensions : null,
+      materials: materials.trim() || null,
     });
   };
 
@@ -538,6 +545,23 @@ useEffect(() => {
                 </p>
               </div>
             )}
+          </div>
+
+          {/* Materials */}
+          <div>
+            <label className="block text-sm font-medium text-charcoal mb-2">
+              Materials (optional)
+            </label>
+            <input
+              type="text"
+              value={materials}
+              onChange={(e) => setMaterials(e.target.value)}
+              className="input-modern"
+              placeholder="e.g., 100% Cotton, Organic Cotton Blend"
+            />
+            <p className="text-xs text-charcoal/60 mt-1">
+              Material specifications shown on the product page
+            </p>
           </div>
 
           {/* Toggles */}
