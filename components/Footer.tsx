@@ -12,8 +12,11 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
           <div>
             <h3 className="font-serif text-3xl mb-4">ELUCID</h3>
-            <p className="text-cream/60 text-sm">
-              Modern streetwear. Est. London.
+            <p className="text-cream/60 text-sm mb-3">
+              Modern streetwear.
+            </p>
+            <p className="text-cream text-sm font-medium uppercase tracking-wider">
+              Made in London
             </p>
           </div>
 

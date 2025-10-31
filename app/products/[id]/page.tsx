@@ -312,6 +312,14 @@ export default function ProductPage() {
                 <span className="px-2 py-1 border border-charcoal/20 text-charcoal-dark rounded">
                   {audienceLabel}
                 </span>
+                {product.madeIn && (
+                  <>
+                    <span>•</span>
+                    <span className="px-2 py-1 border border-charcoal/20 text-charcoal-dark rounded">
+                      Made in {product.madeIn}
+                    </span>
+                  </>
+                )}
               </div>
 
               {/* Price */}

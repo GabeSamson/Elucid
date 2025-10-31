@@ -32,6 +32,7 @@ interface ProductFormData {
   targetAudience: 'MALE' | 'FEMALE' | 'UNISEX';
   releaseDate?: string | null;
   priceOverrides?: Record<string, number>;
+  madeIn?: string | null;
 }
 
 interface NewProductFormProps {

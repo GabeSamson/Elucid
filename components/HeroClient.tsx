@@ -104,7 +104,7 @@ export default function HeroClient({
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, ease: "easeOut" }}
-          className="mb-12 sm:mb-14 flex justify-center"
+          className="mb-6 sm:mb-8 flex justify-center"
         >
           <img
             src="/logo.svg"
@@ -113,6 +113,17 @@ export default function HeroClient({
             onContextMenu={(e) => e.preventDefault()}
             className="w-[90vw] max-w-[420px] sm:w-64 sm:max-w-none md:w-80 lg:w-[520px] xl:w-[640px] drop-shadow-2xl invert brightness-0 contrast-200 select-none pointer-events-none transform -translate-x-[10px]"
           />
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+          className="mb-12 sm:mb-14"
+        >
+          <p className="text-cream-light/60 text-sm md:text-base font-light tracking-[0.35em] uppercase">
+            Made in London
+          </p>
         </motion.div>
 
         <motion.div

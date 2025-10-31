@@ -63,6 +63,7 @@ model Product {
   comingSoon      Boolean   @default(false) @map("coming_soon")
   releaseDate     DateTime? @map("release_date")
   targetAudience  ProductAudience @default(UNISEX) @map("target_audience")
+  madeIn          String?   @map("made_in") // e.g., "London"
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 

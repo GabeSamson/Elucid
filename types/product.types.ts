@@ -34,6 +34,7 @@ export interface Product {
   includeShipping: boolean;
   comingSoon: boolean;
   targetAudience: 'MALE' | 'FEMALE' | 'UNISEX';
+  madeIn?: string | null;
   releaseDate?: string | null;
   createdAt: string;
   updatedAt: string;

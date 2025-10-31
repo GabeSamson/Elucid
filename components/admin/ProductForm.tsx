@@ -37,6 +37,7 @@ interface ProductFormData {
   targetAudience: 'MALE' | 'FEMALE' | 'UNISEX';
   releaseDate?: string | null;
   priceOverrides?: Record<string, number>;
+  madeIn?: string | null;
 }
 
 interface ProductFormProps {
@@ -111,6 +112,14 @@ export default function ProductForm({
     initialData?.releaseDate ? initialData.releaseDate.slice(0, 10) : ''
   );
   const watchedComingSoon = watch('comingSoon', initialData?.comingSoon ?? false);
+
+  // Made in state
+  const [madeInEnabled, setMadeInEnabled] = useState<boolean>(
+    !!initialData?.madeIn
+  );
+  const [madeInText, setMadeInText] = useState<string>(
+    initialData?.madeIn || 'London'
+  );
 
   const handleOverrideChange = (currency: string, value: string) => {
     setOverrideInputs((prev) => {
@@ -271,6 +280,7 @@ useEffect(() => {
       variants,
       releaseDate: normalizedReleaseDate,
       priceOverrides: Object.keys(overrides).length > 0 ? overrides : undefined,
+      madeIn: madeInEnabled ? madeInText.trim() : null,
     });
   };
 
@@ -487,6 +497,40 @@ useEffect(() => {
             <p className="text-xs text-charcoal/60 mt-1">
               Controls where the product is highlighted in gender-specific views.
             </p>
+          </div>
+
+          {/* Made in location */}
+          <div className="border border-charcoal/10 bg-cream-light p-4">
+            <label className="flex items-center gap-2 cursor-pointer mb-3">
+              <input
+                type="checkbox"
+                checked={madeInEnabled}
+                onChange={(e) => {
+                  setMadeInEnabled(e.target.checked);
+                  if (!e.target.checked) {
+                    setMadeInText('London');
+                  }
+                }}
+                className="w-4 h-4 rounded border-charcoal/30 text-charcoal focus:ring-charcoal"
+              />
+              <span className="text-sm font-medium text-charcoal">
+                Made in...
+              </span>
+            </label>
+            {madeInEnabled && (
+              <div>
+                <input
+                  type="text"
+                  value={madeInText}
+                  onChange={(e) => setMadeInText(e.target.value)}
+                  className="input-modern"
+                  placeholder="e.g., London"
+                />
+                <p className="text-xs text-charcoal/60 mt-2">
+                  Display a &ldquo;Made in...&rdquo; badge on the product page.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Toggles */}
