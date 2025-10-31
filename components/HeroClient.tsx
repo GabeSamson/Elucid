@@ -116,17 +116,6 @@ export default function HeroClient({
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="mb-12 sm:mb-14"
-        >
-          <p className="text-cream-light/60 text-sm md:text-base font-light tracking-[0.35em] uppercase">
-            Made in London
-          </p>
-        </motion.div>
-
-        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.9, delay: 0.1 }}
