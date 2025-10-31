@@ -122,7 +122,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Create order
-    const incomingPromoCodes = Array.isArray(promoCodes)
+    interface IncomingPromoPayload {
+      id: string | null;
+      code: string;
+      discountType: 'PERCENTAGE' | 'FIXED' | null;
+      amount: number | null;
+      discountAmount: number | null;
+    }
+
+    const incomingPromoCodes: IncomingPromoPayload[] = Array.isArray(promoCodes)
       ? promoCodes
           .map((promo: any) => {
             const code = typeof promo.code === 'string' ? promo.code.trim().toUpperCase() : null;
@@ -146,7 +154,7 @@ export async function POST(request: NextRequest) {
               discountAmount,
             };
           })
-          .filter(Boolean)
+          .filter((promo): promo is IncomingPromoPayload => promo !== null)
       : [];
 
     const promoIds = Array.from(
