@@ -72,7 +72,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
         {/* Product Info */}
         <div className="mt-4 flex min-h-[118px] flex-col gap-2 md:mt-6">
           <div className="flex items-center justify-between">
-            <h3 className="font-serif text-lg md:text-2xl text-charcoal-dark">
+            <h3 className="text-lg md:text-2xl text-charcoal-dark font-medium">
               {product.name}
             </h3>
             {isComingSoon ? (
