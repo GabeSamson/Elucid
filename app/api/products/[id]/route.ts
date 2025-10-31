@@ -27,6 +27,19 @@ const parsePriceOverrides = (raw: string | null): Record<string, number> => {
   }
 };
 
+const parseSizeDimensions = (raw: string | null): Record<string, string> | null => {
+  if (!raw) return null;
+
+  try {
+    const data = JSON.parse(raw);
+    if (!data || typeof data !== 'object') return null;
+    return data as Record<string, string>;
+  } catch (error) {
+    console.warn('Failed to parse sizeDimensions', error);
+    return null;
+  }
+};
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -62,6 +75,7 @@ export async function GET(
       colors: JSON.parse(product.colors || '[]'),
       variants: product.variants,
       priceOverrides: parsePriceOverrides(product.priceOverrides),
+      sizeDimensions: parseSizeDimensions(product.sizeDimensions),
     };
 
     return NextResponse.json({ product: productWithParsedArrays }, { status: 200 });
