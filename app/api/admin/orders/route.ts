@@ -10,7 +10,7 @@ export async function GET() {
     }
 
     const orders = await prisma.order.findMany({
-      include: { items: true },
+      include: { items: true, appliedPromos: true },
       orderBy: { createdAt: 'desc' },
     });
 

@@ -15,7 +15,7 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await request.json();
-    const { status, trackingNumber } = body;
+    const { status, trackingNumber, notes } = body;
 
     const updateData: any = {
       status: status?.toUpperCase(),
@@ -30,6 +30,11 @@ export async function PATCH(
       updateData.shippedAt = new Date();
     } else if (status?.toUpperCase() === 'SHIPPED' && trackingNumber) {
       updateData.shippedAt = new Date();
+    }
+
+    if (notes !== undefined) {
+      const trimmed = typeof notes === 'string' ? notes.trim() : '';
+      updateData.notes = trimmed.length > 0 ? trimmed : null;
     }
 
     const order = await prisma.order.update({
@@ -61,6 +66,11 @@ export async function DELETE(
       include: {
         items: true,
         promoCode: true,
+        appliedPromos: {
+          include: {
+            promoCode: true,
+          },
+        },
       },
     });
 
@@ -86,7 +96,19 @@ export async function DELETE(
         }
       }
 
-      if (order.promoCodeId) {
+      if (order.appliedPromos && order.appliedPromos.length > 0) {
+        for (const applied of order.appliedPromos) {
+          if (!applied.promoCodeId || !applied.promoCode) continue;
+          const currentRedemptions = applied.promoCode.redemptions ?? 0;
+          const nextRedemptions = Math.max(currentRedemptions - 1, 0);
+          await tx.promoCode.update({
+            where: { id: applied.promoCodeId },
+            data: {
+              redemptions: nextRedemptions,
+            },
+          });
+        }
+      } else if (order.promoCodeId) {
         const currentRedemptions = order.promoCode?.redemptions ?? 0;
         const nextRedemptions = Math.max(currentRedemptions - 1, 0);
         await tx.promoCode.update({

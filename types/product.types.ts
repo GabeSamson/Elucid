@@ -85,6 +85,7 @@ export interface Order {
   isInPerson: boolean;
   notes?: string | null;
   items: OrderItem[];
+  appliedPromos?: OrderAppliedPromo[];
   createdAt: string;
   updatedAt: string;
 }
@@ -99,5 +100,16 @@ export interface OrderItem {
   size?: string | null;
   color?: string | null;
   priceAtPurchase: number;
+  createdAt: string;
+}
+
+export interface OrderAppliedPromo {
+  id: string;
+  orderId: string;
+  promoCodeId?: string | null;
+  code: string;
+  discountType: 'PERCENTAGE' | 'FIXED';
+  amount: number;
+  discountApplied: number;
   createdAt: string;
 }

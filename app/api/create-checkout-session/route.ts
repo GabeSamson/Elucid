@@ -22,8 +22,60 @@ export async function POST(request: NextRequest) {
       discount,
       promoCode,
       promoCodeId,
+      promoCodes,
       currency: userCurrency,
     } = body;
+
+    if (!address || typeof address !== 'object') {
+      return NextResponse.json({ error: 'Shipping address is required.' }, { status: 400 });
+    }
+
+    const trimmedAddress = {
+      line1: typeof address.line1 === 'string' ? address.line1.trim() : '',
+      line2: typeof address.line2 === 'string' ? address.line2.trim() : '',
+      city: typeof address.city === 'string' ? address.city.trim() : '',
+      state: typeof address.state === 'string' ? address.state.trim() : '',
+      postalCode: typeof address.postalCode === 'string' ? address.postalCode.trim().toUpperCase() : '',
+      country: typeof address.country === 'string' ? address.country.trim().toUpperCase() : '',
+    };
+
+    const missingAddressFields = ['line1', 'city', 'state', 'postalCode', 'country'].filter(
+      (key) => !trimmedAddress[key as keyof typeof trimmedAddress]
+    );
+
+    if (missingAddressFields.length > 0) {
+      return NextResponse.json(
+        { error: 'Please provide a complete shipping address before continuing.' },
+        { status: 400 }
+      );
+    }
+
+    const normalizedPromoCodes = Array.isArray(promoCodes)
+      ? promoCodes
+          .map((promo: any) => {
+            const code = typeof promo.code === 'string' ? promo.code.trim().toUpperCase() : null;
+            const id = typeof promo.id === 'string' && promo.id.length > 0 ? promo.id : null;
+            const discountType =
+              promo.discountType === 'PERCENTAGE' || promo.discountType === 'FIXED'
+                ? promo.discountType
+                : null;
+            const amount = typeof promo.amount === 'number' ? promo.amount : null;
+            const discountAmount = typeof promo.discountAmount === 'number' ? promo.discountAmount : null;
+
+            if (!code) {
+              return null;
+            }
+
+            return {
+              id,
+              code,
+              discountType,
+              amount,
+              discountAmount,
+            };
+          })
+          .filter(Boolean)
+      : [];
 
     // Use user's currency if provided and supported, otherwise fall back to environment setting
     const { active: defaultCurrency } = getCurrencySettings();
@@ -43,6 +95,7 @@ export async function POST(request: NextRequest) {
     };
 
     const discountValue = Math.max(0, Number(discount) || 0);
+    const primaryPromo = normalizedPromoCodes[0] ?? null;
     let couponId: string | null = null;
 
     if (discountValue > 0) {
@@ -113,7 +166,7 @@ export async function POST(request: NextRequest) {
       discounts: couponId ? [{ coupon: couponId }] : undefined,
       metadata: {
         customerName: name,
-        address: JSON.stringify(address),
+        address: JSON.stringify(trimmedAddress),
         items: JSON.stringify(items),
         subtotal: subtotal.toString(),
         subtotalAfterDiscount: subtotalAfterDiscount !== undefined
@@ -123,8 +176,9 @@ export async function POST(request: NextRequest) {
         tax: tax.toString(),
         total: total.toString(),
         discount: discountValue.toString(),
-        promoCode: promoCode || '',
-        promoCodeId: promoCodeId || '',
+        promoCode: (promoCode || primaryPromo?.code || '').toString(),
+        promoCodeId: (promoCodeId || primaryPromo?.id || '').toString(),
+        promoCodes: JSON.stringify(normalizedPromoCodes),
       },
     });
 

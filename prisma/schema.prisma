@@ -120,6 +120,7 @@ model Order {
   user            User?       @relation(fields: [userId], references: [id])
   promoCode       PromoCode?  @relation(fields: [promoCodeId], references: [id])
   items           OrderItem[]
+  appliedPromos   OrderAppliedPromoCode[]
 
   @@map("orders")
 }
@@ -185,8 +186,26 @@ model PromoCode {
   updatedAt          DateTime           @updatedAt @map("updated_at")
 
   orders             Order[]
+  appliedOrders      OrderAppliedPromoCode[]
 
   @@map("promo_codes")
+}
+
+model OrderAppliedPromoCode {
+  id               String            @id @default(uuid())
+  orderId          String            @map("order_id")
+  promoCodeId      String?           @map("promo_code_id")
+  code             String
+  discountType     PromoDiscountType @map("discount_type")
+  amount           Float
+  discountApplied  Float             @default(0) @map("discount_applied")
+  createdAt        DateTime          @default(now()) @map("created_at")
+
+  order            Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  promoCode        PromoCode?        @relation(fields: [promoCodeId], references: [id])
+
+  @@index([orderId])
+  @@map("order_applied_promo_codes")
 }
 
 model HomepageConfig {

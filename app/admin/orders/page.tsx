@@ -14,6 +14,14 @@ interface OrderItem {
   color?: string | null;
 }
 
+interface AppliedPromo {
+  id: string;
+  code: string;
+  discountType: 'PERCENTAGE' | 'FIXED';
+  amount: number;
+  discountApplied: number;
+}
+
 interface Order {
   id: string;
   name: string;
@@ -29,6 +37,8 @@ interface Order {
   createdAt: string;
   items: OrderItem[];
   isInPerson: boolean;
+  notes?: string | null;
+  appliedPromos?: AppliedPromo[];
 }
 
 type OrderFilter = 'needs' | 'completed' | 'cancelled' | 'all';
@@ -43,18 +53,24 @@ export default function AdminOrdersPage() {
   const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<OrderFilter>('needs');
   const [trackingInput, setTrackingInput] = useState('');
+  const [notesDraft, setNotesDraft] = useState('');
+  const [savingNotes, setSavingNotes] = useState(false);
 
   useEffect(() => {
     fetchOrders();
   }, []);
-
+ 
   useEffect(() => {
-    if (selectedOrder?.trackingNumber) {
-      setTrackingInput(selectedOrder.trackingNumber);
+    if (selectedOrder) {
+      setTrackingInput(selectedOrder.trackingNumber ?? '');
+      setNotesDraft(selectedOrder.notes ?? '');
     } else {
       setTrackingInput('');
+      setNotesDraft('');
     }
   }, [selectedOrder]);
+
+  const notesChanged = selectedOrder ? (selectedOrder.notes ?? '') !== notesDraft.trim() : false;
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -68,6 +84,8 @@ export default function AdminOrdersPage() {
           (data.orders || []).map((order: any) => ({
             ...order,
             discount: order.discount ?? 0,
+            appliedPromos: order.appliedPromos ?? [],
+            notes: order.notes ?? null,
           }))
         );
       }
@@ -94,6 +112,42 @@ export default function AdminOrdersPage() {
     } catch (error) {
       console.error('Error updating order:', error);
       alert('Failed to update order');
+    }
+  };
+
+  const saveOrderNotes = async (orderId: string, notes: string) => {
+    const trimmedNotes = notes.trim();
+    setSavingNotes(true);
+    try {
+      const res = await fetch(`/api/admin/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes: trimmedNotes }),
+      });
+
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}));
+        throw new Error(payload.error || 'Failed to save notes');
+      }
+
+      setOrders((prev) =>
+        prev.map((order) =>
+          order.id === orderId
+            ? { ...order, notes: trimmedNotes || null }
+            : order
+        )
+      );
+      setSelectedOrder((prev) =>
+        prev && prev.id === orderId
+          ? { ...prev, notes: trimmedNotes || null }
+          : prev
+      );
+      alert('Notes saved successfully');
+    } catch (error) {
+      console.error('Error saving notes:', error);
+      alert(error instanceof Error ? error.message : 'Failed to save notes');
+    } finally {
+      setSavingNotes(false);
     }
   };
 
@@ -342,9 +396,22 @@ export default function AdminOrdersPage() {
               {(selectedOrder.discount ?? 0) > 0 && (
                 <div>
                   <strong>Discount:</strong> -{formatCurrency(selectedOrder.discount ?? 0)}
-                  {selectedOrder.promoCodeCode ? ` (${selectedOrder.promoCodeCode})` : ''}
                 </div>
               )}
+              {selectedOrder.appliedPromos && selectedOrder.appliedPromos.length > 0 ? (
+                <div className="ml-4 text-xs text-charcoal/70 space-y-1">
+                  {selectedOrder.appliedPromos.map((promo) => (
+                    <div key={`${promo.id || promo.code}-promo`}>
+                      {promo.code} – saved {formatCurrency(promo.discountApplied ?? 0)}
+                      {promo.discountType === 'PERCENTAGE' ? ` (${promo.amount}% off)` : ''}
+                    </div>
+                  ))}
+                </div>
+              ) : selectedOrder.promoCodeCode ? (
+                <div className="ml-4 text-xs text-charcoal/70">
+                  Code: {selectedOrder.promoCodeCode}
+                </div>
+              ) : null}
               <div>
                 <strong>Source:</strong> {selectedOrder.isInPerson ? 'In-Person Sale' : 'Online Order'}
               </div>
@@ -369,6 +436,30 @@ export default function AdminOrdersPage() {
 
               <div className="pt-4 border-t">
                 <strong>Total:</strong> {formatCurrency(selectedOrder.total)}
+              </div>
+
+              <div className="pt-4 border-t">
+                <label className="block mb-2">
+                  <strong>Internal Notes</strong>
+                </label>
+                <textarea
+                  value={notesDraft}
+                  onChange={(event) => setNotesDraft(event.target.value)}
+                  className="w-full min-h-[120px] px-4 py-3 bg-cream-light border border-charcoal/20 focus:border-charcoal focus:outline-none"
+                  placeholder="Add fulfillment updates, customer communication, or other internal notes."
+                />
+                <div className="flex flex-wrap items-center gap-3 mt-3">
+                  <button
+                    onClick={() => saveOrderNotes(selectedOrder.id, notesDraft)}
+                    disabled={savingNotes || !notesChanged}
+                    className="px-6 py-3 bg-charcoal-dark text-cream rounded-lg hover:bg-charcoal transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {savingNotes ? 'Saving…' : 'Save Notes'}
+                  </button>
+                  <span className="text-xs text-charcoal/60">
+                    Notes are internal only.{notesChanged ? ' Unsaved changes.' : ''}
+                  </span>
+                </div>
               </div>
 
               {!selectedOrder.isInPerson && selectedOrder.status !== 'CANCELLED' && (

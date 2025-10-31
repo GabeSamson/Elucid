@@ -21,6 +21,7 @@ interface AppliedPromo {
   discountType: DiscountType;
   amount: number;
   minimumOrderValue?: number | null;
+  discountAmount?: number;
 }
 
 function CheckoutPageContent() {
@@ -35,7 +36,7 @@ function CheckoutPageContent() {
   const [error, setError] = useState("");
   const [promoInput, setPromoInput] = useState("");
   const [promoError, setPromoError] = useState<string | null>(null);
-  const [appliedPromo, setAppliedPromo] = useState<AppliedPromo | null>(null);
+  const [appliedPromos, setAppliedPromos] = useState<AppliedPromo[]>([]);
   const [applyingPromo, setApplyingPromo] = useState(false);
   const [saveAddress, setSaveAddress] = useState(false);
   const [buyNowProduct, setBuyNowProduct] = useState<any>(null);
@@ -98,11 +99,20 @@ function CheckoutPageContent() {
       ? 'Free'
       : formatCurrency(shipping);
   const tax = 0;
-  const rawDiscount = appliedPromo
-    ? appliedPromo.discountType === 'PERCENTAGE'
-      ? totalPrice * (appliedPromo.amount / 100)
-      : appliedPromo.amount
-    : 0;
+  const calculatePromoDiscount = (promo: AppliedPromo) => {
+    if (promo.minimumOrderValue && totalPrice < promo.minimumOrderValue) {
+      return 0;
+    }
+    const value =
+      promo.discountType === 'PERCENTAGE'
+        ? totalPrice * (promo.amount / 100)
+        : promo.amount;
+    return Math.max(value, 0);
+  };
+
+  const rawDiscount = appliedPromos.reduce((sum, promo) => {
+    return sum + calculatePromoDiscount(promo);
+  }, 0);
   const discount = Math.min(Math.max(rawDiscount, 0), totalPrice);
   const subtotalAfterDiscount = Math.max(totalPrice - discount, 0);
 const total = subtotalAfterDiscount + shipping;
@@ -148,19 +158,44 @@ useEffect(() => {
 }, [status, session]);
 
 useEffect(() => {
-  if (!appliedPromo) return;
-  if (appliedPromo.minimumOrderValue && totalPrice < appliedPromo.minimumOrderValue) {
-    setAppliedPromo(null);
-    setPromoError(
-      `Order total must be at least ${formatCurrency(appliedPromo.minimumOrderValue)} to use ${appliedPromo.code}.`
-    );
+  if (appliedPromos.length === 0) return;
+
+  const validPromos: AppliedPromo[] = [];
+  const removed: AppliedPromo[] = [];
+
+  appliedPromos.forEach((promo) => {
+    if (promo.minimumOrderValue && totalPrice < promo.minimumOrderValue) {
+      removed.push(promo);
+    } else {
+      validPromos.push(promo);
+    }
+  });
+
+  if (removed.length > 0) {
+    setAppliedPromos(validPromos);
+    const removedCodes = removed.map((promo) => promo.code).join(', ');
+    if (removed.length === 1 && removed[0].minimumOrderValue) {
+      setPromoError(
+        `Order total must be at least ${formatCurrency(removed[0].minimumOrderValue)} to use ${removed[0].code}.`
+      );
+    } else {
+      setPromoError(
+        `Order total no longer qualifies for: ${removedCodes}.`
+      );
+    }
   }
-}, [appliedPromo, totalPrice]);
+}, [appliedPromos, totalPrice, formatCurrency]);
 
   const handleApplyPromo = async () => {
     const code = promoInput.trim();
     if (!code) {
       setPromoError('Enter a promo code to apply.');
+      return;
+    }
+
+    const normalizedCode = code.toUpperCase();
+    if (appliedPromos.some((promo) => promo.code.toUpperCase() === normalizedCode)) {
+      setPromoError(`Promo code ${normalizedCode} is already applied.`);
       return;
     }
 
@@ -180,37 +215,88 @@ useEffect(() => {
         throw new Error(data.error || 'Promo code is invalid');
       }
 
-      setAppliedPromo({
+      const applied: AppliedPromo = {
         id: data.promo.id,
         code: data.promo.code,
         description: data.promo.description,
         discountType: data.promo.discountType,
         amount: data.promo.amount,
         minimumOrderValue: data.promo.minimumOrderValue,
-      });
+        discountAmount: data.promo.discountAmount,
+      };
+
+      setAppliedPromos((prev) => [...prev, applied]);
       setPromoError(null);
-      setPromoInput(data.promo.code);
+      setPromoInput('');
     } catch (err) {
       console.error('Apply promo error:', err);
-      setAppliedPromo(null);
       setPromoError(err instanceof Error ? err.message : 'Failed to apply promo code');
     } finally {
       setApplyingPromo(false);
     }
   };
 
-  const handleRemovePromo = () => {
-    setAppliedPromo(null);
-    setPromoInput('');
+  const handleRemovePromo = (code: string) => {
+    setAppliedPromos((prev) => prev.filter((promo) => promo.code !== code));
     setPromoError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    const requiredAddressFields: Array<keyof typeof formData> = ['line1', 'city', 'state', 'postalCode', 'country'];
+    const missingAddressFields = requiredAddressFields.filter((field) => !formData[field]?.trim());
+
+    if (missingAddressFields.length > 0) {
+      setError('Please complete the shipping address before continuing.');
+      return;
+    }
+
     setLoading(true);
 
     try {
+      const normalizedAddress = {
+        line1: formData.line1.trim(),
+        line2: formData.line2.trim(),
+        city: formData.city.trim(),
+        state: formData.state.trim(),
+        postalCode: formData.postalCode.trim().toUpperCase(),
+        country: formData.country.trim().toUpperCase(),
+      };
+
+      const primaryPromo = appliedPromos[0] ?? null;
+      const rawPromoDiscounts = appliedPromos.map((promo) => Math.max(calculatePromoDiscount(promo), 0));
+      const totalRawPromoDiscount = rawPromoDiscounts.reduce((sum, value) => sum + value, 0);
+      let remainingDiscount = discount;
+      const promoCodesPayload = appliedPromos.map((promo, index) => {
+        if (totalRawPromoDiscount <= 0 || remainingDiscount <= 0) {
+          return {
+            id: promo.id,
+            code: promo.code,
+            discountType: promo.discountType,
+            amount: promo.amount,
+            discountAmount: 0,
+          };
+        }
+
+        const proportionalShare = (rawPromoDiscounts[index] / totalRawPromoDiscount) * discount;
+        const cappedShare = Math.min(proportionalShare, remainingDiscount);
+        const discountAmount = index === appliedPromos.length - 1
+          ? remainingDiscount
+          : cappedShare;
+
+        remainingDiscount = Math.max(remainingDiscount - discountAmount, 0);
+
+        return {
+          id: promo.id,
+          code: promo.code,
+          discountType: promo.discountType,
+          amount: promo.amount,
+          discountAmount: Math.min(Math.max(discountAmount, 0), totalPrice),
+        };
+      });
+
       // Create Stripe checkout session
       const res = await fetch('/api/create-checkout-session', {
         method: 'POST',
@@ -235,21 +321,15 @@ useEffect(() => {
           }),
           email: formData.email,
           name: formData.name,
-          address: {
-            line1: formData.line1,
-            line2: formData.line2,
-            city: formData.city,
-            state: formData.state,
-            postalCode: formData.postalCode,
-            country: formData.country,
-          },
+          address: normalizedAddress,
           subtotal: totalPrice,
           subtotalAfterDiscount,
           shipping,
           tax,
           discount,
-          promoCode: appliedPromo?.code ?? null,
-          promoCodeId: appliedPromo?.id ?? null,
+          promoCode: primaryPromo?.code ?? null,
+          promoCodeId: primaryPromo?.id ?? null,
+          promoCodes: promoCodesPayload,
           total,
           currency,
         }),
@@ -514,37 +594,53 @@ useEffect(() => {
                   <input
                     type="text"
                     value={promoInput}
-                    onChange={(event) => setPromoInput(event.target.value.toUpperCase())}
+                    onChange={(event) => {
+                      setPromoInput(event.target.value.toUpperCase());
+                      setPromoError(null);
+                    }}
                     placeholder="Enter code"
                     className="input-modern"
                     disabled={applyingPromo}
                   />
-                  {appliedPromo ? (
-                    <button
-                      type="button"
-                      onClick={handleRemovePromo}
-                      className="px-6 py-3 border border-charcoal/30 rounded-lg bg-cream hover:border-charcoal transition-colors"
-                    >
-                      Remove
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={handleApplyPromo}
-                      disabled={applyingPromo}
-                      className="px-6 py-3 bg-charcoal text-cream rounded-lg hover:bg-charcoal/90 transition-colors disabled:opacity-50"
-                    >
-                      {applyingPromo ? 'Applying…' : 'Apply'}
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={handleApplyPromo}
+                    disabled={applyingPromo}
+                    className="px-6 py-3 bg-charcoal text-cream rounded-lg hover:bg-charcoal/90 transition-colors disabled:opacity-50"
+                  >
+                    {applyingPromo ? 'Applying…' : 'Apply'}
+                  </button>
                 </div>
                 {promoError && (
                   <p className="text-xs text-charcoal-dark">{promoError}</p>
                 )}
-                {appliedPromo && !promoError && (
-                  <p className="text-xs text-charcoal-dark">
-                    {appliedPromo.description || 'Promo code applied.'}
-                  </p>
+                {appliedPromos.length > 0 && (
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    {appliedPromos.map((promo) => (
+                      <div
+                        key={promo.code}
+                        className="flex items-center gap-2 px-3 py-1 bg-charcoal text-cream text-xs uppercase tracking-wider rounded"
+                      >
+                        <span>{promo.code}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemovePromo(promo.code)}
+                          className="text-cream/80 hover:text-cream focus:outline-none"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {appliedPromos.length > 0 && !promoError && (
+                  <ul className="text-xs text-charcoal-dark space-y-1 pt-2">
+                    {appliedPromos.map((promo) => (
+                      <li key={`${promo.code}-message`}>
+                        {promo.description?.length ? promo.description : `Promo ${promo.code} applied.`}
+                      </li>
+                    ))}
+                  </ul>
                 )}
               </div>
 
@@ -612,6 +708,18 @@ useEffect(() => {
                     <span className="text-charcoal-light">Discount</span>
                     <span>-{formatCurrency(discount)}</span>
                   </div>
+                )}
+                {discount > 0 && appliedPromos.length > 0 && (
+                  <ul className="text-xs text-charcoal/70 space-y-1">
+                    {appliedPromos.map((promo) => {
+                      const promoDiscount = Math.min(Math.max(calculatePromoDiscount(promo), 0), totalPrice);
+                      return (
+                        <li key={`${promo.code}-summary`}>
+                          {promo.code}: -{formatCurrency(promoDiscount)}
+                        </li>
+                      );
+                    })}
+                  </ul>
                 )}
                 <div className="flex justify-between text-lg font-medium pt-4 border-t border-charcoal/10">
                   <span className="text-charcoal-dark">Total</span>
