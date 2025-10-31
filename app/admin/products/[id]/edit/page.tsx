@@ -55,6 +55,18 @@ export default async function EditProductPage({
       console.warn('Failed to parse price overrides for product', product.id, error);
     }
   }
+
+  let sizeDimensions: Record<string, string> | null = null;
+  if (product.sizeDimensions) {
+    try {
+      const raw = JSON.parse(product.sizeDimensions);
+      if (raw && typeof raw === 'object') {
+        sizeDimensions = raw;
+      }
+    } catch (error) {
+      console.warn('Failed to parse size dimensions for product', product.id, error);
+    }
+  }
   const initialData = {
     name: product.name,
     description: product.description,
@@ -79,6 +91,9 @@ export default async function EditProductPage({
     releaseDate: product.releaseDate ? product.releaseDate.toISOString() : null,
     targetAudience: product.targetAudience || 'UNISEX',
     priceOverrides,
+    madeIn: product.madeIn || null,
+    sizeDimensions: sizeDimensions,
+    materials: product.materials || null,
   };
 
   return (
