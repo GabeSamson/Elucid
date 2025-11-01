@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { auth } from "@/auth";
 
 export const dynamic = "force-dynamic";
@@ -73,7 +74,7 @@ export async function GET(request: NextRequest) {
       prisma.pageView.count({ where: whereClause }),
       prisma.pageView.count({
         where: whereClause,
-        distinct: ["visitorHash"],
+        distinct: [Prisma.PageViewScalarFieldEnum.visitorHash],
       }),
       prisma.pageView.findFirst({
         where: whereClause,
@@ -185,7 +186,7 @@ export async function GET(request: NextRequest) {
       prisma.pageView.count({ where: previousWhereClause }),
       prisma.pageView.count({
         where: previousWhereClause,
-        distinct: ["visitorHash"],
+        distinct: [Prisma.PageViewScalarFieldEnum.visitorHash],
       }),
       prisma.order.count({ where: previousOrderWhereClause }),
     ]);
