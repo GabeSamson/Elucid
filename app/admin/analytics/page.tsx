@@ -342,35 +342,52 @@ function AdminAnalyticsContent() {
           <div className="flex items-center justify-center py-12">
             <div className="text-charcoal/60 text-lg">Loading traffic data...</div>
           </div>
-        ) : trafficData ? (
+        ) : (
           <>
+            {/* Show info banner if no traffic data */}
+            {(!trafficData || trafficData.totalViews === 0) && (
+              <div className="bg-beige/10 border border-beige p-4 rounded-lg mb-6">
+                <div className="flex items-start gap-3">
+                  <svg className="w-5 h-5 text-charcoal-dark mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div>
+                    <p className="text-sm font-medium text-charcoal-dark">Traffic Tracking Active</p>
+                    <p className="text-xs text-charcoal/70 mt-1">
+                      Analytics are being collected automatically. Data will appear here once visitors start browsing your site.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Traffic Summary */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               <div className="bg-cream-light p-6 rounded-lg border border-charcoal/20 shadow-sm hover:shadow-md transition-shadow">
                 <div className="text-xs uppercase tracking-wider text-charcoal/60 mb-2">Total Page Views</div>
                 <div className="text-3xl font-serif text-charcoal-dark">
-                  {trafficData.totalViews.toLocaleString()}
+                  {trafficData?.totalViews?.toLocaleString() || 0}
                 </div>
               </div>
 
               <div className="bg-cream-light p-6 rounded-lg border border-charcoal/20 shadow-sm hover:shadow-md transition-shadow">
                 <div className="text-xs uppercase tracking-wider text-charcoal/60 mb-2">Unique Pages</div>
                 <div className="text-3xl font-serif text-charcoal-dark">
-                  {trafficData.viewsByPath.length}
+                  {trafficData?.viewsByPath?.length || 0}
                 </div>
               </div>
 
               <div className="bg-cream-light p-6 rounded-lg border border-charcoal/20 shadow-sm hover:shadow-md transition-shadow">
                 <div className="text-xs uppercase tracking-wider text-charcoal/60 mb-2">Referral Sources</div>
                 <div className="text-3xl font-serif text-charcoal-dark">
-                  {trafficData.viewsByReferrer.length}
+                  {trafficData?.viewsByReferrer?.length || 0}
                 </div>
               </div>
 
               <div className="bg-cream-light p-6 rounded-lg border border-charcoal/20 shadow-sm hover:shadow-md transition-shadow">
                 <div className="text-xs uppercase tracking-wider text-charcoal/60 mb-2">Countries</div>
                 <div className="text-3xl font-serif text-charcoal-dark">
-                  {trafficData.viewsByCountry.length}
+                  {trafficData?.viewsByCountry?.length || 0}
                 </div>
               </div>
             </div>
@@ -378,7 +395,7 @@ function AdminAnalyticsContent() {
             {/* Daily Page Views Chart */}
             <div className="bg-white p-8 rounded-lg border border-charcoal/10 shadow-md mb-8">
               <h3 className="font-serif text-xl text-charcoal mb-6">Page Views Over Time</h3>
-              {trafficData.dailyViews.length > 0 ? (
+              {trafficData?.dailyViews && trafficData.dailyViews.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={trafficData.dailyViews}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#D4C9BA" />
@@ -420,7 +437,7 @@ function AdminAnalyticsContent() {
               {/* Top Pages */}
               <div className="bg-white p-6 rounded-lg border border-charcoal/10 shadow-sm">
                 <h3 className="font-serif text-xl text-charcoal mb-4">Top Pages</h3>
-                {trafficData.viewsByPath.length > 0 ? (
+                {trafficData?.viewsByPath && trafficData.viewsByPath.length > 0 ? (
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead>
@@ -451,7 +468,7 @@ function AdminAnalyticsContent() {
               {/* Top Referrers */}
               <div className="bg-white p-6 rounded-lg border border-charcoal/10 shadow-sm">
                 <h3 className="font-serif text-xl text-charcoal mb-4">Top Referrers</h3>
-                {trafficData.viewsByReferrer.length > 0 ? (
+                {trafficData?.viewsByReferrer && trafficData.viewsByReferrer.length > 0 ? (
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead>
@@ -485,7 +502,7 @@ function AdminAnalyticsContent() {
               {/* UTM Sources */}
               <div className="bg-white p-6 rounded-lg border border-charcoal/10 shadow-sm">
                 <h3 className="font-serif text-xl text-charcoal mb-4">UTM Sources</h3>
-                {trafficData.viewsByUtmSource.length > 0 ? (
+                {trafficData?.viewsByUtmSource && trafficData.viewsByUtmSource.length > 0 ? (
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead>
@@ -516,7 +533,7 @@ function AdminAnalyticsContent() {
               {/* Traffic by Country */}
               <div className="bg-white p-6 rounded-lg border border-charcoal/10 shadow-sm">
                 <h3 className="font-serif text-xl text-charcoal mb-4">Traffic by Country</h3>
-                {trafficData.viewsByCountry.length > 0 ? (
+                {trafficData?.viewsByCountry && trafficData.viewsByCountry.length > 0 ? (
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead>
@@ -545,10 +562,6 @@ function AdminAnalyticsContent() {
               </div>
             </div>
           </>
-        ) : (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-charcoal/60">No traffic data available</div>
-          </div>
         )}
       </section>
 

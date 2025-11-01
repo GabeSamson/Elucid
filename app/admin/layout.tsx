@@ -99,6 +99,12 @@ export default function AdminLayout({
           >
             Newsletter
           </Link>
+          <Link
+            href="/admin/reviews"
+            className="block px-5 py-3 hover:bg-charcoal transition-colors rounded-lg text-sm uppercase tracking-wider"
+          >
+            Reviews
+          </Link>
 
           <div className="pt-6 border-t border-cream-light/20 mt-6">
             <Link
@@ -241,6 +247,13 @@ export default function AdminLayout({
                 className="block px-5 py-3 hover:bg-charcoal transition-colors rounded-lg text-sm uppercase tracking-wider"
               >
                 Newsletter
+              </Link>
+              <Link
+                href="/admin/reviews"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-5 py-3 hover:bg-charcoal transition-colors rounded-lg text-sm uppercase tracking-wider"
+              >
+                Reviews
               </Link>
 
               <div className="pt-6 border-t border-cream-light/20 mt-6">
