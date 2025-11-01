@@ -24,6 +24,8 @@ export interface Product {
   images: string[];
   colorImages: Record<string, string[]>;
   stock: number;
+  shippingCost?: number | null;
+  shippingPrice?: number | null;
   collectionId?: string | null;
   collection?: Collection | null;
   sizes: string[];

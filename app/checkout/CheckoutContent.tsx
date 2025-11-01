@@ -60,6 +60,7 @@ function CheckoutPageContent() {
           price: buyNowProduct.productPrice,
           images: buyNowProduct.productImage ? [buyNowProduct.productImage] : [],
           includeShipping: buyNowProduct.includeShipping ?? true,
+          shippingPrice: buyNowProduct.shippingPrice ?? null,
           colorImages: buyNowProduct.colorImages || null,
         },
         quantity: buyNowProduct.quantity,
@@ -85,10 +86,26 @@ function CheckoutPageContent() {
 
   const shippingFee = getShippingFee();
   const freeShippingThreshold = getFreeShippingThreshold();
-  const requiresShipping = items.some((item) => item.product.includeShipping !== false);
+  const shippingEligibleItems = items.filter(
+    (item) => item.product.includeShipping !== false,
+  );
+  const requiresShipping = shippingEligibleItems.length > 0;
+  const shippingOverrides = shippingEligibleItems.map((item) => {
+    const override = item.product.shippingPrice;
+    if (typeof override === 'number' && !Number.isNaN(override)) {
+      return Math.max(override, 0);
+    }
+    return shippingFee;
+  });
+  const maxShippingOverride = shippingOverrides.length > 0
+    ? Math.max(...shippingOverrides)
+    : 0;
   const qualifiesForFreeShippingThreshold = totalPrice >= freeShippingThreshold;
-  const isFreeShipping = !requiresShipping || qualifiesForFreeShippingThreshold;
-  const shipping = isFreeShipping ? 0 : shippingFee;
+  const shipping = !requiresShipping
+    ? 0
+    : qualifiesForFreeShippingThreshold
+      ? 0
+      : maxShippingOverride;
   const amountUntilFreeShipping =
     requiresShipping && !qualifiesForFreeShippingThreshold
       ? Math.max(freeShippingThreshold - totalPrice, 0)

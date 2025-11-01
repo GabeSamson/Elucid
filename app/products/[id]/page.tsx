@@ -174,6 +174,7 @@ export default function ProductPage() {
       productPrice: unitPriceBase,
       productImage: displayImages.length > 0 ? displayImages[0] : null,
       includeShipping: product.includeShipping,
+      shippingPrice: product.shippingPrice ?? null,
       colorImages: product.colorImages || null,
       quantity: clampedQuantity,
       size: product.sizes && product.sizes.length > 0 ? selectedSize : undefined,

@@ -1,9 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import ImageUploader from './ImageUploader';
-import { getBaseCurrency, getCurrencySymbol } from '@/lib/currency';
+import {
+  formatCurrency,
+  getBaseCurrency,
+  getCurrencySymbol,
+  getShippingFee,
+} from '@/lib/currency';
 import { getSupportedCurrencies } from '@/lib/geolocation';
 
 interface ColorOption {
@@ -59,6 +64,9 @@ export default function ProductForm({
 }: ProductFormProps) {
   const currencySymbol = getCurrencySymbol();
   const baseCurrency = getBaseCurrency();
+  const defaultShippingPrice = getShippingFee();
+  const hasCustomShippingPrice =
+    initialData?.shippingPrice !== undefined && initialData?.shippingPrice !== null;
   const overrideCurrencies = getSupportedCurrencies().filter(
     (code) => code !== baseCurrency,
   );
@@ -77,12 +85,20 @@ export default function ProductForm({
     });
     return initial;
   });
+  const [useDefaultShippingPrice, setUseDefaultShippingPrice] = useState<boolean>(
+    !hasCustomShippingPrice,
+  );
+  const [lastCustomShippingPrice, setLastCustomShippingPrice] = useState<number>(
+    hasCustomShippingPrice ? Number(initialData?.shippingPrice) : defaultShippingPrice,
+  );
+
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
     control,
     watch,
+    setValue,
   } = useForm<ProductFormData>({
     defaultValues: {
       name: initialData?.name || '',
@@ -91,7 +107,9 @@ export default function ProductForm({
       compareAtPrice: initialData?.compareAtPrice,
       costPrice: initialData?.costPrice,
       shippingCost: initialData?.shippingCost,
-      shippingPrice: initialData?.shippingPrice,
+      shippingPrice: hasCustomShippingPrice
+        ? Number(initialData?.shippingPrice)
+        : defaultShippingPrice,
       images: initialData?.images || [],
       sizes: initialData?.sizes || [],
       colors: initialData?.colors || [],
@@ -106,6 +124,8 @@ export default function ProductForm({
       targetAudience: initialData?.targetAudience || 'UNISEX',
     },
   });
+  const watchedShippingPrice = watch('shippingPrice');
+  const watchedIncludeShipping = watch('includeShipping', initialData?.includeShipping ?? true);
 
   const [images, setImages] = useState<string[]>(initialData?.images || []);
   const [sizes, setSizes] = useState<string[]>(initialData?.sizes || []);
@@ -265,6 +285,35 @@ useEffect(() => {
     );
   };
 
+  const handleDefaultShippingToggle = (checked: boolean) => {
+    setUseDefaultShippingPrice(checked);
+    if (checked) {
+      setValue('shippingPrice', defaultShippingPrice, { shouldDirty: false });
+    } else {
+      const nextValue = Number.isFinite(lastCustomShippingPrice)
+        ? lastCustomShippingPrice
+        : defaultShippingPrice;
+      setValue('shippingPrice', nextValue, { shouldDirty: true });
+    }
+  };
+
+  useEffect(() => {
+    if (
+      !useDefaultShippingPrice &&
+      typeof watchedShippingPrice === 'number' &&
+      !Number.isNaN(watchedShippingPrice)
+    ) {
+      setLastCustomShippingPrice(watchedShippingPrice);
+    }
+  }, [useDefaultShippingPrice, watchedShippingPrice]);
+
+  useEffect(() => {
+    if (!watchedIncludeShipping && !useDefaultShippingPrice) {
+      setUseDefaultShippingPrice(true);
+      setValue('shippingPrice', defaultShippingPrice, { shouldDirty: false });
+    }
+  }, [watchedIncludeShipping, useDefaultShippingPrice, defaultShippingPrice, setValue]);
+
   const handleFormSubmit = async (data: ProductFormData) => {
     const normalizedReleaseDate =
       data.comingSoon && comingSoonDate
@@ -287,8 +336,27 @@ useEffect(() => {
         }, {})
       : {};
 
+    const normalizedShippingCost =
+      typeof data.shippingCost === 'number' && !Number.isNaN(data.shippingCost)
+        ? data.shippingCost
+        : undefined;
+
+    const normalizedRawShippingPrice =
+      typeof data.shippingPrice === 'number' && !Number.isNaN(data.shippingPrice)
+        ? data.shippingPrice
+        : undefined;
+
+    const shippingPriceForSubmit =
+      data.includeShipping === false
+        ? undefined
+        : useDefaultShippingPrice
+          ? undefined
+          : normalizedRawShippingPrice;
+
     await onSubmit({
       ...data,
+      shippingCost: normalizedShippingCost,
+      shippingPrice: shippingPriceForSubmit,
       images,
       colorImages,
       sizes,
@@ -301,6 +369,11 @@ useEffect(() => {
       materials: materials.trim() || null,
     });
   };
+
+  const formattedDefaultShippingPrice = formatCurrency(defaultShippingPrice, {
+    convert: false,
+  });
+  const shippingPriceDisabled = useDefaultShippingPrice || !watchedIncludeShipping;
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-8">
@@ -358,6 +431,7 @@ useEffect(() => {
                   {...register('price', {
                     required: 'Price is required',
                     min: { value: 0, message: 'Price must be positive' },
+                    valueAsNumber: true,
                   })}
                   type="number"
                   step="0.01"
@@ -379,7 +453,7 @@ useEffect(() => {
                   {currencySymbol}
                 </span>
                 <input
-                  {...register('compareAtPrice')}
+                  {...register('compareAtPrice', { valueAsNumber: true })}
                   type="number"
                   step="0.01"
                   className="input-modern pl-8"
@@ -397,7 +471,7 @@ useEffect(() => {
                   {currencySymbol}
                 </span>
                 <input
-                  {...register('costPrice')}
+                  {...register('costPrice', { valueAsNumber: true })}
                   type="number"
                   step="0.01"
                   className="input-modern pl-8"
@@ -410,7 +484,7 @@ useEffect(() => {
             </div>
           </div>
 
-          {/* Shipping Costs */}
+          {/* Shipping */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-charcoal mb-2">
@@ -421,7 +495,7 @@ useEffect(() => {
                   {currencySymbol}
                 </span>
                 <input
-                  {...register('shippingCost')}
+                  {...register('shippingCost', { valueAsNumber: true, min: 0 })}
                   type="number"
                   step="0.01"
                   className="input-modern pl-8"
@@ -442,16 +516,42 @@ useEffect(() => {
                   {currencySymbol}
                 </span>
                 <input
-                  {...register('shippingPrice')}
+                  {...register('shippingPrice', { valueAsNumber: true, min: 0 })}
                   type="number"
                   step="0.01"
-                  className="input-modern pl-8"
+                  className={`input-modern pl-8 ${shippingPriceDisabled ? 'bg-cream-dark/70 cursor-not-allowed' : ''}`}
                   placeholder="0.00"
+                  disabled={shippingPriceDisabled}
                 />
               </div>
-              <p className="text-xs text-charcoal/60 mt-1">
-                Amount customer pays for shipping (leave blank for site default)
-              </p>
+              <div className="mt-3 space-y-2">
+                <label className="inline-flex items-center gap-2 text-xs text-charcoal cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={useDefaultShippingPrice}
+                    onChange={(event) => handleDefaultShippingToggle(event.target.checked)}
+                    className="w-4 h-4 rounded border-charcoal/30 text-charcoal focus:ring-charcoal"
+                  />
+                  <span>
+                    Use universal shipping price ({formattedDefaultShippingPrice})
+                  </span>
+                </label>
+                {watchedIncludeShipping ? (
+                  useDefaultShippingPrice ? (
+                    <p className="text-xs text-charcoal/60">
+                      Customers will be charged the universal rate unless they qualify for free shipping.
+                    </p>
+                  ) : (
+                    <p className="text-xs text-charcoal/60">
+                      Customers will be charged this rate when purchasing this product.
+                    </p>
+                  )
+                ) : (
+                  <p className="text-xs text-charcoal/60">
+                    Shipping is disabled for this product, so no charge will be added at checkout.
+                  </p>
+                )}
+              </div>
             </div>
           </div>
 
@@ -666,7 +766,7 @@ useEffect(() => {
                     className="w-4 h-4 rounded border-charcoal/30 text-charcoal focus:ring-charcoal"
                   />
                   <span className="text-sm text-charcoal">
-                    Include shipping cost
+                    Charge shipping for this product
                   </span>
                 </label>
               )}
