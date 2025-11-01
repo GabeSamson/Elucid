@@ -108,10 +108,18 @@ export async function GET(request: NextRequest) {
     const sizeSales: { [key: string]: { quantity: number; revenue: number; orders: number } } = {};
 
     orders.forEach((order) => {
-      // Calculate discount ratio to properly distribute order-level discounts
-      const orderSubtotal = order.subtotal;
-      const orderTotal = order.total;
-      const discountRatio = orderSubtotal > 0 ? orderTotal / orderSubtotal : 1;
+      // Calculate ratio to distribute order-level adjustments (discounts, shipping, tax) across items
+      const computedItemSubtotal = order.items.reduce((sum, item) => {
+        return sum + item.priceAtPurchase * item.quantity;
+      }, 0);
+
+      const storedSubtotal = typeof order.subtotal === 'number' ? order.subtotal : 0;
+      const subtotalForRatio = storedSubtotal > 0 ? storedSubtotal : computedItemSubtotal;
+      const ratioDenominator = subtotalForRatio > 0 ? subtotalForRatio : computedItemSubtotal;
+      const safeDenominator = ratioDenominator > 0 ? ratioDenominator : 1;
+      const rawRatio = safeDenominator !== 0 ? order.total / safeDenominator : 1;
+      const discountRatio =
+        Number.isFinite(rawRatio) && rawRatio >= 0 ? rawRatio : 1;
 
       order.items.forEach((item) => {
         if (!productSales[item.productId]) {
