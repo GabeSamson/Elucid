@@ -323,3 +323,18 @@ model NewsletterEmail {
 
   @@map("newsletter_emails")
 }
+
+model Review {
+  id          String   @id @default(uuid())
+  name        String
+  email       String?
+  rating      Int      // 1-5 stars
+  title       String?
+  content     String
+  isPinned    Boolean  @default(false) @map("is_pinned")
+  isApproved  Boolean  @default(false) @map("is_approved")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("reviews")
+}

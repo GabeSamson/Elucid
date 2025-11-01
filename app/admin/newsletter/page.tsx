@@ -19,6 +19,7 @@ export default function AdminNewsletterPage() {
   const [emailContent, setEmailContent] = useState('');
   const [sending, setSending] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [includeAllUsers, setIncludeAllUsers] = useState(false);
 
   const loadSubscribers = async () => {
     setLoading(true);
@@ -101,13 +102,13 @@ export default function AdminNewsletterPage() {
     }
 
     const activeSubscribers = subscribers.filter(sub => sub.active);
-    if (activeSubscribers.length === 0) {
-      setFeedback({ type: 'error', message: 'No active subscribers to send to' });
-      return;
-    }
+
+    const recipientMessage = includeAllUsers
+      ? 'all verified account holders and newsletter subscribers'
+      : `${activeSubscribers.length} active newsletter subscriber(s)`;
 
     const confirmed = window.confirm(
-      `Send newsletter to ${activeSubscribers.length} active subscriber(s)?`
+      `Send newsletter to ${recipientMessage}?`
     );
     if (!confirmed) return;
 
@@ -121,6 +122,7 @@ export default function AdminNewsletterPage() {
         body: JSON.stringify({
           subject: emailSubject,
           content: emailContent,
+          includeAllUsers,
         }),
       });
 
@@ -132,7 +134,7 @@ export default function AdminNewsletterPage() {
 
       setFeedback({
         type: 'success',
-        message: `Newsletter sent successfully to ${data.sentCount} subscriber(s)!`,
+        message: `Newsletter sent successfully to ${data.sentCount} recipient(s)!`,
       });
 
       // Delay closing the modal to show success message
@@ -140,6 +142,7 @@ export default function AdminNewsletterPage() {
         setShowComposer(false);
         setEmailSubject('');
         setEmailContent('');
+        setIncludeAllUsers(false);
         setSending(false);
       }, 2000);
     } catch (error: any) {
@@ -299,6 +302,25 @@ export default function AdminNewsletterPage() {
                 <p className="text-xs text-charcoal/60 mt-1">
                   You can use HTML tags for formatting
                 </p>
+              </div>
+
+              <div className="pt-4 border-t border-charcoal/10">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={includeAllUsers}
+                    onChange={(e) => setIncludeAllUsers(e.target.checked)}
+                    className="w-4 h-4 rounded border-charcoal/30 text-charcoal focus:ring-charcoal"
+                  />
+                  <div>
+                    <span className="text-sm font-medium text-charcoal">
+                      Send to all account holders
+                    </span>
+                    <p className="text-xs text-charcoal/60 mt-1">
+                      Include all verified users with accounts (not just newsletter subscribers)
+                    </p>
+                  </div>
+                </label>
               </div>
             </div>
 

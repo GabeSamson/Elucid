@@ -7,6 +7,7 @@ import { z } from "zod";
 const sendNewsletterSchema = z.object({
   subject: z.string().min(1, "Subject is required"),
   content: z.string().min(1, "Content is required"),
+  includeAllUsers: z.boolean().optional().default(false),
 });
 
 export async function POST(request: NextRequest) {
@@ -37,20 +38,49 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { subject, content } = validation.data;
+    const { subject, content, includeAllUsers } = validation.data;
 
-    // Get all active, verified subscribers
-    const subscribers = await prisma.newsletter.findMany({
-      where: {
-        active: true,
-        verified: true,
-      },
-      select: { email: true },
-    });
+    // Get recipients based on includeAllUsers flag
+    let recipients: { email: string }[] = [];
 
-    if (subscribers.length === 0) {
+    if (includeAllUsers) {
+      // Get all users with verified emails
+      const users = await prisma.user.findMany({
+        where: {
+          emailVerified: true,
+        },
+        select: { email: true },
+      });
+
+      // Also get newsletter subscribers
+      const newsletterSubscribers = await prisma.newsletter.findMany({
+        where: {
+          active: true,
+          verified: true,
+        },
+        select: { email: true },
+      });
+
+      // Combine and deduplicate emails
+      const emailSet = new Set<string>();
+      users.forEach(u => emailSet.add(u.email));
+      newsletterSubscribers.forEach(s => emailSet.add(s.email));
+
+      recipients = Array.from(emailSet).map(email => ({ email }));
+    } else {
+      // Get only active, verified newsletter subscribers
+      recipients = await prisma.newsletter.findMany({
+        where: {
+          active: true,
+          verified: true,
+        },
+        select: { email: true },
+      });
+    }
+
+    if (recipients.length === 0) {
       return NextResponse.json(
-        { error: "No active subscribers to send to" },
+        { error: "No recipients to send to" },
         { status: 400 }
       );
     }
@@ -58,27 +88,27 @@ export async function POST(request: NextRequest) {
     // Initialize Resend
     const resend = new Resend(process.env.RESEND_API_KEY);
 
-    // Send newsletter to all subscribers with rate limiting
+    // Send newsletter to all recipients with rate limiting
     // Resend free tier: 2 emails per second, so we send in batches with delays
     const results = [];
     const batchSize = 2;
     const delayMs = 1100; // Slightly over 1 second to be safe
 
-    for (let i = 0; i < subscribers.length; i += batchSize) {
-      const batch = subscribers.slice(i, i + batchSize);
+    for (let i = 0; i < recipients.length; i += batchSize) {
+      const batch = recipients.slice(i, i + batchSize);
 
-      const batchPromises = batch.map(async (subscriber) => {
+      const batchPromises = batch.map(async (recipient) => {
         try {
           const result = await resend.emails.send({
             from: "Elucid LDN <hello@elucid.london>",
-            to: subscriber.email,
+            to: recipient.email,
             subject: subject,
             html: content,
           });
-          console.log(`Newsletter sent to ${subscriber.email}:`, result);
+          console.log(`Newsletter sent to ${recipient.email}:`, result);
           return result;
         } catch (error) {
-          console.error(`Failed to send newsletter to ${subscriber.email}:`, error);
+          console.error(`Failed to send newsletter to ${recipient.email}:`, error);
           throw error;
         }
       });
@@ -87,7 +117,7 @@ export async function POST(request: NextRequest) {
       results.push(...batchResults);
 
       // Add delay between batches (except for the last batch)
-      if (i + batchSize < subscribers.length) {
+      if (i + batchSize < recipients.length) {
         console.log(`Sent batch ${Math.floor(i / batchSize) + 1}, waiting ${delayMs}ms before next batch...`);
         await new Promise(resolve => setTimeout(resolve, delayMs));
       }
@@ -100,14 +130,14 @@ export async function POST(request: NextRequest) {
       data: {
         subject,
         content,
-        sentCount: subscribers.length,
+        sentCount: recipients.length,
         sentBy: user.id,
       },
     });
 
     return NextResponse.json({
       success: true,
-      sentCount: subscribers.length,
+      sentCount: recipients.length,
     });
   } catch (error) {
     console.error("Error sending newsletter:", error);

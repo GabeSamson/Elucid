@@ -22,10 +22,20 @@ interface AppliedPromo {
   discountApplied: number;
 }
 
+interface ShippingAddress {
+  line1: string;
+  line2?: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+}
+
 interface Order {
   id: string;
   name: string;
   email?: string | null;
+  address: string; // JSON string
   total: number;
   subtotal: number;
   shipping: number;
@@ -363,6 +373,24 @@ export default function AdminOrdersPage() {
               <div>
                 <strong>Customer:</strong> {selectedOrder.name} {selectedOrder.email ? `(${selectedOrder.email})` : ''}
               </div>
+              {selectedOrder.address && (() => {
+                try {
+                  const address = JSON.parse(selectedOrder.address) as ShippingAddress;
+                  return (
+                    <div>
+                      <strong>Shipping Address:</strong>
+                      <div className="mt-1 pl-4 text-charcoal-light">
+                        <div>{address.line1}</div>
+                        {address.line2 && <div>{address.line2}</div>}
+                        <div>{address.city}, {address.state} {address.postalCode}</div>
+                        <div>{address.country}</div>
+                      </div>
+                    </div>
+                  );
+                } catch {
+                  return null;
+                }
+              })()}
               <div className="flex items-center gap-3">
                 <strong>Status:</strong>
                 <select

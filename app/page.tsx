@@ -3,6 +3,7 @@ import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
 import WritingSection from "@/components/WritingSection";
 import Featured from "@/components/Featured";
+import Reviews from "@/components/Reviews";
 import Newsletter from "@/components/Newsletter";
 import Footer from "@/components/Footer";
 
@@ -17,6 +18,7 @@ export default function Home() {
       <Hero />
       <WritingSection />
       <Featured />
+      <Reviews />
       <Newsletter />
       <Footer />
     </main>

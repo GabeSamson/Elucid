@@ -241,15 +241,44 @@ useEffect(() => {
     setPromoError(null);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-
+  const validateAddress = (): string | null => {
     const requiredAddressFields: Array<keyof typeof formData> = ['line1', 'city', 'state', 'postalCode', 'country'];
     const missingAddressFields = requiredAddressFields.filter((field) => !formData[field]?.trim());
 
     if (missingAddressFields.length > 0) {
-      setError('Please complete the shipping address before continuing.');
+      return 'Please complete all required shipping address fields.';
+    }
+
+    // Validate email
+    if (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      return 'Please enter a valid email address.';
+    }
+
+    // Validate name
+    if (!formData.name || formData.name.trim().length < 2) {
+      return 'Please enter your full name.';
+    }
+
+    // Validate postal code length (basic validation)
+    if (formData.postalCode.trim().length < 3) {
+      return 'Please enter a valid postal code.';
+    }
+
+    // Validate line1 has meaningful content
+    if (formData.line1.trim().length < 5) {
+      return 'Please enter a complete street address.';
+    }
+
+    return null;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    const validationError = validateAddress();
+    if (validationError) {
+      setError(validationError);
       return;
     }
 

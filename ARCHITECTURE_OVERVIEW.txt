@@ -1,0 +1,343 @@
+================================================================================
+                    ELUCID LDN CODEBASE VISUAL OVERVIEW
+================================================================================
+
+ARCHITECTURE OVERVIEW:
+┌─────────────────────────────────────────────────────────────────────────┐
+│                                                                         │
+│  Next.js 15.5.6 (React 19 + TypeScript)                               │
+│  ├─ Frontend: Server & Client Components                               │
+│  ├─ Backend: API Routes (/app/api/*)                                  │
+│  ├─ Database: Prisma ORM + PostgreSQL                                 │
+│  ├─ Auth: NextAuth.js v5                                              │
+│  ├─ Payment: Stripe                                                    │
+│  └─ Email: Resend                                                      │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+
+DIRECTORY STRUCTURE:
+/app
+├── /admin                       # Admin Panel (Protected Routes)
+│   ├── /dashboard              # Dashboard & Key Metrics
+│   ├── /newsletter              # Newsletter Subscriber Management + Composer
+│   ├── /orders                  # Order Management & Fulfillment
+│   ├── /analytics               # Revenue, Traffic, Product Performance
+│   ├── /in-person               # In-Person Sales Recording
+│   ├── /products                # Product CRUD
+│   ├── /inventory               # Stock Management
+│   ├── /collections             # Collection Management
+│   ├── /promo-codes             # Discount Code Management
+│   ├── /team                    # Team Member Management
+│   ├── /users                   # User Management
+│   ├── /workspace               # Admin Settings
+│   ├── /homepage                # Homepage Configuration
+│   └── layout.tsx               # Admin Sidebar Navigation
+├── /api                        # API Endpoints
+│   ├── /admin/*                # Admin APIs (protected)
+│   ├── /newsletter/*           # Newsletter APIs
+│   ├── /orders/*               # Order APIs
+│   ├── /auth/*                 # Auth APIs
+│   ├── /promocodes/*           # Promo Code APIs
+│   ├── /products/*             # Product APIs
+│   ├── /analytics/*            # Analytics APIs
+│   └── create-checkout-session # Stripe Checkout
+├── /checkout                   # Checkout Page
+│   ├── CheckoutContent.tsx     # Checkout Form & Summary
+│   └── page.tsx
+├── /shop                       # Product Listing
+├── /products/[id]              # Product Detail
+├── /account                    # User Account/Login
+└── /order/success              # Order Confirmation
+
+/lib
+├── /email                      # Email Functions
+│   ├── sendOrderThankYouEmail.ts
+│   └── sendNewsletterVerificationEmail.ts
+├── /orders                     # Order Processing Logic
+│   └── createOrderFromStripeSession.ts
+├── currency.ts                 # Multi-currency Support
+├── prisma.ts                   # DB Client
+├── auth.ts                     # Auth Config
+└── [utilities]
+
+/prisma
+└── schema.prisma               # Database Schema (13 Models)
+
+================================================================================
+                           WORKFLOW DIAGRAMS
+================================================================================
+
+NEWSLETTER WORKFLOW:
+┌──────────────────────────────────────────────────────────────────────────┐
+│                                                                          │
+│  Admin Panel → Newsletter Page                                          │
+│       ↓                                                                  │
+│  [View Subscribers] [Compose Email] [Export CSV] [Remove Subscriber]   │
+│       ↓                                                                  │
+│  Admin writes Subject + HTML Content in Modal                          │
+│       ↓                                                                  │
+│  [Show Preview] [Cancel] [Send to X Subscribers]                       │
+│       ↓                                                                  │
+│  POST /api/admin/newsletter/send                                       │
+│       ↓                                                                  │
+│  Resend (Rate Limited: 2 emails/sec)                                   │
+│       ↓                                                                  │
+│  All Active Verified Subscribers Receive Email                         │
+│       ↓                                                                  │
+│  Record in NewsletterEmail table (History)                             │
+│                                                                          │
+└──────────────────────────────────────────────────────────────────────────┘
+
+CHECKOUT WORKFLOW:
+┌──────────────────────────────────────────────────────────────────────────┐
+│                                                                          │
+│  /checkout (Protected - Requires Auth)                                 │
+│       ↓                                                                  │
+│  Load Cart Items (via CartContext)                                     │
+│       ↓                                                                  │
+│  [Customer Info] [Address] [Promo Codes]                              │
+│       ↓                                                                  │
+│  Apply Promo → POST /api/promocodes/validate                          │
+│       ↓                                                                  │
+│  Calculate:                                                             │
+│    • Subtotal (by currency)                                           │
+│    • Discount (from promo codes)                                      │
+│    • Shipping (£5 or free based on threshold)                         │
+│    • Tax (£0 currently)                                               │
+│    • Total                                                             │
+│       ↓                                                                  │
+│  [Continue to Payment]                                                │
+│       ↓                                                                  │
+│  POST /api/create-checkout-session                                     │
+│    • Create Stripe session                                            │
+│    • Store metadata (items, promo codes, address)                     │
+│    • Return Stripe redirect URL                                       │
+│       ↓                                                                  │
+│  Redirect to Stripe Checkout                                          │
+│       ↓                                                                  │
+│  User completes payment on Stripe                                      │
+│       ↓                                                                  │
+│  /order/success (Confirmation Page)                                    │
+│       ↓                                                                  │
+│  POST /api/orders/confirm { sessionId }                                │
+│       ↓                                                                  │
+│  createOrderFromStripeSession()                                        │
+│    • Retrieve Stripe session + line items                             │
+│    • Parse metadata                                                    │
+│    • Create Order + OrderItems + OrderAppliedPromoCode                │
+│    • Send order confirmation email (Resend)                           │
+│       ↓                                                                  │
+│  Order stored in database                                              │
+│                                                                          │
+└──────────────────────────────────────────────────────────────────────────┘
+
+ORDER MANAGEMENT WORKFLOW:
+┌──────────────────────────────────────────────────────────────────────────┐
+│                                                                          │
+│  /admin/orders                                                         │
+│       ↓                                                                  │
+│  Filter by: Needs Shipping | Completed | Cancelled | All              │
+│       ↓                                                                  │
+│  [Table View with Status, Date, Customer, Total]                      │
+│       ↓                                                                  │
+│  [Quick Mark Shipped] or [View Details]                               │
+│       ↓                                                                  │
+│  Order Detail Modal:                                                   │
+│    • Change Status (dropdown)                                         │
+│    • Add/Edit Tracking Number                                         │
+│    • View Items with Specs                                            │
+│    • View Applied Promo Codes                                         │
+│    • Add Internal Notes                                               │
+│    • Delete Order                                                     │
+│       ↓                                                                  │
+│  PATCH /api/admin/orders/{orderId}                                    │
+│       ↓                                                                  │
+│  Update Order record                                                   │
+│                                                                          │
+└──────────────────────────────────────────────────────────────────────────┘
+
+ANALYTICS WORKFLOW:
+┌──────────────────────────────────────────────────────────────────────────┐
+│                                                                          │
+│  /admin/analytics                                                      │
+│       ↓                                                                  │
+│  [Time Range Selector: 7d, 30d, 90d, 1yr, Lifetime]                   │
+│       ↓                                                                  │
+│  GET /api/admin/analytics?days=X&product=OPTIONAL                     │
+│  GET /api/analytics/stats?days=X                                      │
+│       ↓                                                                  │
+│  Aggregate & Display:                                                  │
+│    • Key Metrics (9 cards)                                            │
+│    • Traffic Analytics (views, referrers, UTM, countries)             │
+│    • Variant Performance (colors, sizes, locations)                   │
+│    • Revenue Trends (line chart)                                      │
+│    • Order Status Distribution (pie chart)                            │
+│    • Best Sellers (bar chart)                                         │
+│    • Product Performance (detailed table)                             │
+│    • Low Stock Alerts (inventory table)                               │
+│       ↓                                                                  │
+│  [Reset Statistics] (5-step confirmation for deletion)                │
+│                                                                          │
+└──────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+                        KEY DATABASE MODELS
+================================================================================
+
+User
+├─ Email (unique)
+├─ Password (hashed)
+├─ Role (admin/user)
+├─ Email Verification
+├─ Shipping Address (JSON)
+└─ Relations: orders
+
+Product
+├─ Name, Description, Price
+├─ Price Overrides (currency-specific)
+├─ Cost Price (for profit calculations)
+├─ Images (JSON array)
+├─ Sizes, Colors, Dimensions
+├─ Stock, Collection, Target Audience
+└─ Relations: variants, orderItems
+
+Order
+├─ Customer: userId, email, name, address
+├─ Pricing: subtotal, shipping, tax, discount, total
+├─ Promo: promoCodeId, promoCodeCode (legacy), appliedPromos
+├─ Status: PENDING, PROCESSING, SHIPPED, DELIVERED, CANCELLED
+├─ Tracking Number, Notes (internal)
+├─ Type: isInPerson flag
+├─ Payment: stripePaymentId
+└─ Relations: items, appliedPromos
+
+Newsletter
+├─ Email (unique)
+├─ Active, Verified
+├─ Verification Token
+
+OrderAppliedPromoCode (for multi-promo support)
+├─ Code, Discount Type, Amount
+├─ Discount Applied (actual amount)
+
+PromoCode
+├─ Code (unique)
+├─ Discount Type: PERCENTAGE or FIXED
+├─ Amount, MinimumOrderValue, MaxRedemptions
+├─ Active, Expires
+
+================================================================================
+                         EMAIL SYSTEM
+================================================================================
+
+SERVICE: Resend (hello@elucid.london)
+RATE LIMIT: 2 emails/second (free tier)
+
+EMAIL TYPES:
+
+1. ORDER CONFIRMATION
+   ├─ Triggered: After Stripe payment success
+   ├─ Recipient: Customer email
+   ├─ Content: Order ID, Items, Totals, Breakdown
+   ├─ Format: HTML + Plain Text
+   └─ Function: sendOrderThankYouEmail.ts
+
+2. NEWSLETTER VERIFICATION
+   ├─ Triggered: User subscribes
+   ├─ Recipient: Subscriber email
+   ├─ Content: Confirmation link with unique token
+   ├─ Token: Stored in Newsletter.verificationToken
+   └─ Function: sendNewsletterVerificationEmail.ts
+
+3. NEWSLETTER BROADCAST
+   ├─ Triggered: Admin sends from /admin/newsletter
+   ├─ Recipients: All active, verified subscribers
+   ├─ Content: Admin-composed HTML
+   ├─ Rate Limited: Batched 2/sec with 1.1s delays
+   ├─ Recorded: In NewsletterEmail table
+   └─ Function: POST /api/admin/newsletter/send
+
+================================================================================
+                         ADMIN PANEL FEATURES
+================================================================================
+
+DASHBOARD (/admin)
+├─ Total products, orders, pending orders
+├─ Total revenue (all time)
+├─ Recent pending orders (10)
+└─ Profit by: Today, This Week, This Month, This Year, Lifetime
+
+NEWSLETTER (/admin/newsletter)
+├─ Subscriber list (verified only)
+├─ Remove individual subscribers
+├─ Export to CSV
+└─ Compose & send bulk newsletters
+
+ORDERS (/admin/orders)
+├─ Filter by status (Needs Shipping, Completed, Cancelled, All)
+├─ Quick mark shipped
+├─ View order details modal
+├─ Update status, tracking number
+├─ Add internal notes
+└─ Delete orders
+
+ANALYTICS (/admin/analytics)
+├─ 9 key metrics (revenue, profit, orders, customers, inventory)
+├─ Traffic analytics (page views, referrers, UTM, countries)
+├─ Variant performance (colors, sizes, locations)
+├─ Revenue trends chart
+├─ Order status distribution
+├─ Best sellers chart
+├─ Product performance table
+├─ Low stock alerts
+├─ Time range filter (7d to lifetime)
+├─ Product filter
+└─ Statistics reset tool
+
+IN-PERSON SALES (/admin/in-person)
+├─ Select products, quantities, sizes, colors
+├─ Enter customer info (name, email optional)
+├─ Manual payment recording
+└─ Tracked as orders with isInPerson: true
+
+PRODUCTS (/admin/products)
+├─ Create, Read, Update, Delete
+├─ Multi-currency pricing
+├─ Stock management
+├─ Image upload
+├─ Size/color variants
+├─ Cost price tracking
+└─ Collection association
+
+[+ Inventory, Collections, Promo Codes, Team, Users, Homepage, Workspace]
+
+================================================================================
+                        SECURITY & COMPLIANCE
+================================================================================
+
+AUTHENTICATION:
+├─ NextAuth.js v5
+├─ Email/password login
+├─ Session-based
+├─ Password hashing: bcryptjs
+└─ Email verification required
+
+AUTHORIZATION:
+├─ Admin role check on sensitive endpoints
+├─ Session validation before API calls
+├─ Role-based access control (RBAC)
+└─ Protected routes redirects to /account
+
+VALIDATION:
+├─ Zod schema validation on all API inputs
+├─ Type-safe database queries (Prisma)
+├─ CSRF protection (NextAuth)
+└─ Stripe webhook verification
+
+DATA:
+├─ PostgreSQL with Prisma migrations
+├─ Sensitive data: Passwords hashed, API keys in env
+├─ JSON fields for flexible data storage
+└─ Cascade deletes on relationships
+
+================================================================================
