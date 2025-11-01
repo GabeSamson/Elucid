@@ -125,6 +125,13 @@ const TRAFFIC_SOURCE_ORDER: TrafficSourceKey[] = [
   'Campaign',
 ];
 
+type TrendTone = 'up' | 'down' | 'neutral';
+
+interface TrendInfo {
+  label: string;
+  tone: TrendTone;
+}
+
 const STATUS_COLORS: { [key: string]: string } = {
   PENDING: '#fbbf24',
   PROCESSING: '#60a5fa',
@@ -199,15 +206,15 @@ function AdminAnalyticsContent() {
     return `${minutes}m ${seconds.toString().padStart(2, '0')}s`;
   };
 
-  const formatTrend = (value: number | null | undefined) => {
+  const formatTrend = (value: number | null | undefined): TrendInfo => {
     if (value === null || value === undefined) {
-      return { label: 'No prior data', tone: 'neutral' as const };
+      return { label: 'No prior data', tone: 'neutral' };
     }
     if (!Number.isFinite(value)) {
-      return { label: 'No prior data', tone: 'neutral' as const };
+      return { label: 'No prior data', tone: 'neutral' };
     }
 
-    const tone = value > 0 ? 'up' : value < 0 ? 'down' : 'neutral';
+    const tone: TrendTone = value > 0 ? 'up' : value < 0 ? 'down' : 'neutral';
     const symbol = value > 0 ? '▲' : value < 0 ? '▼' : '■';
     return {
       label: `${symbol} ${Math.abs(value).toFixed(1)}% vs prior period`,
@@ -334,7 +341,7 @@ function AdminAnalyticsContent() {
   const viewsTrend = formatTrend(trafficData?.trend?.viewsChange);
   const uniqueTrend = formatTrend(trafficData?.trend?.uniqueChange);
   const ordersTrend = formatTrend(trafficData?.trend?.ordersChange);
-  const trendClass = (tone: 'up' | 'down' | 'neutral') => {
+  const trendClass = (tone: TrendTone) => {
     if (tone === 'up') return 'text-emerald-600';
     if (tone === 'down') return 'text-red-500';
     return 'text-charcoal/60';
