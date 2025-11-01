@@ -47,6 +47,14 @@ export default function Footer() {
             <ul className="space-y-2 text-cream/60 text-sm">
               <li><a href="mailto:Elucid.Ldn@gmail.com" className="hover:text-cream transition-colors">Elucid.Ldn@gmail.com</a></li>
             </ul>
+            <div className="mt-4">
+              <a
+                href="/reviews"
+                className="inline-flex items-center justify-center rounded-full border border-cream/40 px-5 py-2 text-xs uppercase tracking-wider text-cream hover:bg-cream hover:text-charcoal-dark transition-colors"
+              >
+                Share Feedback
+              </a>
+            </div>
           </div>
         </div>
 

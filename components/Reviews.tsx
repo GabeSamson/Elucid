@@ -11,6 +11,8 @@ interface Review {
   title: string | null;
   content: string;
   createdAt: string;
+  pinLocation: 'AUTO' | 'HOME' | 'PRODUCT';
+  productId: string | null;
 }
 
 export default function Reviews() {
@@ -23,7 +25,7 @@ export default function Reviews() {
 
   const fetchPinnedReviews = async () => {
     try {
-      const res = await fetch('/api/reviews?pinned=true&feedbackOnly=true', {
+      const res = await fetch('/api/reviews?pinned=true&feedbackOnly=true&pinLocation=HOME', {
         cache: 'no-store',
       });
       const data = await res.json();
@@ -59,6 +61,9 @@ export default function Reviews() {
           </h2>
           <p className="text-charcoal-light max-w-2xl mx-auto">
             Feedback from the community
+          </p>
+          <p className="text-charcoal/60 text-sm mt-3">
+            Tell us what you loved, what could be better, or how we can help next.
           </p>
         </motion.div>
 

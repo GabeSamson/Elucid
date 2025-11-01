@@ -13,11 +13,21 @@ interface Review {
   isApproved: boolean;
   productId: string | null;
   createdAt: string;
+  pinLocation: 'AUTO' | 'HOME' | 'PRODUCT';
   product?: {
     id: string;
     name: string;
   } | null;
 }
+
+type PinLocation = 'AUTO' | 'HOME' | 'PRODUCT';
+
+const derivePinLocation = (review: Review): PinLocation => {
+  if (review.pinLocation && review.pinLocation !== 'AUTO') {
+    return review.pinLocation;
+  }
+  return review.productId ? 'PRODUCT' : 'HOME';
+};
 
 export const dynamic = 'force-dynamic';
 
@@ -28,6 +38,7 @@ export default function AdminReviewsPage() {
   const [selectedReview, setSelectedReview] = useState<Review | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [pinSelections, setPinSelections] = useState<Record<string, PinLocation>>({});
 
   useEffect(() => {
     fetchReviews();
@@ -47,7 +58,13 @@ export default function AdminReviewsPage() {
       const data = await res.json();
 
       if (res.ok) {
-        setReviews(data.reviews || []);
+        const fetchedReviews: Review[] = data.reviews || [];
+        setReviews(fetchedReviews);
+        const selections: Record<string, PinLocation> = {};
+        fetchedReviews.forEach((review) => {
+          selections[review.id] = derivePinLocation(review);
+        });
+        setPinSelections(selections);
       } else {
         throw new Error(data.error || 'Failed to load reviews');
       }
@@ -58,7 +75,10 @@ export default function AdminReviewsPage() {
     }
   };
 
-  const updateReview = async (id: string, updates: { isApproved?: boolean; isPinned?: boolean }) => {
+  const updateReview = async (
+    id: string,
+    updates: { isApproved?: boolean; isPinned?: boolean; pinLocation?: PinLocation }
+  ) => {
     setUpdatingId(id);
     try {
       const res = await fetch('/api/admin/reviews', {
@@ -108,9 +128,18 @@ export default function AdminReviewsPage() {
     }
   };
 
+  const handlePinSelectionChange = (id: string, value: PinLocation) => {
+    setPinSelections((prev) => ({
+      ...prev,
+      [id]: value,
+    }));
+  };
+
   const pendingReviews = reviews.filter(r => !r.isApproved);
   const approvedReviews = reviews.filter(r => r.isApproved && !r.isPinned);
   const pinnedReviews = reviews.filter(r => r.isPinned);
+  const pinnedHomepageReviews = pinnedReviews.filter((review) => derivePinLocation(review) === 'HOME');
+  const pinnedProductReviews = pinnedReviews.filter((review) => derivePinLocation(review) === 'PRODUCT');
   const productReviews = reviews.filter(r => r.productId);
   const generalFeedback = reviews.filter(r => !r.productId);
 
@@ -212,54 +241,188 @@ export default function AdminReviewsPage() {
 
           {/* Pinned Reviews */}
           {pinnedReviews.length > 0 && (
-            <div className="bg-beige/20 p-6 border border-beige">
-              <h2 className="font-serif text-2xl text-charcoal-dark mb-4">
-                Pinned ({pinnedReviews.length})
-              </h2>
-              <p className="text-xs text-charcoal/60 mb-4">
-                Product reviews are pinned to their product pages. General feedback is pinned to the homepage.
-              </p>
+            <div className="bg-beige/20 p-6 border border-beige space-y-6">
+              <div>
+                <h2 className="font-serif text-2xl text-charcoal-dark mb-2">
+                  Pinned Highlights
+                </h2>
+                <p className="text-xs text-charcoal/60">
+                  Choose whether a testimonial appears on the homepage or its product page. Homepage pins showcase social proof across the site.
+                </p>
+              </div>
+
               <div className="space-y-4">
-                {pinnedReviews.map((review) => (
-                  <div key={review.id} className="bg-cream p-4 border border-charcoal/10">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <span className="font-medium text-charcoal-dark">{review.name}</span>
-                          <div className="text-charcoal-dark">
-                            {'★'.repeat(review.rating)}
-                            <span className="text-charcoal/30">{'★'.repeat(5 - review.rating)}</span>
-                          </div>
-                          <span className="px-2 py-1 bg-charcoal-dark text-cream text-xs uppercase tracking-wider">
-                            Pinned
-                          </span>
-                        </div>
-                        {review.title && (
-                          <h3 className="font-medium text-charcoal mb-2">{review.title}</h3>
-                        )}
-                        <p className="text-sm text-charcoal-light mb-2">{review.content}</p>
-                        <p className="text-xs text-charcoal/60">
-                          {new Date(review.createdAt).toLocaleString()}
-                        </p>
-                      </div>
-                      <div className="flex flex-col gap-2">
-                        <button
-                          onClick={() => updateReview(review.id, { isPinned: false })}
-                          disabled={updatingId === review.id}
-                          className="px-4 py-2 bg-charcoal text-cream hover:bg-charcoal-dark text-xs uppercase tracking-wider disabled:opacity-50"
-                        >
-                          {updatingId === review.id ? 'Unpinning...' : 'Unpin'}
-                        </button>
-                        <button
-                          onClick={() => setSelectedReview(review)}
-                          className="px-4 py-2 border border-charcoal/20 text-charcoal hover:border-charcoal text-xs uppercase tracking-wider"
-                        >
-                          View
-                        </button>
-                      </div>
-                    </div>
+                <h3 className="text-sm uppercase tracking-wider text-charcoal/70">
+                  Homepage ({pinnedHomepageReviews.length})
+                </h3>
+                {pinnedHomepageReviews.length === 0 ? (
+                  <div className="rounded-lg border border-charcoal/10 bg-cream p-4 text-sm text-charcoal/60">
+                    No reviews are pinned to the homepage yet.
                   </div>
-                ))}
+                ) : (
+                  pinnedHomepageReviews.map((review) => {
+                    const selection = pinSelections[review.id] ?? derivePinLocation(review);
+                    const availableLocations: PinLocation[] = review.productId ? ['PRODUCT', 'HOME'] : ['HOME'];
+                    return (
+                      <div key={review.id} className="bg-cream p-4 border border-charcoal/10">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2 flex-wrap">
+                              <span className="font-medium text-charcoal-dark">{review.name}</span>
+                              <div className="text-charcoal-dark">
+                                {'★'.repeat(review.rating)}
+                                <span className="text-charcoal/30">{'★'.repeat(5 - review.rating)}</span>
+                              </div>
+                              <span className="px-2 py-1 bg-charcoal-dark text-cream text-xs uppercase tracking-wider">
+                                Homepage
+                              </span>
+                            </div>
+                            {review.title && (
+                              <h3 className="font-medium text-charcoal mb-2">{review.title}</h3>
+                            )}
+                            <p className="text-sm text-charcoal-light mb-2">{review.content}</p>
+                            <p className="text-xs text-charcoal/60">
+                              {new Date(review.createdAt).toLocaleString()}
+                            </p>
+                            {availableLocations.length > 1 && (
+                              <div className="mt-3 flex items-center gap-2 text-xs text-charcoal/70">
+                                <span>Pin to</span>
+                                <select
+                                  value={selection}
+                                  onChange={(event) =>
+                                    handlePinSelectionChange(review.id, event.target.value as PinLocation)
+                                  }
+                                  className="select-modern-sm"
+                                >
+                                  {availableLocations.map((location) => (
+                                    <option key={location} value={location}>
+                                      {location === 'HOME' ? 'Homepage' : 'Product page'}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex flex-col gap-2 min-w-[160px]">
+                            {availableLocations.length > 1 && (
+                              <button
+                                onClick={() =>
+                                  updateReview(review.id, {
+                                    isPinned: true,
+                                    pinLocation: pinSelections[review.id] ?? derivePinLocation(review),
+                                  })
+                                }
+                                disabled={updatingId === review.id}
+                                className="px-4 py-2 border border-charcoal/20 text-charcoal hover:border-charcoal text-xs uppercase tracking-wider disabled:opacity-50"
+                              >
+                                {updatingId === review.id ? 'Saving...' : 'Update Location'}
+                              </button>
+                            )}
+                            <button
+                              onClick={() => updateReview(review.id, { isPinned: false })}
+                              disabled={updatingId === review.id}
+                              className="px-4 py-2 bg-charcoal text-cream hover:bg-charcoal-dark text-xs uppercase tracking-wider disabled:opacity-50"
+                            >
+                              {updatingId === review.id ? 'Unpinning...' : 'Unpin'}
+                            </button>
+                            <button
+                              onClick={() => setSelectedReview(review)}
+                              className="px-4 py-2 border border-charcoal/20 text-charcoal hover:border-charcoal text-xs uppercase tracking-wider"
+                            >
+                              View
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-sm uppercase tracking-wider text-charcoal/70">
+                  Product Pages ({pinnedProductReviews.length})
+                </h3>
+                {pinnedProductReviews.length === 0 ? (
+                  <div className="rounded-lg border border-charcoal/10 bg-cream p-4 text-sm text-charcoal/60">
+                    No product reviews are pinned yet.
+                  </div>
+                ) : (
+                  pinnedProductReviews.map((review) => {
+                    const selection = pinSelections[review.id] ?? derivePinLocation(review);
+                    const availableLocations: PinLocation[] = ['PRODUCT', 'HOME'];
+                    return (
+                      <div key={review.id} className="bg-cream p-4 border border-charcoal/10">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2 flex-wrap">
+                              <span className="font-medium text-charcoal-dark">{review.name}</span>
+                              <div className="text-charcoal-dark">
+                                {'★'.repeat(review.rating)}
+                                <span className="text-charcoal/30">{'★'.repeat(5 - review.rating)}</span>
+                              </div>
+                              {review.product && (
+                                <span className="px-2 py-1 bg-beige text-charcoal text-xs uppercase tracking-wider">
+                                  {review.product.name}
+                                </span>
+                              )}
+                            </div>
+                            {review.title && (
+                              <h3 className="font-medium text-charcoal mb-2">{review.title}</h3>
+                            )}
+                            <p className="text-sm text-charcoal-light mb-2">{review.content}</p>
+                            <p className="text-xs text-charcoal/60">
+                              {new Date(review.createdAt).toLocaleString()}
+                            </p>
+                            <div className="mt-3 flex items-center gap-2 text-xs text-charcoal/70">
+                              <span>Pin to</span>
+                              <select
+                                value={selection}
+                                onChange={(event) =>
+                                  handlePinSelectionChange(review.id, event.target.value as PinLocation)
+                                }
+                                className="select-modern-sm"
+                              >
+                                {availableLocations.map((location) => (
+                                  <option key={location} value={location}>
+                                    {location === 'HOME' ? 'Homepage' : 'Product page'}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+                          <div className="flex flex-col gap-2 min-w-[160px]">
+                            <button
+                              onClick={() =>
+                                updateReview(review.id, {
+                                  isPinned: true,
+                                  pinLocation: pinSelections[review.id] ?? derivePinLocation(review),
+                                })
+                              }
+                              disabled={updatingId === review.id}
+                              className="px-4 py-2 border border-charcoal/20 text-charcoal hover:border-charcoal text-xs uppercase tracking-wider disabled:opacity-50"
+                            >
+                              {updatingId === review.id ? 'Saving...' : 'Update Location'}
+                            </button>
+                            <button
+                              onClick={() => updateReview(review.id, { isPinned: false })}
+                              disabled={updatingId === review.id}
+                              className="px-4 py-2 bg-charcoal text-cream hover:bg-charcoal-dark text-xs uppercase tracking-wider disabled:opacity-50"
+                            >
+                              {updatingId === review.id ? 'Unpinning...' : 'Unpin'}
+                            </button>
+                            <button
+                              onClick={() => setSelectedReview(review)}
+                              className="px-4 py-2 border border-charcoal/20 text-charcoal hover:border-charcoal text-xs uppercase tracking-wider"
+                            >
+                              View
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
           )}
@@ -298,14 +461,36 @@ export default function AdminReviewsPage() {
                         <p className="text-xs text-charcoal/60">
                           {new Date(review.createdAt).toLocaleString()}
                         </p>
+                        <div className="mt-3 flex items-center gap-2 text-xs text-charcoal/70">
+                          <span>Pin to</span>
+                          <select
+                            value={pinSelections[review.id] ?? derivePinLocation(review)}
+                            onChange={(event) =>
+                              handlePinSelectionChange(review.id, event.target.value as PinLocation)
+                            }
+                            className="select-modern-sm"
+                          >
+                            <option value="HOME">Homepage</option>
+                            {review.productId && <option value="PRODUCT">Product page</option>}
+                          </select>
+                        </div>
                       </div>
                       <div className="flex flex-col gap-2">
                         <button
-                          onClick={() => updateReview(review.id, { isPinned: true })}
+                          onClick={() =>
+                            updateReview(review.id, {
+                              isPinned: true,
+                              pinLocation: pinSelections[review.id] ?? derivePinLocation(review),
+                            })
+                          }
                           disabled={updatingId === review.id}
                           className="px-4 py-2 bg-charcoal-dark text-cream hover:bg-charcoal text-xs uppercase tracking-wider disabled:opacity-50"
                         >
-                          {updatingId === review.id ? 'Pinning...' : review.product ? `Pin to ${review.product.name}` : 'Pin to Homepage'}
+                          {updatingId === review.id
+                            ? 'Pinning...'
+                            : (pinSelections[review.id] ?? derivePinLocation(review)) === 'HOME'
+                              ? 'Pin to Homepage'
+                              : 'Pin to Product Page'}
                         </button>
                         <button
                           onClick={() => updateReview(review.id, { isApproved: false })}
@@ -381,6 +566,14 @@ export default function AdminReviewsPage() {
                 ) : (
                   <span className="px-2 py-1 bg-amber-100 text-amber-800 text-xs uppercase">Pending</span>
                 )}
+              </div>
+              <div>
+                <strong>Pin target:</strong>{' '}
+                {derivePinLocation(selectedReview) === 'HOME'
+                  ? 'Homepage'
+                  : selectedReview.product?.name
+                    ? `${selectedReview.product.name}`
+                    : 'Product page'}
               </div>
               <div>
                 <strong>Submitted:</strong> {new Date(selectedReview.createdAt).toLocaleString()}

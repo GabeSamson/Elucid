@@ -7,6 +7,11 @@ export async function GET(req: NextRequest) {
     const pinnedOnly = searchParams.get('pinned') === 'true';
     const productId = searchParams.get('productId');
     const feedbackOnly = searchParams.get('feedbackOnly') === 'true'; // General feedback (not product reviews)
+    const pinLocationParam = searchParams.get('pinLocation');
+
+    const normalizedPinLocation = pinLocationParam
+      ? pinLocationParam.toUpperCase()
+      : null;
 
     const reviews = await prisma.review.findMany({
       where: {
@@ -28,10 +33,21 @@ export async function GET(req: NextRequest) {
         isPinned: true,
         productId: true,
         createdAt: true,
+        pinLocation: true,
       },
     });
+    const filteredReviews = normalizedPinLocation
+      ? reviews.filter((review) => {
+          const effectiveLocation = review.pinLocation && review.pinLocation !== 'AUTO'
+            ? review.pinLocation
+            : review.productId
+              ? 'PRODUCT'
+              : 'HOME';
+          return effectiveLocation === normalizedPinLocation;
+        })
+      : reviews;
 
-    return NextResponse.json({ reviews });
+    return NextResponse.json({ reviews: filteredReviews });
   } catch (error) {
     console.error('Error fetching reviews:', error);
     return NextResponse.json(

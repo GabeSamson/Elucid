@@ -168,6 +168,14 @@ export default function HeroClient({
           >
             {ctaLabel}
           </a>
+          <div className="mt-6">
+            <a
+              href="/reviews"
+              className="inline-flex items-center justify-center gap-3 rounded-full border border-cream-light/20 px-6 py-3 text-xs uppercase tracking-[0.3em] text-cream-light/80 hover:text-cream-light"
+            >
+              Share Feedback
+            </a>
+          </div>
         </motion.div>
       </div>
     </section>

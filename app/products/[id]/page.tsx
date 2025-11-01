@@ -1,7 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useEffect, useState, useMemo, Suspense } from "react";
+import Link from "next/link";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
@@ -16,6 +17,7 @@ import {
   getProductPriceInCurrency,
   hasPriceOverrideForCurrency,
 } from "@/lib/productPricing";
+import ProductReviews from "@/components/ProductReviews";
 
 export default function ProductPage() {
   const params = useParams();
@@ -543,6 +545,21 @@ export default function ProductPage() {
                 </button>
               )}
 
+              <div className="mt-6 flex flex-wrap items-center gap-3 text-xs uppercase tracking-wider">
+                <Link
+                  href={`/reviews?productId=${product.id}`}
+                  className="inline-flex items-center gap-1 rounded-full border border-charcoal/30 px-4 py-2 text-charcoal hover:border-charcoal"
+                >
+                  Review this product
+                </Link>
+                <Link
+                  href="/reviews"
+                  className="inline-flex items-center gap-1 rounded-full border border-charcoal/20 px-4 py-2 text-charcoal/80 hover:text-charcoal"
+                >
+                  Leave store feedback
+                </Link>
+              </div>
+
               {/* Additional Info */}
               <div className="mt-8 pt-8 border-t border-charcoal/10 space-y-4 text-sm text-charcoal-light">
                 <p>
@@ -556,6 +573,7 @@ export default function ProductPage() {
         </div>
       </div>
 
+      <ProductReviews productId={product.id} productName={product.name} />
       <Footer />
     </main>
   );

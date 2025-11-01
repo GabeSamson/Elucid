@@ -61,7 +61,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const { id, isApproved, isPinned } = await req.json();
+    const { id, isApproved, isPinned, pinLocation } = await req.json();
 
     if (!id) {
       return NextResponse.json(
@@ -70,12 +70,35 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
+    let resolvedPinLocation: string | undefined;
+    if (typeof pinLocation === 'string') {
+      const normalized = pinLocation.toUpperCase();
+      if (['AUTO', 'HOME', 'PRODUCT'].includes(normalized)) {
+        resolvedPinLocation = normalized;
+      }
+    }
+
+    const data: any = {};
+    if (typeof isApproved === 'boolean') {
+      data.isApproved = isApproved;
+    }
+    if (typeof isPinned === 'boolean') {
+      data.isPinned = isPinned;
+    }
+    if (resolvedPinLocation) {
+      data.pinLocation = resolvedPinLocation;
+    }
+
+    if (Object.keys(data).length === 0) {
+      return NextResponse.json(
+        { error: 'No updates provided' },
+        { status: 400 }
+      );
+    }
+
     const review = await prisma.review.update({
       where: { id },
-      data: {
-        ...(typeof isApproved === 'boolean' && { isApproved }),
-        ...(typeof isPinned === 'boolean' && { isPinned }),
-      },
+      data,
     });
 
     return NextResponse.json({ success: true, review });
