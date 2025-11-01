@@ -80,16 +80,21 @@ interface TrafficAnalyticsData {
   averageSessionDuration: number;
   medianSessionDuration: number;
   averagePagesPerSession: number;
+  sessionsPerVisitor: number;
   conversion: {
     orders: number;
     revenue: number;
     conversionRate: number;
     averageOrderValue: number;
+    ordersPerVisit: number;
+    ordersPerCustomer: number;
+    uniqueCustomers: number;
   };
   trend: {
     viewsChange: number | null;
     uniqueChange: number | null;
     ordersChange: number | null;
+    sessionsChange: number | null;
   };
   sourceBreakdown: TrafficSourceBreakdown[];
   sourceTimeline: TrafficTimelinePoint[];
@@ -101,7 +106,8 @@ interface TrafficAnalyticsData {
   viewsByCountry: Array<{ country: string | null; count: number }>;
   dailyViews: Array<{
     date: string;
-    count: number;
+    pageViews: number;
+    sessions: number;
     uniqueVisitors: number;
     orders: number;
     conversionRate: number;
@@ -338,6 +344,7 @@ function AdminAnalyticsContent() {
   const totalSearchVisits = sumCounts(trafficData?.searchReferrers);
   const totalCampaignVisits = sumCounts(trafficData?.viewsByUtmSource);
   const channelBarHeight = Math.max(((trafficData?.sourceBreakdown?.length || 0) + 1) * 44, 240);
+  const sessionsTrend = formatTrend(trafficData?.trend?.sessionsChange);
   const viewsTrend = formatTrend(trafficData?.trend?.viewsChange);
   const uniqueTrend = formatTrend(trafficData?.trend?.uniqueChange);
   const ordersTrend = formatTrend(trafficData?.trend?.ordersChange);
@@ -365,10 +372,12 @@ function AdminAnalyticsContent() {
                 onChange={(e) => setTimeRange(parseInt(e.target.value))}
                 className="w-full px-4 py-2 pr-10 bg-cream border border-cream/20 focus:border-cream focus:outline-none rounded appearance-none cursor-pointer text-charcoal"
               >
+                <option value={1}>Today</option>
                 <option value={7}>Last 7 days</option>
+                <option value={14}>Last 14 days</option>
                 <option value={30}>Last 30 days</option>
                 <option value={90}>Last 90 days</option>
-                <option value={365}>Last year</option>
+                <option value={365}>Last 365 days</option>
                 <option value={9999999}>Lifetime</option>
               </select>
               <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-charcoal/60">
@@ -519,13 +528,13 @@ function AdminAnalyticsContent() {
             {/* Traffic Summary */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-6">
               <div className="bg-cream-light p-6 rounded-lg border border-charcoal/20 shadow-sm hover:shadow-md transition-shadow">
-                <div className="text-xs uppercase tracking-wider text-charcoal/60 mb-2">Total Page Views</div>
+                <div className="text-xs uppercase tracking-wider text-charcoal/60 mb-2">Site Visits</div>
                 <div className="text-3xl font-serif text-charcoal-dark">
-                  {trafficData?.totalViews?.toLocaleString() || 0}
+                  {trafficData?.totalSessions?.toLocaleString() || 0}
                 </div>
-                {viewsTrend && (
-                  <div className={`text-xs font-medium mt-2 ${trendClass(viewsTrend.tone)}`}>
-                    {viewsTrend.label}
+                {sessionsTrend && (
+                  <div className={`text-xs font-medium mt-2 ${trendClass(sessionsTrend.tone)}`}>
+                    {sessionsTrend.label}
                   </div>
                 )}
               </div>
@@ -543,13 +552,16 @@ function AdminAnalyticsContent() {
               </div>
 
               <div className="bg-cream-light p-6 rounded-lg border border-charcoal/20 shadow-sm hover:shadow-md transition-shadow">
-                <div className="text-xs uppercase tracking-wider text-charcoal/60 mb-2">Leading Channel</div>
+                <div className="text-xs uppercase tracking-wider text-charcoal/60 mb-2">Conversion Rate</div>
                 <div className="text-3xl font-serif text-charcoal-dark">
-                  {topTrafficSource ? topTrafficSource.source : 'No data'}
+                  {trafficData ? `${trafficData.conversion.conversionRate.toFixed(2)}%` : '0.00%'}
                 </div>
-                {topTrafficSource && (
-                  <div className="text-xs text-charcoal mt-2 font-medium">
-                    {topTrafficSource.views.toLocaleString()} views • {topTrafficSource.percentage}%
+                <div className="text-xs text-charcoal/70 mt-2 font-medium">
+                  {trafficData?.conversion?.orders?.toLocaleString() || 0} orders
+                </div>
+                {ordersTrend && (
+                  <div className={`text-xs font-medium mt-1 ${trendClass(ordersTrend.tone)}`}>
+                    {ordersTrend.label}
                   </div>
                 )}
               </div>
@@ -571,6 +583,12 @@ function AdminAnalyticsContent() {
                 )}
               </div>
             </div>
+
+            {topTrafficSource && (
+              <p className="mb-6 text-xs uppercase tracking-wider text-charcoal/60">
+                Leading channel: <span className="text-charcoal-dark font-medium">{topTrafficSource.source}</span> · {topTrafficSource.views.toLocaleString()} visits ({topTrafficSource.percentage}%)
+              </p>
+            )}
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
               <div className="bg-white p-8 rounded-lg border border-charcoal/10 shadow-md">
@@ -690,47 +708,50 @@ function AdminAnalyticsContent() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-6">
               <div className="bg-cream-light p-6 rounded-lg border border-charcoal/20 shadow-sm hover:shadow-md transition-shadow">
-                <div className="text-xs uppercase tracking-wider text-charcoal/60 mb-2">Total Sessions</div>
+                <div className="text-xs uppercase tracking-wider text-charcoal/60 mb-2">Page Views</div>
                 <div className="text-3xl font-serif text-charcoal-dark">
-                  {trafficData?.totalSessions?.toLocaleString() || 0}
+                  {trafficData?.totalViews?.toLocaleString() || 0}
                 </div>
-                <div className="text-xs text-charcoal/70 mt-2 font-medium">
-                  Avg {trafficData ? trafficData.averagePagesPerSession.toFixed(1) : '0.0'} pages / session
-                </div>
-              </div>
-
-              <div className="bg-cream-light p-6 rounded-lg border border-charcoal/20 shadow-sm hover:shadow-md transition-shadow">
-                <div className="text-xs uppercase tracking-wider text-charcoal/60 mb-2">Avg Session Length</div>
-                <div className="text-2xl font-serif text-charcoal-dark">
-                  {trafficData ? formatDuration(trafficData.averageSessionDuration) : '0m 00s'}
-                </div>
-                <div className="text-xs text-charcoal/70 mt-2 font-medium">
-                  Median {trafficData ? formatDuration(trafficData.medianSessionDuration) : '0m 00s'}
-                </div>
-              </div>
-
-              <div className="bg-cream-light p-6 rounded-lg border border-charcoal/20 shadow-sm hover:shadow-md transition-shadow">
-                <div className="text-xs uppercase tracking-wider text-charcoal/60 mb-2">Conversion Rate</div>
-                <div className="text-3xl font-serif text-charcoal-dark">
-                  {trafficData ? `${trafficData.conversion.conversionRate.toFixed(2)}%` : '0.00%'}
-                </div>
-                <div className="text-xs text-charcoal/70 mt-2 font-medium">
-                  {trafficData?.conversion?.orders?.toLocaleString() || 0} orders
-                </div>
-                {ordersTrend && (
-                  <div className={`text-xs font-medium mt-1 ${trendClass(ordersTrend.tone)}`}>
-                    {ordersTrend.label}
+                {viewsTrend && (
+                  <div className={`text-xs font-medium mt-2 ${trendClass(viewsTrend.tone)}`}>
+                    {viewsTrend.label}
                   </div>
                 )}
               </div>
 
               <div className="bg-cream-light p-6 rounded-lg border border-charcoal/20 shadow-sm hover:shadow-md transition-shadow">
-                <div className="text-xs uppercase tracking-wider text-charcoal/60 mb-2">Order Revenue</div>
+                <div className="text-xs uppercase tracking-wider text-charcoal/60 mb-2">Pages per Visit</div>
                 <div className="text-3xl font-serif text-charcoal-dark">
-                  {trafficData ? formatCurrency(trafficData.conversion.revenue) : formatCurrency(0)}
+                  {trafficData ? trafficData.averagePagesPerSession.toFixed(1) : '0.0'}
                 </div>
                 <div className="text-xs text-charcoal/70 mt-2 font-medium">
-                  Avg order {trafficData ? formatCurrency(trafficData.conversion.averageOrderValue) : formatCurrency(0)}
+                  Avg session length {trafficData ? formatDuration(trafficData.averageSessionDuration) : '0m 00s'}
+                </div>
+                <div className="text-xs text-charcoal/60 mt-1">
+                  Median session {trafficData ? formatDuration(trafficData.medianSessionDuration) : '0m 00s'}
+                </div>
+                <div className="text-xs text-charcoal/60 mt-1">
+                  {trafficData ? trafficData.sessionsPerVisitor.toFixed(2) : '0.00'} sessions / visitor
+                </div>
+              </div>
+
+              <div className="bg-cream-light p-6 rounded-lg border border-charcoal/20 shadow-sm hover:shadow-md transition-shadow">
+                <div className="text-xs uppercase tracking-wider text-charcoal/60 mb-2">Orders per Visit</div>
+                <div className="text-3xl font-serif text-charcoal-dark">
+                  {trafficData ? trafficData.conversion.ordersPerVisit.toFixed(2) : '0.00'}
+                </div>
+                <div className="text-xs text-charcoal/70 mt-2 font-medium">
+                  {trafficData?.conversion?.orders?.toLocaleString() || 0} orders in range
+                </div>
+              </div>
+
+              <div className="bg-cream-light p-6 rounded-lg border border-charcoal/20 shadow-sm hover:shadow-md transition-shadow">
+                <div className="text-xs uppercase tracking-wider text-charcoal/60 mb-2">Unique Customers</div>
+                <div className="text-3xl font-serif text-charcoal-dark">
+                  {trafficData?.conversion?.uniqueCustomers?.toLocaleString() || 0}
+                </div>
+                <div className="text-xs text-charcoal/70 mt-2 font-medium">
+                  {trafficData ? `${trafficData.conversion.ordersPerCustomer.toFixed(2)} orders / customer` : '0.00'}
                 </div>
               </div>
             </div>
@@ -783,7 +804,7 @@ function AdminAnalyticsContent() {
 
             {/* Daily Page Views Chart */}
             <div className="bg-white p-8 rounded-lg border border-charcoal/10 shadow-md mb-8">
-              <h3 className="font-serif text-xl text-charcoal mb-6">Page Views Over Time</h3>
+              <h3 className="font-serif text-xl text-charcoal mb-6">Site Visits Over Time</h3>
               {trafficData?.dailyViews && trafficData.dailyViews.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={trafficData.dailyViews}>
@@ -812,20 +833,26 @@ function AdminAnalyticsContent() {
                           year: 'numeric',
                         })
                       }
-                      formatter={(value: number, name: string) => {
-                        const label = name === 'count' ? 'Total Views' : 'Unique Visitors';
-                        return [value.toLocaleString(), label];
-                      }}
+                      formatter={(value: number, name: string) => [value.toLocaleString(), name]}
                     />
                     <Legend />
                     <Line
                       type="monotone"
-                      dataKey="count"
+                      dataKey="sessions"
                       stroke="#2B2826"
                       strokeWidth={2}
                       dot={{ fill: '#2B2826', r: 4 }}
                       activeDot={{ r: 6 }}
-                      name="Total Views"
+                      name="Site Visits"
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="pageViews"
+                      stroke="#F97316"
+                      strokeWidth={1.5}
+                      strokeDasharray="4 3"
+                      dot={false}
+                      name="Page Views"
                     />
                     <Line
                       type="monotone"
@@ -900,10 +927,22 @@ function AdminAnalyticsContent() {
                         if (name === 'revenue') {
                           return [formatCurrency(value), 'Revenue'];
                         }
-                        return [value, name];
+                        if (name === 'Site Visits') {
+                          return [value.toLocaleString(), 'Site Visits'];
+                        }
+                        return [typeof value === 'number' ? value.toLocaleString() : value, name];
                       }}
                     />
                     <Legend />
+                    <Area
+                      yAxisId="orders"
+                      type="monotone"
+                      dataKey="sessions"
+                      stroke="#10B981"
+                      fill="#10B981"
+                      fillOpacity={0.12}
+                      name="Site Visits"
+                    />
                     <Bar
                       yAxisId="orders"
                       dataKey="orders"
@@ -1088,7 +1127,9 @@ function AdminAnalyticsContent() {
                     </table>
                   </div>
                 ) : (
-                  <p className="text-sm text-charcoal/60">No UTM campaign data available</p>
+                  <p className="text-sm text-charcoal/60">
+                    No UTM campaign data detected. Add parameters like <code className="font-mono">?utm_source=instagram&utm_campaign=autumn_drop</code> to your links to capture campaign performance here.
+                  </p>
                 )}
               </div>
 

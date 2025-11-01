@@ -67,9 +67,11 @@ export async function GET(request: NextRequest) {
       sessionStatsRaw,
       ordersSummary,
       ordersByDayRaw,
+      ordersForCustomers,
       previousViewsCount,
       previousUniqueCount,
       previousOrdersCount,
+      previousSessionsCount,
     ] = await Promise.all([
       prisma.pageView.count({ where: whereClause }),
       prisma.pageView.count({
@@ -127,12 +129,13 @@ export async function GET(request: NextRequest) {
         take: 10,
       }),
       prisma.$queryRaw<
-        Array<{ date: Date; total: bigint; unique_count: bigint }>
+        Array<{ date: Date; total: bigint; unique_count: bigint; session_count: bigint }>
       >`
         SELECT
           DATE(created_at) as date,
           COUNT(*) as total,
-          COUNT(DISTINCT visitor_hash) as unique_count
+          COUNT(DISTINCT visitor_hash) as unique_count,
+          COUNT(DISTINCT session_hash) as session_count
         FROM page_views
         WHERE created_at >= ${dateFrom}
         GROUP BY DATE(created_at)
@@ -183,12 +186,24 @@ export async function GET(request: NextRequest) {
         GROUP BY DATE(created_at)
         ORDER BY date ASC
       `,
+      prisma.order.findMany({
+        where: orderWhereClause,
+        select: {
+          id: true,
+          userId: true,
+          email: true,
+        },
+      }),
       prisma.pageView.count({ where: previousWhereClause }),
       prisma.pageView.count({
         where: previousWhereClause,
         distinct: [Prisma.PageViewScalarFieldEnum.visitorHash],
       }),
       prisma.order.count({ where: previousOrderWhereClause }),
+      prisma.pageView.count({
+        where: previousWhereClause,
+        distinct: [Prisma.PageViewScalarFieldEnum.sessionHash],
+      }),
     ]);
 
     type SourceKey = "Direct" | "Social" | "Search" | "Referral" | "Campaign";
@@ -383,11 +398,14 @@ export async function GET(request: NextRequest) {
 
       return {
         date: dateKey,
-        count: Number(dv.total),
+        pageViews: Number(dv.total),
+        sessions: Number(dv.session_count),
         uniqueVisitors: unique,
         orders: dayOrders,
         conversionRate:
-          unique > 0 ? Number(((dayOrders / unique) * 100).toFixed(1)) : 0,
+          Number(dv.session_count) > 0
+            ? Number(((dayOrders / Number(dv.session_count)) * 100).toFixed(1))
+            : 0,
         revenue: Number(dayRevenue.toFixed(2)),
       };
     });
@@ -448,9 +466,25 @@ export async function GET(request: NextRequest) {
     const averageOrderValue =
       ordersCount > 0 ? ordersRevenue / ordersCount : 0;
     const conversionRate =
-      uniqueVisitors > 0
-        ? Number(((ordersCount / uniqueVisitors) * 100).toFixed(2))
+      totalSessions > 0
+        ? Number(((ordersCount / totalSessions) * 100).toFixed(2))
         : 0;
+
+    const uniqueCustomerSet = new Set<string>();
+    ordersForCustomers.forEach((order) => {
+      if (order.userId) {
+        uniqueCustomerSet.add(`user:${order.userId}`);
+      } else if (order.email) {
+        uniqueCustomerSet.add(`email:${order.email.toLowerCase()}`);
+      } else {
+        uniqueCustomerSet.add(`order:${order.id}`);
+      }
+    });
+
+    const uniqueCustomers = uniqueCustomerSet.size;
+    const ordersPerVisit = totalSessions > 0 ? Number((ordersCount / totalSessions).toFixed(2)) : 0;
+    const ordersPerCustomer = uniqueCustomers > 0 ? Number((ordersCount / uniqueCustomers).toFixed(2)) : 0;
+    const sessionsPerVisitor = uniqueVisitors > 0 ? Number((totalSessions / uniqueVisitors).toFixed(2)) : 0;
 
     const trend = {
       viewsChange:
@@ -479,6 +513,15 @@ export async function GET(request: NextRequest) {
               ).toFixed(1)
             )
           : null,
+      sessionsChange:
+        previousSessionsCount > 0
+          ? Number(
+              (
+                ((totalSessions - previousSessionsCount) / previousSessionsCount) *
+                100
+              ).toFixed(1)
+            )
+          : null,
     };
 
     return NextResponse.json({
@@ -491,11 +534,15 @@ export async function GET(request: NextRequest) {
       averageSessionDuration,
       medianSessionDuration,
       averagePagesPerSession,
+      sessionsPerVisitor,
       conversion: {
         orders: ordersCount,
         revenue: Number(ordersRevenue.toFixed(2)),
         conversionRate,
         averageOrderValue: Number(averageOrderValue.toFixed(2)),
+        ordersPerVisit,
+        ordersPerCustomer,
+        uniqueCustomers,
       },
       trend,
       sourceBreakdown,
