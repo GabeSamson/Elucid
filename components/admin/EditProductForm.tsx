@@ -15,6 +15,8 @@ interface ProductFormData {
   price: number;
   compareAtPrice?: number;
   costPrice?: number;
+  shippingCost?: number;
+  shippingPrice?: number;
   images: string[];
   colorImages: Record<string, string[]>;
   sizes: string[];

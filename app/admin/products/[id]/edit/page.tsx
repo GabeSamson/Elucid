@@ -73,6 +73,8 @@ export default async function EditProductPage({
     price: product.price,
     compareAtPrice: product.compareAtPrice || undefined,
     costPrice: product.costPrice || undefined,
+    shippingCost: product.shippingCost || undefined,
+    shippingPrice: product.shippingPrice || undefined,
     images: imagePayload.defaultImages,
     colorImages: imagePayload.colorImages,
     sizes: JSON.parse(product.sizes),

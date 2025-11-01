@@ -52,6 +52,8 @@ model Product {
   priceOverrides  String?   @map("price_overrides") // JSON map of currency -> price overrides
   compareAtPrice  Float?    @map("compare_at_price")
   costPrice       Float?    @map("cost_price") // Cost to manufacture/buy
+  shippingCost    Float?    @map("shipping_cost") // Cost to ship this item (for profit calculation)
+  shippingPrice   Float?    @map("shipping_price") // Optional: Amount customer pays for shipping (null = use site default)
   images          String    @default("[]") // JSON array as string
   stock           Int       @default(0)
   collectionId    String?   @map("collection_id")

@@ -51,6 +51,8 @@ export async function POST(request: NextRequest) {
       price,
       compareAtPrice,
       costPrice,
+      shippingCost,
+      shippingPrice,
       images,
       sizes,
       colors,
@@ -96,6 +98,18 @@ export async function POST(request: NextRequest) {
         : typeof costPrice === 'string'
           ? parseFloat(costPrice)
           : Number(costPrice);
+    const parsedShippingCost =
+      shippingCost === undefined || shippingCost === null || shippingCost === ''
+        ? null
+        : typeof shippingCost === 'string'
+          ? parseFloat(shippingCost)
+          : Number(shippingCost);
+    const parsedShippingPrice =
+      shippingPrice === undefined || shippingPrice === null || shippingPrice === ''
+        ? null
+        : typeof shippingPrice === 'string'
+          ? parseFloat(shippingPrice)
+          : Number(shippingPrice);
 
     // Validate required fields
     if (!name || !description || price === undefined || Number.isNaN(parsedPrice)) {
@@ -143,6 +157,8 @@ export async function POST(request: NextRequest) {
         price: parsedPrice,
         compareAtPrice: parsedCompareAtPrice,
         costPrice: parsedCostPrice,
+        shippingCost: parsedShippingCost,
+        shippingPrice: parsedShippingPrice,
         images: serializeProductImages(imagePayload),
         sizes: JSON.stringify(sizes || []),
         colors: JSON.stringify(colors || []),

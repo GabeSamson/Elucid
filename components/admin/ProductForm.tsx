@@ -24,6 +24,8 @@ interface ProductFormData {
   price: number;
   compareAtPrice?: number;
   costPrice?: number;
+  shippingCost?: number;
+  shippingPrice?: number;
   images: string[];
   colorImages: Record<string, string[]>;
   sizes: string[];
@@ -88,6 +90,8 @@ export default function ProductForm({
       price: initialData?.price || 0,
       compareAtPrice: initialData?.compareAtPrice,
       costPrice: initialData?.costPrice,
+      shippingCost: initialData?.shippingCost,
+      shippingPrice: initialData?.shippingPrice,
       images: initialData?.images || [],
       sizes: initialData?.sizes || [],
       colors: initialData?.colors || [],
@@ -402,6 +406,51 @@ useEffect(() => {
               </div>
               <p className="text-xs text-charcoal/60 mt-1">
                 Your cost to manufacture/buy
+              </p>
+            </div>
+          </div>
+
+          {/* Shipping Costs */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-charcoal mb-2">
+                Shipping Cost (optional)
+              </label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-charcoal/60 z-10">
+                  {currencySymbol}
+                </span>
+                <input
+                  {...register('shippingCost')}
+                  type="number"
+                  step="0.01"
+                  className="input-modern pl-8"
+                  placeholder="0.00"
+                />
+              </div>
+              <p className="text-xs text-charcoal/60 mt-1">
+                Your cost to ship this item
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-charcoal mb-2">
+                Customer Shipping Price (optional)
+              </label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-charcoal/60 z-10">
+                  {currencySymbol}
+                </span>
+                <input
+                  {...register('shippingPrice')}
+                  type="number"
+                  step="0.01"
+                  className="input-modern pl-8"
+                  placeholder="0.00"
+                />
+              </div>
+              <p className="text-xs text-charcoal/60 mt-1">
+                Amount customer pays for shipping (leave blank for site default)
               </p>
             </div>
           </div>

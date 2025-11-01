@@ -108,6 +108,11 @@ export async function GET(request: NextRequest) {
     const sizeSales: { [key: string]: { quantity: number; revenue: number; orders: number } } = {};
 
     orders.forEach((order) => {
+      // Calculate discount ratio to properly distribute order-level discounts
+      const orderSubtotal = order.subtotal;
+      const orderTotal = order.total;
+      const discountRatio = orderSubtotal > 0 ? orderTotal / orderSubtotal : 1;
+
       order.items.forEach((item) => {
         if (!productSales[item.productId]) {
           productSales[item.productId] = {
@@ -118,32 +123,37 @@ export async function GET(request: NextRequest) {
             profit: 0,
           };
         }
-        const revenue = item.priceAtPurchase * item.quantity;
+        // Calculate item revenue before discount
+        const itemSubtotalRevenue = item.priceAtPurchase * item.quantity;
+        // Apply proportional discount from order total
+        const itemActualRevenue = itemSubtotalRevenue * discountRatio;
+
         const costPrice = item.product?.costPrice || 0;
-        const cost = costPrice * item.quantity;
-        const profit = revenue - cost;
+        const shippingCost = item.product?.shippingCost || 0;
+        const cost = (costPrice + shippingCost) * item.quantity;
+        const profit = itemActualRevenue - cost;
 
         productSales[item.productId].quantity += item.quantity;
-        productSales[item.productId].revenue += revenue;
+        productSales[item.productId].revenue += itemActualRevenue;
         productSales[item.productId].cost += cost;
         productSales[item.productId].profit += profit;
 
-        // Track color performance
+        // Track color performance (with discount applied)
         if (item.color) {
           if (!colorSales[item.color]) {
             colorSales[item.color] = { quantity: 0, revenue: 0, orders: 0 };
           }
           colorSales[item.color].quantity += item.quantity;
-          colorSales[item.color].revenue += item.priceAtPurchase * item.quantity;
+          colorSales[item.color].revenue += itemActualRevenue;
         }
 
-        // Track size performance
+        // Track size performance (with discount applied)
         if (item.size) {
           if (!sizeSales[item.size]) {
             sizeSales[item.size] = { quantity: 0, revenue: 0, orders: 0 };
           }
           sizeSales[item.size].quantity += item.quantity;
-          sizeSales[item.size].revenue += item.priceAtPurchase * item.quantity;
+          sizeSales[item.size].revenue += itemActualRevenue;
         }
       });
 

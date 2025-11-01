@@ -141,6 +141,8 @@ export async function PUT(
       price,
       compareAtPrice,
       costPrice,
+      shippingCost,
+      shippingPrice,
       images,
       sizes,
       colors,
@@ -186,6 +188,18 @@ export async function PUT(
         : typeof costPrice === 'string'
           ? parseFloat(costPrice)
           : Number(costPrice);
+    const parsedShippingCost =
+      shippingCost === undefined || shippingCost === null || shippingCost === ''
+        ? null
+        : typeof shippingCost === 'string'
+          ? parseFloat(shippingCost)
+          : Number(shippingCost);
+    const parsedShippingPrice =
+      shippingPrice === undefined || shippingPrice === null || shippingPrice === ''
+        ? null
+        : typeof shippingPrice === 'string'
+          ? parseFloat(shippingPrice)
+          : Number(shippingPrice);
 
     if (!name || !description || price === undefined || Number.isNaN(parsedPrice)) {
       return NextResponse.json(
@@ -238,6 +252,8 @@ export async function PUT(
         price: parsedPrice,
         compareAtPrice: parsedCompareAtPrice,
         costPrice: parsedCostPrice,
+        shippingCost: parsedShippingCost,
+        shippingPrice: parsedShippingPrice,
         images: serializeProductImages(imagePayload),
         sizes: JSON.stringify(sizes || []),
         colors: JSON.stringify(colors || []),

@@ -32,6 +32,7 @@ export default async function AdminDashboard({ searchParams }: AdminDashboardPro
             product: {
               select: {
                 costPrice: true,
+                shippingCost: true,
               },
             },
           },
@@ -66,7 +67,8 @@ export default async function AdminDashboard({ searchParams }: AdminDashboardPro
     const revenue = order.total;
     const cost = order.items.reduce((acc, item) => {
       const unitCost = item.product?.costPrice ?? 0;
-      return acc + unitCost * item.quantity;
+      const shippingCost = item.product?.shippingCost ?? 0;
+      return acc + (unitCost + shippingCost) * item.quantity;
     }, 0);
 
     (Object.keys(profitBuckets) as Array<keyof typeof profitBuckets>).forEach((bucketKey) => {
