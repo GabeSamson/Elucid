@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { createHash } from "crypto";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const userAgent = request.headers.get("user-agent") || "unknown";
+    const now = new Date();
+    const dayKey = now.toISOString().split("T")[0];
+
+    const hashInput = `${ip || "anonymous"}|${userAgent}`;
+    const visitorHash = createHash("sha256").update(hashInput).digest("hex");
+    const sessionHash = createHash("sha256")
+      .update(`${hashInput}|${dayKey}`)
+      .digest("hex");
+
     // Store page view in database
     await prisma.pageView.create({
       data: {
@@ -37,6 +48,9 @@ export async function POST(request: NextRequest) {
         utmMedium: utmMedium || null,
         utmCampaign: utmCampaign || null,
         country: country || null,
+        userAgent,
+        visitorHash,
+        sessionHash,
       },
     });
 

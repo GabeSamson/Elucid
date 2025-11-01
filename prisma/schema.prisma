@@ -299,6 +299,9 @@ model PageView {
   utmMedium   String?  @map("utm_medium")
   utmCampaign String?  @map("utm_campaign")
   country     String?
+  userAgent   String?  @map("user_agent")
+  visitorHash String?  @map("visitor_hash")
+  sessionHash String?  @map("session_hash")
   createdAt   DateTime @default(now()) @map("created_at")
 
   @@map("page_views")
