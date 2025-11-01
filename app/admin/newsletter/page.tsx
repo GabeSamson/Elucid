@@ -20,6 +20,7 @@ export default function AdminNewsletterPage() {
   const [sending, setSending] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [includeAllUsers, setIncludeAllUsers] = useState(false);
+  const [totalUsersCount, setTotalUsersCount] = useState<number>(0);
 
   const loadSubscribers = async () => {
     setLoading(true);
@@ -29,6 +30,7 @@ export default function AdminNewsletterPage() {
 
       if (res.ok) {
         setSubscribers(payload.subscribers || []);
+        setTotalUsersCount(payload.totalUsersCount || 0);
       } else {
         throw new Error(payload.error || 'Failed to load subscribers');
       }
@@ -152,6 +154,10 @@ export default function AdminNewsletterPage() {
   };
 
   const activeCount = subscribers.filter(sub => sub.active).length;
+  const recipientCount = includeAllUsers ? totalUsersCount : activeCount;
+  const recipientLabel = includeAllUsers
+    ? `${recipientCount} Recipient(s) (All Users)`
+    : `${recipientCount} Subscriber(s)`;
 
   return (
     <div className="space-y-8">
@@ -346,7 +352,7 @@ export default function AdminNewsletterPage() {
                 disabled={sending || !emailSubject.trim() || !emailContent.trim()}
                 className="px-6 py-3 bg-charcoal-dark text-cream hover:bg-charcoal uppercase tracking-wider text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {sending ? 'Sending...' : `Send to ${activeCount} Subscriber(s)`}
+                {sending ? 'Sending...' : `Send to ${recipientLabel}`}
               </button>
             </div>
 

@@ -16,7 +16,19 @@ export async function GET() {
       orderBy: { createdAt: 'desc' },
     });
 
-    return NextResponse.json({ subscribers });
+    // Get count of all verified users
+    const verifiedUsers = await prisma.user.findMany({
+      where: { emailVerified: true },
+      select: { email: true },
+    });
+
+    // Calculate total unique recipients (users + newsletter subscribers)
+    const emailSet = new Set<string>();
+    verifiedUsers.forEach(u => emailSet.add(u.email));
+    subscribers.forEach(s => emailSet.add(s.email));
+    const totalUsersCount = emailSet.size;
+
+    return NextResponse.json({ subscribers, totalUsersCount });
   } catch (error) {
     console.error('Newsletter fetch error:', error);
     return NextResponse.json(
