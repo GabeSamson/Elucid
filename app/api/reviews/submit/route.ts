@@ -8,6 +8,7 @@ const reviewSchema = z.object({
   rating: z.number().int().min(1).max(5),
   title: z.string().max(200).optional().or(z.literal('')),
   content: z.string().min(10, 'Review must be at least 10 characters').max(2000),
+  productId: z.string().optional().or(z.literal('')), // Optional product ID for product reviews
 });
 
 export async function POST(req: NextRequest) {
@@ -22,7 +23,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { name, email, rating, title, content } = validation.data;
+    const { name, email, rating, title, content, productId } = validation.data;
 
     const review = await prisma.review.create({
       data: {
@@ -31,6 +32,7 @@ export async function POST(req: NextRequest) {
         rating,
         title: title || null,
         content,
+        productId: productId || null,
         isApproved: false, // Requires admin approval
         isPinned: false,
       },

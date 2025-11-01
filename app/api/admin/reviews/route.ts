@@ -24,6 +24,14 @@ export async function GET(req: NextRequest) {
         { isPinned: 'desc' },
         { createdAt: 'desc' },
       ],
+      include: {
+        product: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
     });
 
     return NextResponse.json({ reviews });

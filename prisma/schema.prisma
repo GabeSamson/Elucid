@@ -72,6 +72,7 @@ model Product {
   collection      Collection? @relation(fields: [collectionId], references: [id])
   orderItems      OrderItem[]
   variants        ProductVariant[]
+  reviews         Review[]
 
   @@map("products")
 }
@@ -331,10 +332,13 @@ model Review {
   rating      Int      // 1-5 stars
   title       String?
   content     String
-  isPinned    Boolean  @default(false) @map("is_pinned")
+  productId   String?  @map("product_id") // null = general feedback, set = product review
+  isPinned    Boolean  @default(false) @map("is_pinned") // Pin to homepage (feedback) or product page (product review)
   isApproved  Boolean  @default(false) @map("is_approved")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
+
+  product     Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@map("reviews")
 }

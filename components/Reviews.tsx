@@ -23,7 +23,7 @@ export default function Reviews() {
 
   const fetchPinnedReviews = async () => {
     try {
-      const res = await fetch('/api/reviews?pinned=true', {
+      const res = await fetch('/api/reviews?pinned=true&feedbackOnly=true', {
         cache: 'no-store',
       });
       const data = await res.json();

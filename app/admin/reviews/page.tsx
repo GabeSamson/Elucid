@@ -11,7 +11,12 @@ interface Review {
   content: string;
   isPinned: boolean;
   isApproved: boolean;
+  productId: string | null;
   createdAt: string;
+  product?: {
+    id: string;
+    name: string;
+  } | null;
 }
 
 export const dynamic = 'force-dynamic';
@@ -106,14 +111,16 @@ export default function AdminReviewsPage() {
   const pendingReviews = reviews.filter(r => !r.isApproved);
   const approvedReviews = reviews.filter(r => r.isApproved && !r.isPinned);
   const pinnedReviews = reviews.filter(r => r.isPinned);
+  const productReviews = reviews.filter(r => r.productId);
+  const generalFeedback = reviews.filter(r => !r.productId);
 
   return (
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="font-serif text-4xl text-charcoal-dark mb-2">Customer Reviews</h1>
+          <h1 className="font-serif text-4xl text-charcoal-dark mb-2">Reviews & Feedback</h1>
           <p className="text-charcoal/60">
-            {reviews.length} total • {pendingReviews.length} pending • {pinnedReviews.length} pinned
+            {reviews.length} total • {productReviews.length} product reviews • {generalFeedback.length} general feedback • {pendingReviews.length} pending
           </p>
         </div>
         <button
@@ -155,12 +162,21 @@ export default function AdminReviewsPage() {
                   <div key={review.id} className="bg-white p-4 border border-charcoal/10">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
+                        <div className="flex items-center gap-3 mb-2 flex-wrap">
                           <span className="font-medium text-charcoal-dark">{review.name}</span>
                           <div className="text-charcoal-dark">
                             {'★'.repeat(review.rating)}
                             <span className="text-charcoal/30">{'★'.repeat(5 - review.rating)}</span>
                           </div>
+                          {review.product ? (
+                            <span className="px-2 py-1 bg-beige text-charcoal text-xs uppercase tracking-wider">
+                              Product: {review.product.name}
+                            </span>
+                          ) : (
+                            <span className="px-2 py-1 bg-cream-dark text-charcoal text-xs uppercase tracking-wider">
+                              General Feedback
+                            </span>
+                          )}
                         </div>
                         {review.title && (
                           <h3 className="font-medium text-charcoal mb-2">{review.title}</h3>
@@ -198,8 +214,11 @@ export default function AdminReviewsPage() {
           {pinnedReviews.length > 0 && (
             <div className="bg-beige/20 p-6 border border-beige">
               <h2 className="font-serif text-2xl text-charcoal-dark mb-4">
-                Pinned on Homepage ({pinnedReviews.length})
+                Pinned ({pinnedReviews.length})
               </h2>
+              <p className="text-xs text-charcoal/60 mb-4">
+                Product reviews are pinned to their product pages. General feedback is pinned to the homepage.
+              </p>
               <div className="space-y-4">
                 {pinnedReviews.map((review) => (
                   <div key={review.id} className="bg-cream p-4 border border-charcoal/10">
@@ -256,12 +275,21 @@ export default function AdminReviewsPage() {
                   <div key={review.id} className="bg-cream-light p-4 border border-charcoal/10">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
+                        <div className="flex items-center gap-3 mb-2 flex-wrap">
                           <span className="font-medium text-charcoal-dark">{review.name}</span>
                           <div className="text-charcoal-dark">
                             {'★'.repeat(review.rating)}
                             <span className="text-charcoal/30">{'★'.repeat(5 - review.rating)}</span>
                           </div>
+                          {review.product ? (
+                            <span className="px-2 py-1 bg-beige text-charcoal text-xs uppercase tracking-wider">
+                              Product: {review.product.name}
+                            </span>
+                          ) : (
+                            <span className="px-2 py-1 bg-cream-dark text-charcoal text-xs uppercase tracking-wider">
+                              General Feedback
+                            </span>
+                          )}
                         </div>
                         {review.title && (
                           <h3 className="font-medium text-charcoal mb-2">{review.title}</h3>
@@ -277,7 +305,7 @@ export default function AdminReviewsPage() {
                           disabled={updatingId === review.id}
                           className="px-4 py-2 bg-charcoal-dark text-cream hover:bg-charcoal text-xs uppercase tracking-wider disabled:opacity-50"
                         >
-                          {updatingId === review.id ? 'Pinning...' : 'Pin to Homepage'}
+                          {updatingId === review.id ? 'Pinning...' : review.product ? `Pin to ${review.product.name}` : 'Pin to Homepage'}
                         </button>
                         <button
                           onClick={() => updateReview(review.id, { isApproved: false })}

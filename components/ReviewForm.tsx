@@ -3,7 +3,12 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 
-export default function ReviewForm() {
+interface ReviewFormProps {
+  productId?: string;
+  productName?: string;
+}
+
+export default function ReviewForm({ productId, productName }: ReviewFormProps) {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -29,6 +34,7 @@ export default function ReviewForm() {
           rating: formData.rating,
           title: formData.title || undefined,
           content: formData.content,
+          productId: productId || undefined,
         }),
       });
 
@@ -70,10 +76,12 @@ export default function ReviewForm() {
           className="mb-12"
         >
           <h1 className="font-serif text-5xl md:text-7xl text-charcoal-dark mb-4">
-            Share Your Feedback
+            {productName ? `Review: ${productName}` : 'Share Your Feedback'}
           </h1>
           <p className="text-charcoal-light text-lg">
-            We'd love to hear about your experience with Elucid LDN
+            {productName
+              ? 'Tell us about your experience with this product'
+              : "We'd love to hear about your experience with Elucid LDN"}
           </p>
         </motion.div>
 
