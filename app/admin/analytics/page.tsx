@@ -654,7 +654,7 @@ function AdminAnalyticsContent() {
                     <BarChart
                       data={trafficData.sourceBreakdown}
                       layout="vertical"
-                      margin={{ top: 0, right: 24, left: 0, bottom: 0 }}
+                      margin={{ top: 0, right: 24, left: 60, bottom: 0 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" stroke="#E2DCD0" horizontal={false} />
                       <XAxis
@@ -668,6 +668,7 @@ function AdminAnalyticsContent() {
                         type="category"
                         stroke="#2B2826"
                         tick={{ fill: '#6B6560' }}
+                        width={80}
                       />
                       <Tooltip
                         contentStyle={{
