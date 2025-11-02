@@ -18,9 +18,6 @@ const playfair = Playfair_Display({
 export const metadata: Metadata = {
   title: "Elucid London - Modern Streetwear",
   description: "Contemporary streetwear crafted in London",
-  icons: {
-    icon: '/logo.svg',
-  },
 };
 
 export default function RootLayout({
