@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
 
 export async function GET(req: NextRequest) {
   try {
@@ -71,15 +70,11 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    let resolvedPinLocation: Prisma.ReviewPinLocation | undefined;
+    let resolvedPinLocation: 'AUTO' | 'HOME' | 'PRODUCT' | undefined;
     if (typeof pinLocation === 'string') {
       const normalized = pinLocation.toUpperCase();
-      if (normalized === 'AUTO') {
-        resolvedPinLocation = Prisma.ReviewPinLocation.AUTO;
-      } else if (normalized === 'HOME') {
-        resolvedPinLocation = Prisma.ReviewPinLocation.HOME;
-      } else if (normalized === 'PRODUCT') {
-        resolvedPinLocation = Prisma.ReviewPinLocation.PRODUCT;
+      if (normalized === 'AUTO' || normalized === 'HOME' || normalized === 'PRODUCT') {
+        resolvedPinLocation = normalized as 'AUTO' | 'HOME' | 'PRODUCT';
       }
     }
 
