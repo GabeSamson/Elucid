@@ -13,6 +13,7 @@ interface Review {
   createdAt: string;
   pinLocation: 'AUTO' | 'HOME' | 'PRODUCT';
   productId: string | null;
+  isAnonymous: boolean;
 }
 
 export default function Reviews() {
@@ -94,7 +95,7 @@ export default function Reviews() {
 
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-charcoal">
-                  {review.name}
+                  {review.isAnonymous ? 'Anonymous' : review.name}
                 </span>
                 <span className="text-xs text-charcoal/60">
                   {new Date(review.createdAt).toLocaleDateString()}

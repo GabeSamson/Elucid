@@ -11,6 +11,7 @@ interface Review {
   content: string;
   isPinned: boolean;
   isApproved: boolean;
+  isAnonymous: boolean;
   productId: string | null;
   createdAt: string;
   pinLocation: 'AUTO' | 'HOME' | 'PRODUCT';
@@ -39,6 +40,7 @@ export default function AdminReviewsPage() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [pinSelections, setPinSelections] = useState<Record<string, PinLocation>>({});
+  const [anonymizeSelections, setAnonymizeSelections] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     fetchReviews();
@@ -61,10 +63,13 @@ export default function AdminReviewsPage() {
         const fetchedReviews: Review[] = data.reviews || [];
         setReviews(fetchedReviews);
         const selections: Record<string, PinLocation> = {};
+        const anonymize: Record<string, boolean> = {};
         fetchedReviews.forEach((review) => {
           selections[review.id] = derivePinLocation(review);
+          anonymize[review.id] = review.isAnonymous ?? false;
         });
         setPinSelections(selections);
+        setAnonymizeSelections(anonymize);
       } else {
         throw new Error(data.error || 'Failed to load reviews');
       }
@@ -77,7 +82,7 @@ export default function AdminReviewsPage() {
 
   const updateReview = async (
     id: string,
-    updates: { isApproved?: boolean; isPinned?: boolean; pinLocation?: PinLocation }
+    updates: { isApproved?: boolean; isPinned?: boolean; pinLocation?: PinLocation; isAnonymous?: boolean }
   ) => {
     setUpdatingId(id);
     try {
@@ -474,6 +479,15 @@ export default function AdminReviewsPage() {
                             {review.productId && <option value="PRODUCT">Product page</option>}
                           </select>
                         </div>
+                        <label className="mt-2 flex items-center gap-2 text-xs text-charcoal cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={anonymizeSelections[review.id] ?? review.isAnonymous}
+                            onChange={(e) => setAnonymizeSelections({...anonymizeSelections, [review.id]: e.target.checked})}
+                            className="h-3.5 w-3.5 rounded border-charcoal/30 text-charcoal focus:ring-charcoal"
+                          />
+                          <span>Display as Anonymous</span>
+                        </label>
                       </div>
                       <div className="flex flex-col gap-2">
                         <button
@@ -481,6 +495,7 @@ export default function AdminReviewsPage() {
                             updateReview(review.id, {
                               isPinned: true,
                               pinLocation: pinSelections[review.id] ?? derivePinLocation(review),
+                              isAnonymous: anonymizeSelections[review.id] ?? review.isAnonymous,
                             })
                           }
                           disabled={updatingId === review.id}

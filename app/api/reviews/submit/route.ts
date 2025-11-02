@@ -9,6 +9,7 @@ const reviewSchema = z.object({
   title: z.string().max(200).optional().or(z.literal('')),
   content: z.string().min(10, 'Review must be at least 10 characters').max(2000),
   productId: z.string().optional().or(z.literal('')), // Optional product ID for product reviews
+  isAnonymous: z.boolean().optional().default(false),
 });
 
 export async function POST(req: NextRequest) {
@@ -23,7 +24,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { name, email, rating, title, content, productId } = validation.data;
+    const { name, email, rating, title, content, productId, isAnonymous } = validation.data;
 
     const review = await prisma.review.create({
       data: {
@@ -35,6 +36,7 @@ export async function POST(req: NextRequest) {
         productId: productId || null,
         isApproved: false, // Requires admin approval
         isPinned: false,
+        isAnonymous: isAnonymous ?? false,
       },
     });
 

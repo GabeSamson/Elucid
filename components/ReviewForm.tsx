@@ -15,6 +15,7 @@ export default function ReviewForm({ productId, productName }: ReviewFormProps) 
     rating: 5,
     title: '',
     content: '',
+    isAnonymous: false,
   });
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -35,6 +36,7 @@ export default function ReviewForm({ productId, productName }: ReviewFormProps) 
           title: formData.title || undefined,
           content: formData.content,
           productId: productId || undefined,
+          isAnonymous: formData.isAnonymous,
         }),
       });
 
@@ -56,6 +58,7 @@ export default function ReviewForm({ productId, productName }: ReviewFormProps) 
         rating: 5,
         title: '',
         content: '',
+        isAnonymous: false,
       });
     } catch (error: any) {
       setFeedback({
@@ -116,7 +119,7 @@ export default function ReviewForm({ productId, productName }: ReviewFormProps) 
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
               className="w-full px-4 py-3 bg-cream border border-charcoal/20 focus:border-charcoal focus:outline-none"
-              placeholder="John Doe"
+              placeholder="Your name here"
             />
           </div>
 
@@ -129,11 +132,27 @@ export default function ReviewForm({ productId, productName }: ReviewFormProps) 
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               className="w-full px-4 py-3 bg-cream border border-charcoal/20 focus:border-charcoal focus:outline-none"
-              placeholder="john@example.com"
+              placeholder="your@email.com"
             />
             <p className="text-xs text-charcoal/60 mt-1">
               We'll never share your email publicly
             </p>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              id="isAnonymous"
+              checked={formData.isAnonymous}
+              onChange={(e) => setFormData({ ...formData, isAnonymous: e.target.checked })}
+              className="mt-1 h-4 w-4 rounded border-charcoal/30 text-charcoal focus:ring-charcoal"
+            />
+            <label htmlFor="isAnonymous" className="text-sm text-charcoal cursor-pointer">
+              <span className="font-medium">Submit anonymously</span>
+              <p className="text-xs text-charcoal/60 mt-1">
+                Your review will be displayed as "Anonymous" instead of your name
+              </p>
+            </label>
           </div>
 
           <div>

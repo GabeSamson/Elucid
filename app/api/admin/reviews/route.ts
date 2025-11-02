@@ -61,7 +61,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const { id, isApproved, isPinned, pinLocation } = await req.json();
+    const { id, isApproved, isPinned, pinLocation, isAnonymous } = await req.json();
 
     if (!id) {
       return NextResponse.json(
@@ -87,6 +87,9 @@ export async function PATCH(req: NextRequest) {
     }
     if (resolvedPinLocation) {
       data.pinLocation = resolvedPinLocation;
+    }
+    if (typeof isAnonymous === 'boolean') {
+      data.isAnonymous = isAnonymous;
     }
 
     if (Object.keys(data).length === 0) {
