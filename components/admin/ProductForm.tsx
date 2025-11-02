@@ -135,7 +135,7 @@ export default function ProductForm({
     initialData?.colorImages || {}
   );
   const [comingSoonDate, setComingSoonDate] = useState<string>(
-    initialData?.releaseDate ? initialData.releaseDate.slice(0, 10) : ''
+    initialData?.releaseDate ? initialData.releaseDate.slice(0, 16) : ''
   );
   const watchedComingSoon = watch('comingSoon', initialData?.comingSoon ?? false);
 
@@ -796,20 +796,20 @@ useEffect(() => {
             <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] sm:items-end">
               <div>
                 <label className="block text-sm font-medium text-charcoal mb-2">
-                  Release date (optional)
+                  Release date & time (optional)
                 </label>
                 <input
-                  type="date"
+                  type="datetime-local"
                   value={comingSoonDate}
                   onChange={(event) => setComingSoonDate(event.target.value)}
                   className="input-modern"
                 />
                 <p className="text-xs text-charcoal/60 mt-1">
-                  Shown on the product page and used to label the drop.
+                  Product will automatically switch from "Coming Soon" to available at this time.
                 </p>
               </div>
               <div className="rounded-lg border border-charcoal/15 bg-white p-4 text-sm text-charcoal/70">
-                Customers will see a <strong>Pre-order</strong> button and a &ldquo;Coming Soon&rdquo; tag.
+                Customers will see a <strong>Pre-order</strong> button and a &ldquo;Coming Soon&rdquo; tag until the release time.
               </div>
             </div>
           )}
