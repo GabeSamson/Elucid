@@ -17,7 +17,7 @@ const playfair = Playfair_Display({
 
 export const metadata: Metadata = {
   title: "Elucid LDN - Modern Streetwear",
-  description: "Contemporary streetwear with a vintage soul",
+  description: "Contemporary streetwear crafted in London",
 };
 
 export default function RootLayout({
