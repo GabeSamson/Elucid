@@ -75,7 +75,7 @@ export default function ProductReviews({ productId, productName, showReviews = t
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-12">
           <div>
             <h2 className="font-serif text-4xl md:text-5xl text-charcoal-dark mb-2">
-              Customer Reviews
+              Some of Our Reviews
             </h2>
             {reviews.length > 0 && (
               <div className="flex items-center gap-3 mt-3">
@@ -88,9 +88,6 @@ export default function ProductReviews({ productId, productName, showReviews = t
                     </span>
                   </div>
                 </div>
-                <span className="text-charcoal-light text-sm">
-                  Based on {reviews.length} {reviews.length === 1 ? 'review' : 'reviews'}
-                </span>
               </div>
             )}
           </div>
