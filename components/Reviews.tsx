@@ -14,6 +14,7 @@ interface Review {
   pinLocation: 'AUTO' | 'HOME' | 'PRODUCT';
   productId: string | null;
   isAnonymous: boolean;
+  hideAuthor: boolean;
 }
 
 export default function Reviews() {
@@ -94,9 +95,11 @@ export default function Reviews() {
               </p>
 
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-charcoal">
-                  {review.isAnonymous ? 'Anonymous' : review.name}
-                </span>
+                {!review.hideAuthor && (
+                  <span className="text-sm font-medium text-charcoal">
+                    {review.isAnonymous ? 'Anonymous' : review.name}
+                  </span>
+                )}
                 <span className="text-xs text-charcoal/60">
                   {new Date(review.createdAt).toLocaleDateString()}
                 </span>

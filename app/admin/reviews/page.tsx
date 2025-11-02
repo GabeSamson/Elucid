@@ -12,6 +12,7 @@ interface Review {
   isPinned: boolean;
   isApproved: boolean;
   isAnonymous: boolean;
+  hideAuthor: boolean;
   productId: string | null;
   createdAt: string;
   pinLocation: 'AUTO' | 'HOME' | 'PRODUCT';
@@ -30,6 +31,12 @@ const derivePinLocation = (review: Review): PinLocation => {
   return review.productId ? 'PRODUCT' : 'HOME';
 };
 
+const getDisplayName = (review: Review): string | null => {
+  if (review.hideAuthor) return null;
+  if (review.isAnonymous) return 'Anonymous';
+  return review.name;
+};
+
 export const dynamic = 'force-dynamic';
 
 export default function AdminReviewsPage() {
@@ -43,6 +50,7 @@ export default function AdminReviewsPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [pinSelections, setPinSelections] = useState<Record<string, PinLocation>>({});
   const [anonymizeSelections, setAnonymizeSelections] = useState<Record<string, boolean>>({});
+  const [hideAuthorSelections, setHideAuthorSelections] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     fetchReviews();
@@ -66,12 +74,15 @@ export default function AdminReviewsPage() {
         setReviews(fetchedReviews);
         const selections: Record<string, PinLocation> = {};
         const anonymize: Record<string, boolean> = {};
+        const hideAuthor: Record<string, boolean> = {};
         fetchedReviews.forEach((review) => {
           selections[review.id] = derivePinLocation(review);
           anonymize[review.id] = review.isAnonymous ?? false;
+          hideAuthor[review.id] = review.hideAuthor ?? false;
         });
         setPinSelections(selections);
         setAnonymizeSelections(anonymize);
+        setHideAuthorSelections(hideAuthor);
       } else {
         throw new Error(data.error || 'Failed to load reviews');
       }
@@ -84,7 +95,7 @@ export default function AdminReviewsPage() {
 
   const updateReview = async (
     id: string,
-    updates: { isApproved?: boolean; isPinned?: boolean; pinLocation?: PinLocation; isAnonymous?: boolean }
+    updates: { isApproved?: boolean; isPinned?: boolean; pinLocation?: PinLocation; isAnonymous?: boolean; hideAuthor?: boolean }
   ) => {
     setUpdatingId(id);
     try {
@@ -247,9 +258,11 @@ export default function AdminReviewsPage() {
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2 flex-wrap">
-                          <span className="font-medium text-charcoal-dark">
-                            {review.isAnonymous ? 'Anonymous' : review.name}
-                          </span>
+                          {getDisplayName(review) && (
+                            <span className="font-medium text-charcoal-dark">
+                              {getDisplayName(review)}
+                            </span>
+                          )}
                           <div className="text-charcoal-dark">
                             {'★'.repeat(review.rating)}
                             <span className="text-charcoal/30">{'★'.repeat(5 - review.rating)}</span>
@@ -367,15 +380,50 @@ export default function AdminReviewsPage() {
                                 </select>
                               </div>
                             )}
-                            <label className="mt-2 flex items-center gap-2 text-xs text-charcoal cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={anonymizeSelections[review.id] ?? review.isAnonymous}
-                                onChange={(e) => setAnonymizeSelections({...anonymizeSelections, [review.id]: e.target.checked})}
-                                className="h-3.5 w-3.5 rounded border-charcoal/30 text-charcoal focus:ring-charcoal"
-                              />
-                              <span>Display as Anonymous</span>
-                            </label>
+                            <div className="mt-2 text-xs text-charcoal/70">
+                              <span className="block mb-1">Display name as:</span>
+                              <div className="flex gap-3">
+                                <label className="flex items-center gap-1 cursor-pointer">
+                                  <input
+                                    type="radio"
+                                    name={`name-display-${review.id}`}
+                                    checked={!(hideAuthorSelections[review.id] ?? review.hideAuthor) && !(anonymizeSelections[review.id] ?? review.isAnonymous)}
+                                    onChange={() => {
+                                      setHideAuthorSelections({...hideAuthorSelections, [review.id]: false});
+                                      setAnonymizeSelections({...anonymizeSelections, [review.id]: false});
+                                    }}
+                                    className="h-3.5 w-3.5"
+                                  />
+                                  <span>Name</span>
+                                </label>
+                                <label className="flex items-center gap-1 cursor-pointer">
+                                  <input
+                                    type="radio"
+                                    name={`name-display-${review.id}`}
+                                    checked={!(hideAuthorSelections[review.id] ?? review.hideAuthor) && (anonymizeSelections[review.id] ?? review.isAnonymous)}
+                                    onChange={() => {
+                                      setHideAuthorSelections({...hideAuthorSelections, [review.id]: false});
+                                      setAnonymizeSelections({...anonymizeSelections, [review.id]: true});
+                                    }}
+                                    className="h-3.5 w-3.5"
+                                  />
+                                  <span>Anonymous</span>
+                                </label>
+                                <label className="flex items-center gap-1 cursor-pointer">
+                                  <input
+                                    type="radio"
+                                    name={`name-display-${review.id}`}
+                                    checked={hideAuthorSelections[review.id] ?? review.hideAuthor}
+                                    onChange={() => {
+                                      setHideAuthorSelections({...hideAuthorSelections, [review.id]: true});
+                                      setAnonymizeSelections({...anonymizeSelections, [review.id]: false});
+                                    }}
+                                    className="h-3.5 w-3.5"
+                                  />
+                                  <span>No name</span>
+                                </label>
+                              </div>
+                            </div>
                           </div>
                           <div className="flex flex-col gap-2 min-w-[160px]">
                             <button
@@ -391,6 +439,7 @@ export default function AdminReviewsPage() {
                                     isPinned: true,
                                     pinLocation: pinSelections[review.id] ?? derivePinLocation(review),
                                     isAnonymous: anonymizeSelections[review.id] ?? review.isAnonymous,
+                                    hideAuthor: hideAuthorSelections[review.id] ?? review.hideAuthor,
                                   })
                                 }
                                 disabled={updatingId === review.id}
@@ -404,6 +453,7 @@ export default function AdminReviewsPage() {
                                 onClick={() =>
                                   updateReview(review.id, {
                                     isAnonymous: anonymizeSelections[review.id] ?? review.isAnonymous,
+                                    hideAuthor: hideAuthorSelections[review.id] ?? review.hideAuthor,
                                   })
                                 }
                                 disabled={updatingId === review.id}
@@ -486,15 +536,50 @@ export default function AdminReviewsPage() {
                                 ))}
                               </select>
                             </div>
-                            <label className="mt-2 flex items-center gap-2 text-xs text-charcoal cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={anonymizeSelections[review.id] ?? review.isAnonymous}
-                                onChange={(e) => setAnonymizeSelections({...anonymizeSelections, [review.id]: e.target.checked})}
-                                className="h-3.5 w-3.5 rounded border-charcoal/30 text-charcoal focus:ring-charcoal"
-                              />
-                              <span>Display as Anonymous</span>
-                            </label>
+                            <div className="mt-2 text-xs text-charcoal/70">
+                              <span className="block mb-1">Display name as:</span>
+                              <div className="flex gap-3">
+                                <label className="flex items-center gap-1 cursor-pointer">
+                                  <input
+                                    type="radio"
+                                    name={`name-display-${review.id}`}
+                                    checked={!(hideAuthorSelections[review.id] ?? review.hideAuthor) && !(anonymizeSelections[review.id] ?? review.isAnonymous)}
+                                    onChange={() => {
+                                      setHideAuthorSelections({...hideAuthorSelections, [review.id]: false});
+                                      setAnonymizeSelections({...anonymizeSelections, [review.id]: false});
+                                    }}
+                                    className="h-3.5 w-3.5"
+                                  />
+                                  <span>Name</span>
+                                </label>
+                                <label className="flex items-center gap-1 cursor-pointer">
+                                  <input
+                                    type="radio"
+                                    name={`name-display-${review.id}`}
+                                    checked={!(hideAuthorSelections[review.id] ?? review.hideAuthor) && (anonymizeSelections[review.id] ?? review.isAnonymous)}
+                                    onChange={() => {
+                                      setHideAuthorSelections({...hideAuthorSelections, [review.id]: false});
+                                      setAnonymizeSelections({...anonymizeSelections, [review.id]: true});
+                                    }}
+                                    className="h-3.5 w-3.5"
+                                  />
+                                  <span>Anonymous</span>
+                                </label>
+                                <label className="flex items-center gap-1 cursor-pointer">
+                                  <input
+                                    type="radio"
+                                    name={`name-display-${review.id}`}
+                                    checked={hideAuthorSelections[review.id] ?? review.hideAuthor}
+                                    onChange={() => {
+                                      setHideAuthorSelections({...hideAuthorSelections, [review.id]: true});
+                                      setAnonymizeSelections({...anonymizeSelections, [review.id]: false});
+                                    }}
+                                    className="h-3.5 w-3.5"
+                                  />
+                                  <span>No name</span>
+                                </label>
+                              </div>
+                            </div>
                           </div>
                           <div className="flex flex-col gap-2 min-w-[160px]">
                             <button
@@ -551,9 +636,11 @@ export default function AdminReviewsPage() {
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2 flex-wrap">
-                          <span className="font-medium text-charcoal-dark">
-                            {review.isAnonymous ? 'Anonymous' : review.name}
-                          </span>
+                          {getDisplayName(review) && (
+                            <span className="font-medium text-charcoal-dark">
+                              {getDisplayName(review)}
+                            </span>
+                          )}
                           <div className="text-charcoal-dark">
                             {'★'.repeat(review.rating)}
                             <span className="text-charcoal/30">{'★'.repeat(5 - review.rating)}</span>
@@ -588,15 +675,50 @@ export default function AdminReviewsPage() {
                             {review.productId && <option value="PRODUCT">Product page</option>}
                           </select>
                         </div>
-                        <label className="mt-2 flex items-center gap-2 text-xs text-charcoal cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={anonymizeSelections[review.id] ?? review.isAnonymous}
-                            onChange={(e) => setAnonymizeSelections({...anonymizeSelections, [review.id]: e.target.checked})}
-                            className="h-3.5 w-3.5 rounded border-charcoal/30 text-charcoal focus:ring-charcoal"
-                          />
-                          <span>Display as Anonymous</span>
-                        </label>
+                        <div className="mt-2 text-xs text-charcoal/70">
+                          <span className="block mb-1">Display name as:</span>
+                          <div className="flex gap-3">
+                            <label className="flex items-center gap-1 cursor-pointer">
+                              <input
+                                type="radio"
+                                name={`name-display-${review.id}`}
+                                checked={!(hideAuthorSelections[review.id] ?? review.hideAuthor) && !(anonymizeSelections[review.id] ?? review.isAnonymous)}
+                                onChange={() => {
+                                  setHideAuthorSelections({...hideAuthorSelections, [review.id]: false});
+                                  setAnonymizeSelections({...anonymizeSelections, [review.id]: false});
+                                }}
+                                className="h-3.5 w-3.5"
+                              />
+                              <span>Name</span>
+                            </label>
+                            <label className="flex items-center gap-1 cursor-pointer">
+                              <input
+                                type="radio"
+                                name={`name-display-${review.id}`}
+                                checked={!(hideAuthorSelections[review.id] ?? review.hideAuthor) && (anonymizeSelections[review.id] ?? review.isAnonymous)}
+                                onChange={() => {
+                                  setHideAuthorSelections({...hideAuthorSelections, [review.id]: false});
+                                  setAnonymizeSelections({...anonymizeSelections, [review.id]: true});
+                                }}
+                                className="h-3.5 w-3.5"
+                              />
+                              <span>Anonymous</span>
+                            </label>
+                            <label className="flex items-center gap-1 cursor-pointer">
+                              <input
+                                type="radio"
+                                name={`name-display-${review.id}`}
+                                checked={hideAuthorSelections[review.id] ?? review.hideAuthor}
+                                onChange={() => {
+                                  setHideAuthorSelections({...hideAuthorSelections, [review.id]: true});
+                                  setAnonymizeSelections({...anonymizeSelections, [review.id]: false});
+                                }}
+                                className="h-3.5 w-3.5"
+                              />
+                              <span>No name</span>
+                            </label>
+                          </div>
+                        </div>
                       </div>
                       <div className="flex flex-col gap-2">
                         <button
@@ -611,6 +733,7 @@ export default function AdminReviewsPage() {
                               isPinned: true,
                               pinLocation: pinSelections[review.id] ?? derivePinLocation(review),
                               isAnonymous: anonymizeSelections[review.id] ?? review.isAnonymous,
+                              hideAuthor: hideAuthorSelections[review.id] ?? review.hideAuthor,
                             })
                           }
                           disabled={updatingId === review.id}

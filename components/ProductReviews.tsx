@@ -12,6 +12,7 @@ interface Review {
   content: string;
   createdAt: string;
   isAnonymous: boolean;
+  hideAuthor: boolean;
 }
 
 interface ProductReviewsProps {
@@ -131,9 +132,11 @@ export default function ProductReviews({ productId, productName, showReviews = t
               </p>
 
               <div className="flex items-center justify-between border-t border-charcoal/10 pt-3">
-                <span className="text-sm font-medium text-charcoal">
-                  {review.isAnonymous ? 'Anonymous' : review.name}
-                </span>
+                {!review.hideAuthor && (
+                  <span className="text-sm font-medium text-charcoal">
+                    {review.isAnonymous ? 'Anonymous' : review.name}
+                  </span>
+                )}
                 <span className="text-xs text-charcoal/60">
                   {new Date(review.createdAt).toLocaleDateString()}
                 </span>
