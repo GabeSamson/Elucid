@@ -110,6 +110,7 @@ function CheckoutPageContent() {
     requiresShipping && !qualifiesForFreeShippingThreshold
       ? Math.max(freeShippingThreshold - totalPrice, 0)
       : 0;
+  const isFreeShipping = shipping === 0;
   const shippingLabel = !requiresShipping
     ? 'Not required'
     : shipping === 0

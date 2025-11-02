@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
+import { Prisma, OrderStatus } from "@prisma/client";
 import { auth } from "@/auth";
 
 export const dynamic = "force-dynamic";
@@ -44,19 +44,19 @@ export async function GET(request: NextRequest) {
 
     const orderWhereClause = {
       createdAt: { gte: dateFrom },
-      status: { not: "CANCELLED" },
+      status: { not: OrderStatus.CANCELLED },
     };
     const previousOrderWhereClause = {
       createdAt: {
         gte: previousPeriodStart,
         lt: dateFrom,
       },
-      status: { not: "CANCELLED" },
+      status: { not: OrderStatus.CANCELLED },
     };
 
     const [
       totalViews,
-      uniqueVisitors,
+      uniqueVisitorsGrouped,
       latestView,
       viewsByPath,
       viewsByReferrer,
@@ -69,14 +69,14 @@ export async function GET(request: NextRequest) {
       ordersByDayRaw,
       ordersForCustomers,
       previousViewsCount,
-      previousUniqueCount,
+      previousUniqueGrouped,
       previousOrdersCount,
-      previousSessionsCount,
+      previousSessionsGrouped,
     ] = await Promise.all([
       prisma.pageView.count({ where: whereClause }),
-      prisma.pageView.count({
+      prisma.pageView.groupBy({
+        by: ['visitorHash'],
         where: whereClause,
-        distinct: [Prisma.PageViewScalarFieldEnum.visitorHash],
       }),
       prisma.pageView.findFirst({
         where: whereClause,
@@ -195,16 +195,21 @@ export async function GET(request: NextRequest) {
         },
       }),
       prisma.pageView.count({ where: previousWhereClause }),
-      prisma.pageView.count({
+      prisma.pageView.groupBy({
+        by: ['visitorHash'],
         where: previousWhereClause,
-        distinct: [Prisma.PageViewScalarFieldEnum.visitorHash],
       }),
       prisma.order.count({ where: previousOrderWhereClause }),
-      prisma.pageView.count({
+      prisma.pageView.groupBy({
+        by: ['sessionHash'],
         where: previousWhereClause,
-        distinct: [Prisma.PageViewScalarFieldEnum.sessionHash],
       }),
     ]);
+
+    // Convert grouped results to counts
+    const uniqueVisitors = uniqueVisitorsGrouped.length;
+    const previousUniqueCount = previousUniqueGrouped.length;
+    const previousSessionsCount = previousSessionsGrouped.length;
 
     type SourceKey = "Direct" | "Social" | "Search" | "Referral" | "Campaign";
     const SOURCE_KEYS: SourceKey[] = [
