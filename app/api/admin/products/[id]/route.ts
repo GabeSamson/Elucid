@@ -159,6 +159,8 @@ export async function PUT(
       madeIn,
       sizeDimensions,
       materials,
+      allowReviews,
+      showReviews,
     } = body;
 
     const toBoolean = (value: unknown, fallback: boolean) => {
@@ -174,6 +176,8 @@ export async function PUT(
     const normalizedFeatured = toBoolean(featured, false);
     const normalizedActive = toBoolean(active, true);
     const normalizedIncludeShipping = toBoolean(includeShipping, true);
+    const normalizedAllowReviews = toBoolean(allowReviews, true);
+    const normalizedShowReviews = toBoolean(showReviews, true);
     const parsedPrice =
       typeof price === 'string' ? parseFloat(price) : Number(price);
     const parsedCompareAtPrice =
@@ -272,6 +276,8 @@ export async function PUT(
         madeIn: madeIn && typeof madeIn === 'string' && madeIn.trim() ? madeIn.trim() : null,
         sizeDimensions: sizeDimensions && typeof sizeDimensions === 'object' && Object.keys(sizeDimensions).length > 0 ? JSON.stringify(sizeDimensions) : null,
         materials: materials && typeof materials === 'string' && materials.trim() ? materials.trim() : null,
+        allowReviews: normalizedAllowReviews,
+        showReviews: normalizedShowReviews,
         priceOverrides:
           Object.keys(normalizedOverrides).length > 0
             ? JSON.stringify(normalizedOverrides)

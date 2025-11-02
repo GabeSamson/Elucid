@@ -16,9 +16,11 @@ interface Review {
 interface ProductReviewsProps {
   productId: string;
   productName: string;
+  showReviews?: boolean;
+  allowReviews?: boolean;
 }
 
-export default function ProductReviews({ productId, productName }: ProductReviewsProps) {
+export default function ProductReviews({ productId, productName, showReviews = true, allowReviews = true }: ProductReviewsProps) {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -44,6 +46,19 @@ export default function ProductReviews({ productId, productName }: ProductReview
   };
 
   if (loading) {
+    return null;
+  }
+
+  // Don't show the reviews section if:
+  // 1. showReviews is false, OR
+  // 2. There are no reviews and allowReviews is false (can't write reviews either)
+  if (!showReviews || (reviews.length === 0 && !allowReviews)) {
+    return null;
+  }
+
+  // If there are no reviews but reviews are allowed, still show the "Write a Review" button
+  // but hide the entire reviews section (as requested)
+  if (reviews.length === 0) {
     return null;
   }
 
@@ -77,64 +92,54 @@ export default function ProductReviews({ productId, productName }: ProductReview
               </div>
             )}
           </div>
-          <Link
-            href={`/reviews?productId=${productId}`}
-            className="inline-block px-8 py-4 bg-charcoal-dark text-cream hover:bg-charcoal transition-colors duration-300 tracking-wider text-sm uppercase mt-6 md:mt-0"
-          >
-            Write a Review
-          </Link>
-        </div>
-
-        {reviews.length === 0 ? (
-          <div className="text-center py-12 bg-cream-light border border-charcoal/10">
-            <p className="text-charcoal-light mb-4">No reviews yet. Be the first to review this product!</p>
+          {allowReviews && (
             <Link
               href={`/reviews?productId=${productId}`}
-              className="inline-block px-6 py-3 bg-charcoal text-cream hover:bg-charcoal-dark transition-colors tracking-wider text-sm uppercase"
+              className="inline-block px-8 py-4 bg-charcoal-dark text-cream hover:bg-charcoal transition-colors duration-300 tracking-wider text-sm uppercase mt-6 md:mt-0"
             >
-              Write the First Review
+              Write a Review
             </Link>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {reviews.map((review, index) => (
-              <motion.div
-                key={review.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                className="bg-cream-light p-6 border border-charcoal/10 hover:border-charcoal/20 transition-colors"
-              >
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="text-charcoal-dark text-lg">
-                    {'★'.repeat(review.rating)}
-                    <span className="text-charcoal/20">{'★'.repeat(5 - review.rating)}</span>
-                  </div>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {reviews.map((review, index) => (
+            <motion.div
+              key={review.id}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: index * 0.1 }}
+              className="bg-cream-light p-6 border border-charcoal/10 hover:border-charcoal/20 transition-colors"
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <div className="text-charcoal-dark text-lg">
+                  {'★'.repeat(review.rating)}
+                  <span className="text-charcoal/20">{'★'.repeat(5 - review.rating)}</span>
                 </div>
+              </div>
 
-                {review.title && (
-                  <h3 className="font-medium text-charcoal-dark mb-2">
-                    {review.title}
-                  </h3>
-                )}
+              {review.title && (
+                <h3 className="font-medium text-charcoal-dark mb-2">
+                  {review.title}
+                </h3>
+              )}
 
-                <p className="text-sm text-charcoal-light mb-4">
-                  {review.content}
-                </p>
+              <p className="text-sm text-charcoal-light mb-4">
+                {review.content}
+              </p>
 
-                <div className="flex items-center justify-between border-t border-charcoal/10 pt-3">
-                  <span className="text-sm font-medium text-charcoal">
-                    {review.name}
-                  </span>
-                  <span className="text-xs text-charcoal/60">
-                    {new Date(review.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        )}
+              <div className="flex items-center justify-between border-t border-charcoal/10 pt-3">
+                <span className="text-sm font-medium text-charcoal">
+                  {review.name}
+                </span>
+                <span className="text-xs text-charcoal/60">
+                  {new Date(review.createdAt).toLocaleDateString()}
+                </span>
+              </div>
+            </motion.div>
+          ))}
+        </div>
       </div>
     </section>
   );

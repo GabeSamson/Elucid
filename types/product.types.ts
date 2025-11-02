@@ -40,6 +40,8 @@ export interface Product {
   sizeDimensions?: Record<string, string> | null;
   materials?: string | null;
   releaseDate?: string | null;
+  allowReviews: boolean;
+  showReviews: boolean;
   createdAt: string;
   updatedAt: string;
 }

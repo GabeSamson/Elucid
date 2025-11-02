@@ -47,6 +47,8 @@ interface ProductFormData {
   madeIn?: string | null;
   sizeDimensions?: Record<string, string> | null;
   materials?: string | null;
+  allowReviews: boolean;
+  showReviews: boolean;
 }
 
 interface ProductFormProps {
@@ -122,6 +124,8 @@ export default function ProductForm({
       releaseDate: initialData?.releaseDate ?? null,
       colorImages: initialData?.colorImages || {},
       targetAudience: initialData?.targetAudience || 'UNISEX',
+      allowReviews: initialData?.allowReviews ?? true,
+      showReviews: initialData?.showReviews ?? true,
     },
   });
   const watchedShippingPrice = watch('shippingPrice');
@@ -786,6 +790,44 @@ useEffect(() => {
                   />
                   <span className="text-sm text-charcoal">
                     Coming soon / pre-order
+                  </span>
+                </label>
+              )}
+            />
+
+            <Controller
+              control={control}
+              name="allowReviews"
+              defaultValue={initialData?.allowReviews ?? true}
+              render={({ field }) => (
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={field.value}
+                    onChange={(event) => field.onChange(event.target.checked)}
+                    className="w-4 h-4 rounded border-charcoal/30 text-charcoal focus:ring-charcoal"
+                  />
+                  <span className="text-sm text-charcoal">
+                    Allow reviews
+                  </span>
+                </label>
+              )}
+            />
+
+            <Controller
+              control={control}
+              name="showReviews"
+              defaultValue={initialData?.showReviews ?? true}
+              render={({ field }) => (
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={field.value}
+                    onChange={(event) => field.onChange(event.target.checked)}
+                    className="w-4 h-4 rounded border-charcoal/30 text-charcoal focus:ring-charcoal"
+                  />
+                  <span className="text-sm text-charcoal">
+                    Show reviews section
                   </span>
                 </label>
               )}

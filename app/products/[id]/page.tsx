@@ -546,12 +546,14 @@ export default function ProductPage() {
               )}
 
               <div className="mt-6 flex flex-wrap items-center gap-3 text-xs uppercase tracking-wider">
-                <Link
-                  href={`/reviews?productId=${product.id}`}
-                  className="inline-flex items-center gap-1 rounded-full border border-charcoal/30 px-4 py-2 text-charcoal hover:border-charcoal"
-                >
-                  Review this product
-                </Link>
+                {product.allowReviews && (
+                  <Link
+                    href={`/reviews?productId=${product.id}`}
+                    className="inline-flex items-center gap-1 rounded-full border border-charcoal/30 px-4 py-2 text-charcoal hover:border-charcoal"
+                  >
+                    Review this product
+                  </Link>
+                )}
                 <Link
                   href="/reviews"
                   className="inline-flex items-center gap-1 rounded-full border border-charcoal/20 px-4 py-2 text-charcoal/80 hover:text-charcoal"
@@ -573,7 +575,12 @@ export default function ProductPage() {
         </div>
       </div>
 
-      <ProductReviews productId={product.id} productName={product.name} />
+      <ProductReviews
+        productId={product.id}
+        productName={product.name}
+        showReviews={product.showReviews}
+        allowReviews={product.allowReviews}
+      />
       <Footer />
     </main>
   );

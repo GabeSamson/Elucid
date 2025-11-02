@@ -68,6 +68,8 @@ model Product {
   releaseDate     DateTime? @map("release_date")
   targetAudience  ProductAudience @default(UNISEX) @map("target_audience")
   madeIn          String?   @map("made_in") // e.g., "London"
+  allowReviews    Boolean   @default(true) @map("allow_reviews") // Allow users to submit reviews for this product
+  showReviews     Boolean   @default(true) @map("show_reviews") // Display reviews section on product page
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
