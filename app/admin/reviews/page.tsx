@@ -730,6 +730,18 @@ export default function AdminReviewsPage() {
                         <button
                           onClick={() =>
                             updateReview(review.id, {
+                              isAnonymous: anonymizeSelections[review.id] ?? review.isAnonymous,
+                              hideAuthor: hideAuthorSelections[review.id] ?? review.hideAuthor,
+                            })
+                          }
+                          disabled={updatingId === review.id}
+                          className="px-4 py-2 border border-charcoal/20 text-charcoal hover:border-charcoal text-xs uppercase tracking-wider disabled:opacity-50"
+                        >
+                          {updatingId === review.id ? 'Saving...' : 'Save Changes'}
+                        </button>
+                        <button
+                          onClick={() =>
+                            updateReview(review.id, {
                               isPinned: true,
                               pinLocation: pinSelections[review.id] ?? derivePinLocation(review),
                               isAnonymous: anonymizeSelections[review.id] ?? review.isAnonymous,
