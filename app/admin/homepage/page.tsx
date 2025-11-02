@@ -85,6 +85,10 @@ async function updateHomepageSettingsAction(formData: FormData) {
     ? formData.get("purchasingEnabled") === "on"
     : existingConfig?.purchasingEnabled ?? true;
 
+  const showFeedbackSection = includesPurchasingFields
+    ? formData.get("showFeedbackSection") === "on"
+    : existingConfig?.showFeedbackSection ?? false;
+
   const showCountdown = includesHeroFields
     ? formData.get("showCountdown") === "on"
     : existingConfig?.showCountdown ?? false;
@@ -140,6 +144,7 @@ async function updateHomepageSettingsAction(formData: FormData) {
       featuredDescription,
       writingSection,
       purchasingEnabled,
+      showFeedbackSection,
     },
     create: {
       id: "main",
@@ -157,6 +162,7 @@ async function updateHomepageSettingsAction(formData: FormData) {
       featuredDescription,
       writingSection,
       purchasingEnabled,
+      showFeedbackSection,
     },
   });
 
@@ -486,6 +492,24 @@ export default async function AdminHomepagePage({ searchParams }: AdminHomepageP
               </label>
               <p className="text-xs text-charcoal/60">
                 When disabled, customers will not be able to add items to cart or make purchases. Use this for maintenance or when you need to temporarily disable sales.
+              </p>
+            </fieldset>
+
+            <fieldset className="space-y-3 rounded-xl border border-charcoal/10 bg-white px-5 py-4">
+              <legend className="px-2 text-sm font-semibold uppercase tracking-wider text-charcoal/70">
+                Feedback Section
+              </legend>
+              <label className="flex items-center gap-3 text-sm text-charcoal">
+                <input
+                  type="checkbox"
+                  name="showFeedbackSection"
+                  defaultChecked={homepageConfig?.showFeedbackSection ?? false}
+                  className="h-4 w-4 rounded border-charcoal/30 text-charcoal focus:ring-charcoal"
+                />
+                Show customer feedback section on homepage
+              </label>
+              <p className="text-xs text-charcoal/60">
+                When enabled, the homepage will display pinned customer reviews and feedback. The section will only appear if there are approved and pinned reviews.
               </p>
             </fieldset>
 

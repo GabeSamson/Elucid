@@ -6,10 +6,17 @@ import Featured from "@/components/Featured";
 import Reviews from "@/components/Reviews";
 import Newsletter from "@/components/Newsletter";
 import Footer from "@/components/Footer";
+import { prisma } from "@/lib/prisma";
 
 export const dynamic = 'force-dynamic';
 
-export default function Home() {
+export default async function Home() {
+  const config = await prisma.homepageConfig.findUnique({
+    where: { id: "main" },
+  });
+
+  const showFeedbackSection = config?.showFeedbackSection ?? false;
+
   return (
     <main>
       <Suspense fallback={<div className="h-20" />}>
@@ -18,7 +25,7 @@ export default function Home() {
       <Hero />
       <WritingSection />
       <Featured />
-      <Reviews />
+      {showFeedbackSection && <Reviews />}
       <Newsletter />
       <Footer />
     </main>
