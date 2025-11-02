@@ -228,6 +228,7 @@ model HomepageConfig {
   writingSection       String?     @map("writing_section")
   purchasingEnabled    Boolean     @default(true) @map("purchasing_enabled")
   showFeedbackSection  Boolean     @default(false) @map("show_feedback_section")
+  showFeedbackButton   Boolean     @default(false) @map("show_feedback_button")
   createdAt            DateTime    @default(now()) @map("created_at")
   updatedAt            DateTime    @updatedAt @map("updated_at")
 

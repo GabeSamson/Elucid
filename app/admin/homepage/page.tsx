@@ -89,6 +89,10 @@ async function updateHomepageSettingsAction(formData: FormData) {
     ? formData.get("showFeedbackSection") === "on"
     : existingConfig?.showFeedbackSection ?? false;
 
+  const showFeedbackButton = includesPurchasingFields
+    ? formData.get("showFeedbackButton") === "on"
+    : existingConfig?.showFeedbackButton ?? false;
+
   const showCountdown = includesHeroFields
     ? formData.get("showCountdown") === "on"
     : existingConfig?.showCountdown ?? false;
@@ -145,6 +149,7 @@ async function updateHomepageSettingsAction(formData: FormData) {
       writingSection,
       purchasingEnabled,
       showFeedbackSection,
+      showFeedbackButton,
     },
     create: {
       id: "main",
@@ -163,6 +168,7 @@ async function updateHomepageSettingsAction(formData: FormData) {
       writingSection,
       purchasingEnabled,
       showFeedbackSection,
+      showFeedbackButton,
     },
   });
 
@@ -497,20 +503,35 @@ export default async function AdminHomepagePage({ searchParams }: AdminHomepageP
 
             <fieldset className="space-y-3 rounded-xl border border-charcoal/10 bg-white px-5 py-4">
               <legend className="px-2 text-sm font-semibold uppercase tracking-wider text-charcoal/70">
-                Feedback Section
+                Feedback
               </legend>
               <label className="flex items-center gap-3 text-sm text-charcoal">
                 <input
                   type="checkbox"
-                  name="showFeedbackSection"
-                  defaultChecked={homepageConfig?.showFeedbackSection ?? false}
+                  name="showFeedbackButton"
+                  defaultChecked={homepageConfig?.showFeedbackButton ?? false}
                   className="h-4 w-4 rounded border-charcoal/30 text-charcoal focus:ring-charcoal"
                 />
-                Show customer feedback section on homepage
+                Show "Share Feedback" button on hero section
               </label>
               <p className="text-xs text-charcoal/60">
-                When enabled, the homepage will display pinned customer reviews and feedback. The section will only appear if there are approved and pinned reviews.
+                When enabled, a "Share Feedback" button will appear below the main CTA on the homepage hero section.
               </p>
+
+              <div className="pt-2 border-t border-charcoal/5">
+                <label className="flex items-center gap-3 text-sm text-charcoal">
+                  <input
+                    type="checkbox"
+                    name="showFeedbackSection"
+                    defaultChecked={homepageConfig?.showFeedbackSection ?? false}
+                    className="h-4 w-4 rounded border-charcoal/30 text-charcoal focus:ring-charcoal"
+                  />
+                  Show customer feedback section on homepage
+                </label>
+                <p className="text-xs text-charcoal/60 mt-1">
+                  When enabled, the homepage will display pinned customer reviews and feedback. The section will only appear if there are approved and pinned reviews.
+                </p>
+              </div>
             </fieldset>
 
             <div className="flex flex-wrap justify-end gap-3">
