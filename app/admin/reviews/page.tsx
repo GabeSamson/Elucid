@@ -37,6 +37,8 @@ export default function AdminReviewsPage() {
   const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [selectedReview, setSelectedReview] = useState<Review | null>(null);
+  const [editingReview, setEditingReview] = useState<Review | null>(null);
+  const [editForm, setEditForm] = useState<{ name: string; rating: number; title: string; content: string } | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [pinSelections, setPinSelections] = useState<Record<string, PinLocation>>({});
@@ -140,6 +142,54 @@ export default function AdminReviewsPage() {
     }));
   };
 
+  const openEditModal = (review: Review) => {
+    setEditingReview(review);
+    setEditForm({
+      name: review.name,
+      rating: review.rating,
+      title: review.title || '',
+      content: review.content,
+    });
+  };
+
+  const closeEditModal = () => {
+    setEditingReview(null);
+    setEditForm(null);
+  };
+
+  const saveEditedReview = async () => {
+    if (!editingReview || !editForm) return;
+
+    setUpdatingId(editingReview.id);
+    try {
+      const res = await fetch('/api/admin/reviews', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingReview.id,
+          name: editForm.name,
+          rating: editForm.rating,
+          title: editForm.title,
+          content: editForm.content,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to update review');
+      }
+
+      setFeedback({ type: 'success', message: 'Review updated successfully' });
+      await fetchReviews();
+      closeEditModal();
+    } catch (error: any) {
+      setFeedback({ type: 'error', message: error.message || 'Failed to update review' });
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
   const pendingReviews = reviews.filter(r => !r.isApproved);
   const approvedReviews = reviews.filter(r => r.isApproved && !r.isPinned);
   const pinnedReviews = reviews.filter(r => r.isPinned);
@@ -222,6 +272,12 @@ export default function AdminReviewsPage() {
                         </p>
                       </div>
                       <div className="flex flex-col gap-2">
+                        <button
+                          onClick={() => openEditModal(review)}
+                          className="px-4 py-2 border border-charcoal/20 text-charcoal hover:border-charcoal text-xs uppercase tracking-wider"
+                        >
+                          Edit
+                        </button>
                         <button
                           onClick={() => updateReview(review.id, { isApproved: true })}
                           disabled={updatingId === review.id}
@@ -309,6 +365,12 @@ export default function AdminReviewsPage() {
                             )}
                           </div>
                           <div className="flex flex-col gap-2 min-w-[160px]">
+                            <button
+                              onClick={() => openEditModal(review)}
+                              className="px-4 py-2 border border-charcoal/20 text-charcoal hover:border-charcoal text-xs uppercase tracking-wider"
+                            >
+                              Edit
+                            </button>
                             {availableLocations.length > 1 && (
                               <button
                                 onClick={() =>
@@ -397,6 +459,12 @@ export default function AdminReviewsPage() {
                             </div>
                           </div>
                           <div className="flex flex-col gap-2 min-w-[160px]">
+                            <button
+                              onClick={() => openEditModal(review)}
+                              className="px-4 py-2 border border-charcoal/20 text-charcoal hover:border-charcoal text-xs uppercase tracking-wider"
+                            >
+                              Edit
+                            </button>
                             <button
                               onClick={() =>
                                 updateReview(review.id, {
@@ -490,6 +558,12 @@ export default function AdminReviewsPage() {
                         </label>
                       </div>
                       <div className="flex flex-col gap-2">
+                        <button
+                          onClick={() => openEditModal(review)}
+                          className="px-4 py-2 border border-charcoal/20 text-charcoal hover:border-charcoal text-xs uppercase tracking-wider"
+                        >
+                          Edit
+                        </button>
                         <button
                           onClick={() =>
                             updateReview(review.id, {
@@ -601,6 +675,105 @@ export default function AdminReviewsPage() {
                   className="px-6 py-3 bg-charcoal-dark text-cream hover:bg-charcoal uppercase tracking-wider text-sm disabled:opacity-50"
                 >
                   {deletingId === selectedReview.id ? 'Deleting...' : 'Delete Review'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Review Modal */}
+      {editingReview && editForm && (
+        <div className="fixed inset-0 bg-charcoal-dark/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-cream max-w-2xl w-full p-8 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-start mb-6">
+              <h2 className="font-serif text-2xl text-charcoal-dark">Edit Review</h2>
+              <button
+                onClick={closeEditModal}
+                className="text-charcoal hover:text-charcoal-dark"
+              >
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-charcoal mb-2">
+                  Name
+                </label>
+                <input
+                  type="text"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  className="w-full px-4 py-2 border border-charcoal/20 bg-white text-charcoal focus:outline-none focus:border-charcoal"
+                  placeholder="Reviewer name"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-charcoal mb-2">
+                  Rating
+                </label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setEditForm({ ...editForm, rating: star })}
+                      className={`text-3xl ${
+                        star <= editForm.rating ? 'text-charcoal-dark' : 'text-charcoal/30'
+                      }`}
+                    >
+                      ★
+                    </button>
+                  ))}
+                  <span className="ml-2 text-sm text-charcoal/70 self-center">
+                    {editForm.rating} star{editForm.rating !== 1 ? 's' : ''}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-charcoal mb-2">
+                  Title (optional)
+                </label>
+                <input
+                  type="text"
+                  value={editForm.title}
+                  onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                  className="w-full px-4 py-2 border border-charcoal/20 bg-white text-charcoal focus:outline-none focus:border-charcoal"
+                  placeholder="Review title"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-charcoal mb-2">
+                  Review Content
+                </label>
+                <textarea
+                  value={editForm.content}
+                  onChange={(e) => setEditForm({ ...editForm, content: e.target.value })}
+                  rows={6}
+                  className="w-full px-4 py-2 border border-charcoal/20 bg-white text-charcoal focus:outline-none focus:border-charcoal resize-y"
+                  placeholder="Review content"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4 border-t border-charcoal/10">
+                <button
+                  onClick={saveEditedReview}
+                  disabled={updatingId === editingReview.id || !editForm.name.trim() || !editForm.content.trim()}
+                  className="px-6 py-3 bg-charcoal-dark text-cream hover:bg-charcoal uppercase tracking-wider text-sm disabled:opacity-50"
+                >
+                  {updatingId === editingReview.id ? 'Saving...' : 'Save Changes'}
+                </button>
+                <button
+                  onClick={closeEditModal}
+                  className="px-6 py-3 border border-charcoal/20 text-charcoal hover:border-charcoal uppercase tracking-wider text-sm"
+                >
+                  Cancel
                 </button>
               </div>
             </div>

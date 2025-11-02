@@ -61,7 +61,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const { id, isApproved, isPinned, pinLocation, isAnonymous } = await req.json();
+    const { id, isApproved, isPinned, pinLocation, isAnonymous, name, rating, title, content } = await req.json();
 
     if (!id) {
       return NextResponse.json(
@@ -90,6 +90,18 @@ export async function PATCH(req: NextRequest) {
     }
     if (typeof isAnonymous === 'boolean') {
       data.isAnonymous = isAnonymous;
+    }
+    if (typeof name === 'string' && name.trim().length > 0) {
+      data.name = name.trim();
+    }
+    if (typeof rating === 'number' && rating >= 1 && rating <= 5) {
+      data.rating = rating;
+    }
+    if (typeof title === 'string') {
+      data.title = title.trim() || null;
+    }
+    if (typeof content === 'string' && content.trim().length > 0) {
+      data.content = content.trim();
     }
 
     if (Object.keys(data).length === 0) {
