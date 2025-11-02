@@ -34,6 +34,7 @@ export async function GET(req: NextRequest) {
         productId: true,
         createdAt: true,
         pinLocation: true,
+        isAnonymous: true,
       },
     });
     const filteredReviews = normalizedPinLocation

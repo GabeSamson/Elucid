@@ -11,6 +11,7 @@ interface Review {
   title: string | null;
   content: string;
   createdAt: string;
+  isAnonymous: boolean;
 }
 
 interface ProductReviewsProps {
@@ -131,7 +132,7 @@ export default function ProductReviews({ productId, productName, showReviews = t
 
               <div className="flex items-center justify-between border-t border-charcoal/10 pt-3">
                 <span className="text-sm font-medium text-charcoal">
-                  {review.name}
+                  {review.isAnonymous ? 'Anonymous' : review.name}
                 </span>
                 <span className="text-xs text-charcoal/60">
                   {new Date(review.createdAt).toLocaleDateString()}
