@@ -247,7 +247,9 @@ export default function AdminReviewsPage() {
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2 flex-wrap">
-                          <span className="font-medium text-charcoal-dark">{review.name}</span>
+                          <span className="font-medium text-charcoal-dark">
+                            {review.isAnonymous ? 'Anonymous' : review.name}
+                          </span>
                           <div className="text-charcoal-dark">
                             {'★'.repeat(review.rating)}
                             <span className="text-charcoal/30">{'★'.repeat(5 - review.rating)}</span>
@@ -329,7 +331,9 @@ export default function AdminReviewsPage() {
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2 flex-wrap">
-                              <span className="font-medium text-charcoal-dark">{review.name}</span>
+                              <span className="font-medium text-charcoal-dark">
+                                {review.isAnonymous ? 'Anonymous' : review.name}
+                              </span>
                               <div className="text-charcoal-dark">
                                 {'★'.repeat(review.rating)}
                                 <span className="text-charcoal/30">{'★'.repeat(5 - review.rating)}</span>
@@ -363,6 +367,15 @@ export default function AdminReviewsPage() {
                                 </select>
                               </div>
                             )}
+                            <label className="mt-2 flex items-center gap-2 text-xs text-charcoal cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={anonymizeSelections[review.id] ?? review.isAnonymous}
+                                onChange={(e) => setAnonymizeSelections({...anonymizeSelections, [review.id]: e.target.checked})}
+                                className="h-3.5 w-3.5 rounded border-charcoal/30 text-charcoal focus:ring-charcoal"
+                              />
+                              <span>Display as Anonymous</span>
+                            </label>
                           </div>
                           <div className="flex flex-col gap-2 min-w-[160px]">
                             <button
@@ -377,12 +390,26 @@ export default function AdminReviewsPage() {
                                   updateReview(review.id, {
                                     isPinned: true,
                                     pinLocation: pinSelections[review.id] ?? derivePinLocation(review),
+                                    isAnonymous: anonymizeSelections[review.id] ?? review.isAnonymous,
                                   })
                                 }
                                 disabled={updatingId === review.id}
                                 className="px-4 py-2 border border-charcoal/20 text-charcoal hover:border-charcoal text-xs uppercase tracking-wider disabled:opacity-50"
                               >
-                                {updatingId === review.id ? 'Saving...' : 'Update Location'}
+                                {updatingId === review.id ? 'Saving...' : 'Save Changes'}
+                              </button>
+                            )}
+                            {availableLocations.length === 1 && (
+                              <button
+                                onClick={() =>
+                                  updateReview(review.id, {
+                                    isAnonymous: anonymizeSelections[review.id] ?? review.isAnonymous,
+                                  })
+                                }
+                                disabled={updatingId === review.id}
+                                className="px-4 py-2 border border-charcoal/20 text-charcoal hover:border-charcoal text-xs uppercase tracking-wider disabled:opacity-50"
+                              >
+                                {updatingId === review.id ? 'Saving...' : 'Save Changes'}
                               </button>
                             )}
                             <button
@@ -423,7 +450,9 @@ export default function AdminReviewsPage() {
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2 flex-wrap">
-                              <span className="font-medium text-charcoal-dark">{review.name}</span>
+                              <span className="font-medium text-charcoal-dark">
+                                {review.isAnonymous ? 'Anonymous' : review.name}
+                              </span>
                               <div className="text-charcoal-dark">
                                 {'★'.repeat(review.rating)}
                                 <span className="text-charcoal/30">{'★'.repeat(5 - review.rating)}</span>
@@ -457,6 +486,15 @@ export default function AdminReviewsPage() {
                                 ))}
                               </select>
                             </div>
+                            <label className="mt-2 flex items-center gap-2 text-xs text-charcoal cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={anonymizeSelections[review.id] ?? review.isAnonymous}
+                                onChange={(e) => setAnonymizeSelections({...anonymizeSelections, [review.id]: e.target.checked})}
+                                className="h-3.5 w-3.5 rounded border-charcoal/30 text-charcoal focus:ring-charcoal"
+                              />
+                              <span>Display as Anonymous</span>
+                            </label>
                           </div>
                           <div className="flex flex-col gap-2 min-w-[160px]">
                             <button
@@ -470,12 +508,13 @@ export default function AdminReviewsPage() {
                                 updateReview(review.id, {
                                   isPinned: true,
                                   pinLocation: pinSelections[review.id] ?? derivePinLocation(review),
+                                  isAnonymous: anonymizeSelections[review.id] ?? review.isAnonymous,
                                 })
                               }
                               disabled={updatingId === review.id}
                               className="px-4 py-2 border border-charcoal/20 text-charcoal hover:border-charcoal text-xs uppercase tracking-wider disabled:opacity-50"
                             >
-                              {updatingId === review.id ? 'Saving...' : 'Update Location'}
+                              {updatingId === review.id ? 'Saving...' : 'Save Changes'}
                             </button>
                             <button
                               onClick={() => updateReview(review.id, { isPinned: false })}
@@ -512,7 +551,9 @@ export default function AdminReviewsPage() {
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2 flex-wrap">
-                          <span className="font-medium text-charcoal-dark">{review.name}</span>
+                          <span className="font-medium text-charcoal-dark">
+                            {review.isAnonymous ? 'Anonymous' : review.name}
+                          </span>
                           <div className="text-charcoal-dark">
                             {'★'.repeat(review.rating)}
                             <span className="text-charcoal/30">{'★'.repeat(5 - review.rating)}</span>
