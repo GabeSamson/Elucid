@@ -116,6 +116,50 @@ export default function AdminInventoryPage() {
     }
   };
 
+  const handleReserveStock = async (productId: string, availableStock: number) => {
+    const amount = prompt(`How many units do you want to reserve? (Available: ${availableStock})`);
+
+    if (!amount) return;
+
+    const reserveAmount = parseInt(amount);
+    if (isNaN(reserveAmount) || reserveAmount <= 0) {
+      setFeedback({ type: 'error', message: 'Please enter a valid positive number' });
+      return;
+    }
+
+    if (reserveAmount > availableStock) {
+      setFeedback({ type: 'error', message: `Cannot reserve more than ${availableStock} available units` });
+      return;
+    }
+
+    setReleasing(productId);
+    setFeedback(null);
+
+    try {
+      const res = await fetch('/api/admin/inventory', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId, action: 'reserve', amount: reserveAmount }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to reserve stock');
+      }
+
+      setFeedback({
+        type: 'success',
+        message: `Reserved ${data.reserved} units`
+      });
+      await fetchInventory();
+    } catch (error: any) {
+      setFeedback({ type: 'error', message: error.message || 'Failed to reserve stock' });
+    } finally {
+      setReleasing(null);
+    }
+  };
+
   const exportToCSV = () => {
     const headers = ['Product', 'Color', 'Size', 'SKU', 'Stock', 'Reserved Stock', 'Value', 'Status'];
     const rows = filteredVariants.map((v) => [
@@ -397,15 +441,26 @@ export default function AdminInventoryPage() {
                         />
                       </td>
                       <td className="py-3 px-4">
-                        {hasReservedStock && (
-                          <button
-                            onClick={() => handleReleaseReservedStock(variant.product.id)}
-                            disabled={releasing === variant.product.id}
-                            className="text-xs px-3 py-1.5 bg-charcoal-dark text-cream hover:bg-charcoal disabled:opacity-50 disabled:cursor-not-allowed rounded transition-colors"
-                          >
-                            {releasing === variant.product.id ? 'Releasing...' : 'Release Reserved'}
-                          </button>
-                        )}
+                        <div className="flex gap-2">
+                          {variant.stock > 0 && (
+                            <button
+                              onClick={() => handleReserveStock(variant.product.id, variant.stock)}
+                              disabled={releasing === variant.product.id}
+                              className="text-xs px-3 py-1.5 bg-beige text-charcoal hover:bg-beige/80 disabled:opacity-50 disabled:cursor-not-allowed rounded transition-colors"
+                            >
+                              Reserve Stock
+                            </button>
+                          )}
+                          {hasReservedStock && (
+                            <button
+                              onClick={() => handleReleaseReservedStock(variant.product.id)}
+                              disabled={releasing === variant.product.id}
+                              className="text-xs px-3 py-1.5 bg-charcoal-dark text-cream hover:bg-charcoal disabled:opacity-50 disabled:cursor-not-allowed rounded transition-colors"
+                            >
+                              {releasing === variant.product.id ? 'Processing...' : 'Release Reserved'}
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );

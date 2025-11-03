@@ -108,38 +108,83 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { productId, action } = body;
+    const { productId, action, amount } = body;
 
-    if (!productId || action !== 'release') {
+    if (!productId || !action) {
       return NextResponse.json(
         { error: 'Product ID and action are required' },
         { status: 400 }
       );
     }
 
-    // Release all reserved stock for this product
     const product = await prisma.product.findUnique({
       where: { id: productId },
-      select: { reservedStock: true },
+      select: { reservedStock: true, stock: true },
     });
 
     if (!product) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
 
-    await prisma.product.update({
-      where: { id: productId },
-      data: { reservedStock: 0 },
-    });
+    if (action === 'release') {
+      // Release all reserved stock for this product
+      await prisma.product.update({
+        where: { id: productId },
+        data: { reservedStock: 0 },
+      });
 
-    return NextResponse.json({
-      success: true,
-      released: product.reservedStock,
-    });
+      return NextResponse.json({
+        success: true,
+        released: product.reservedStock,
+      });
+    } else if (action === 'reserve') {
+      // Manually reserve stock
+      if (!amount || amount <= 0) {
+        return NextResponse.json(
+          { error: 'Amount must be a positive number' },
+          { status: 400 }
+        );
+      }
+
+      const reserveAmount = parseInt(String(amount));
+      if (isNaN(reserveAmount)) {
+        return NextResponse.json(
+          { error: 'Invalid amount' },
+          { status: 400 }
+        );
+      }
+
+      // Check if there's enough available stock
+      if (product.stock < reserveAmount) {
+        return NextResponse.json(
+          { error: 'Not enough available stock to reserve' },
+          { status: 400 }
+        );
+      }
+
+      // Move from available to reserved
+      await prisma.product.update({
+        where: { id: productId },
+        data: {
+          stock: { decrement: reserveAmount },
+          reservedStock: { increment: reserveAmount },
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        reserved: reserveAmount,
+      });
+    } else {
+      return NextResponse.json(
+        { error: 'Invalid action' },
+        { status: 400 }
+      );
+    }
   } catch (error) {
-    console.error('Error releasing reserved stock:', error);
+    console.error('Error managing reserved stock:', error);
     return NextResponse.json(
-      { error: 'Failed to release reserved stock' },
+      { error: 'Failed to manage reserved stock' },
       { status: 500 }
     );
   }
