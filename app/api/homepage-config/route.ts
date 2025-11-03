@@ -7,7 +7,7 @@ export async function GET() {
       where: { id: "main" },
     });
 
-    return NextResponse.json(config || {});
+    return NextResponse.json({ config: config || {} });
   } catch (error) {
     console.error("Error fetching homepage config:", error);
     return NextResponse.json(

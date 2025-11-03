@@ -341,22 +341,43 @@ export async function createOrderFromStripeSession(
     }
   }
 
+  // Check if auto-deduct stock is enabled
+  const homepageConfig = await prisma.homepageConfig.findUnique({
+    where: { id: "main" },
+    select: { autoDeductStock: true },
+  });
+
+  const shouldDeductStock = homepageConfig?.autoDeductStock ?? false;
+
   if (orderItemsToCreate.length > 0) {
     for (const item of parsedItems) {
       if (!item?.productId || typeof item.quantity !== 'number') continue;
 
       try {
-        await prisma.product.update({
-          where: { id: item.productId },
-          data: {
-            stock: {
-              decrement: item.quantity,
+        if (shouldDeductStock) {
+          // Auto-deduct stock
+          await prisma.product.update({
+            where: { id: item.productId },
+            data: {
+              stock: {
+                decrement: item.quantity,
+              },
             },
-          },
-        });
+          });
+        } else {
+          // Reserve stock instead
+          await prisma.product.update({
+            where: { id: item.productId },
+            data: {
+              reservedStock: {
+                increment: item.quantity,
+              },
+            },
+          });
+        }
       } catch (stockError) {
         console.error(
-          `Failed to decrement stock for product ${item.productId}:`,
+          `Failed to ${shouldDeductStock ? 'decrement' : 'reserve'} stock for product ${item.productId}:`,
           stockError
         );
       }

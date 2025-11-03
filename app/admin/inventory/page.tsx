@@ -15,6 +15,7 @@ interface InventoryVariant {
     name: string;
     price: number;
     active: boolean;
+    reservedStock: number;
   };
 }
 
@@ -25,6 +26,7 @@ export default function AdminInventoryPage() {
   const [stockFilter, setStockFilter] = useState('all'); // all, low, out, ok
   const [activeFilter, setActiveFilter] = useState('all'); // all, active, inactive
   const [updating, setUpdating] = useState<string | null>(null);
+  const [releasing, setReleasing] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   useEffect(() => {
@@ -81,14 +83,48 @@ export default function AdminInventoryPage() {
     }
   };
 
+  const handleReleaseReservedStock = async (productId: string) => {
+    if (!confirm('Are you sure you want to release all reserved stock for this product? This will move reserved stock back to available stock.')) {
+      return;
+    }
+
+    setReleasing(productId);
+    setFeedback(null);
+
+    try {
+      const res = await fetch('/api/admin/inventory', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId, action: 'release' }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to release reserved stock');
+      }
+
+      setFeedback({
+        type: 'success',
+        message: `Released ${data.released} reserved units`
+      });
+      await fetchInventory();
+    } catch (error: any) {
+      setFeedback({ type: 'error', message: error.message || 'Failed to release reserved stock' });
+    } finally {
+      setReleasing(null);
+    }
+  };
+
   const exportToCSV = () => {
-    const headers = ['Product', 'Color', 'Size', 'SKU', 'Stock', 'Value', 'Status'];
+    const headers = ['Product', 'Color', 'Size', 'SKU', 'Stock', 'Reserved Stock', 'Value', 'Status'];
     const rows = filteredVariants.map((v) => [
       v.product.name,
       v.color,
       v.size,
       v.sku || 'N/A',
       v.stock,
+      v.product.reservedStock || 0,
       formatCurrency(v.stock * v.product.price),
       v.product.active ? 'Active' : 'Inactive',
     ]);
@@ -130,10 +166,19 @@ export default function AdminInventoryPage() {
     return true;
   });
 
+  // Group variants by product to get accurate reserved stock totals
+  const productMap = new Map<string, typeof variants[0]['product']>();
+  variants.forEach(v => {
+    if (!productMap.has(v.product.id)) {
+      productMap.set(v.product.id, v.product);
+    }
+  });
+
   const totalItems = variants.length;
   const outOfStock = variants.filter((v) => v.stock === 0).length;
   const lowStock = variants.filter((v) => v.stock > 0 && v.stock <= 5).length;
   const totalUnits = variants.reduce((sum, v) => sum + v.stock, 0);
+  const totalReserved = Array.from(productMap.values()).reduce((sum, p) => sum + (p.reservedStock || 0), 0);
   const totalValue = variants.reduce((sum, v) => sum + v.stock * v.product.price, 0);
 
   return (
@@ -153,7 +198,7 @@ export default function AdminInventoryPage() {
         </button>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <div className="rounded-2xl border border-charcoal/10 bg-cream p-5">
           <p className="text-xs uppercase tracking-wider text-charcoal/50">
             Total inventory value
@@ -168,6 +213,14 @@ export default function AdminInventoryPage() {
           </p>
           <p className="mt-2 text-2xl font-semibold text-charcoal">
             {totalUnits}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-charcoal/10 bg-cream p-5">
+          <p className="text-xs uppercase tracking-wider text-charcoal/50">
+            Reserved units
+          </p>
+          <p className="mt-2 text-2xl font-semibold text-charcoal">
+            {totalReserved}
           </p>
         </div>
         <div className="rounded-2xl border border-charcoal/10 bg-cream p-5">
@@ -265,15 +318,18 @@ export default function AdminInventoryPage() {
                   <th className="py-3 px-4">Size</th>
                   <th className="py-3 px-4">SKU</th>
                   <th className="py-3 px-4">Stock</th>
+                  <th className="py-3 px-4">Reserved</th>
                   <th className="py-3 px-4">Value</th>
                   <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4">Action</th>
+                  <th className="py-3 px-4">Update Stock</th>
+                  <th className="py-3 px-4">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredVariants.map((variant) => {
                   const isLowStock = variant.stock > 0 && variant.stock <= 5;
                   const isOutOfStock = variant.stock === 0;
+                  const hasReservedStock = (variant.product.reservedStock || 0) > 0;
 
                   return (
                     <tr key={variant.id} className="border-b border-charcoal/10 last:border-0">
@@ -293,6 +349,15 @@ export default function AdminInventoryPage() {
                         >
                           {variant.stock}
                         </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        {hasReservedStock ? (
+                          <span className="text-sm font-medium text-beige">
+                            {variant.product.reservedStock}
+                          </span>
+                        ) : (
+                          <span className="text-sm text-charcoal/40">—</span>
+                        )}
                       </td>
                       <td className="py-3 px-4 text-sm text-charcoal">
                         {formatCurrency(variant.stock * variant.product.price)}
@@ -330,6 +395,17 @@ export default function AdminInventoryPage() {
                           disabled={updating === variant.id}
                           className="w-20 px-2 py-1 text-sm border border-charcoal/20 focus:border-charcoal focus:outline-none disabled:opacity-50"
                         />
+                      </td>
+                      <td className="py-3 px-4">
+                        {hasReservedStock && (
+                          <button
+                            onClick={() => handleReleaseReservedStock(variant.product.id)}
+                            disabled={releasing === variant.product.id}
+                            className="text-xs px-3 py-1.5 bg-charcoal-dark text-cream hover:bg-charcoal disabled:opacity-50 disabled:cursor-not-allowed rounded transition-colors"
+                          >
+                            {releasing === variant.product.id ? 'Releasing...' : 'Release Reserved'}
+                          </button>
+                        )}
                       </td>
                     </tr>
                   );

@@ -93,6 +93,14 @@ async function updateHomepageSettingsAction(formData: FormData) {
     ? formData.get("showFeedbackButton") === "on"
     : existingConfig?.showFeedbackButton ?? false;
 
+  const rotateHomepageReviews = includesPurchasingFields
+    ? formData.get("rotateHomepageReviews") === "on"
+    : existingConfig?.rotateHomepageReviews ?? false;
+
+  const autoDeductStock = includesPurchasingFields
+    ? formData.get("autoDeductStock") === "on"
+    : existingConfig?.autoDeductStock ?? false;
+
   const showCountdown = includesHeroFields
     ? formData.get("showCountdown") === "on"
     : existingConfig?.showCountdown ?? false;
@@ -150,6 +158,8 @@ async function updateHomepageSettingsAction(formData: FormData) {
       purchasingEnabled,
       showFeedbackSection,
       showFeedbackButton,
+      rotateHomepageReviews,
+      autoDeductStock,
     },
     create: {
       id: "main",
@@ -169,6 +179,8 @@ async function updateHomepageSettingsAction(formData: FormData) {
       purchasingEnabled,
       showFeedbackSection,
       showFeedbackButton,
+      rotateHomepageReviews,
+      autoDeductStock,
     },
   });
 
@@ -530,6 +542,36 @@ export default async function AdminHomepagePage({ searchParams }: AdminHomepageP
                 </label>
                 <p className="text-xs text-charcoal/60 mt-1">
                   When enabled, the homepage will display pinned customer reviews and feedback. The section will only appear if there are approved and pinned reviews.
+                </p>
+              </div>
+
+              <div className="pt-2 border-t border-charcoal/5">
+                <label className="flex items-center gap-3 text-sm text-charcoal">
+                  <input
+                    type="checkbox"
+                    name="rotateHomepageReviews"
+                    defaultChecked={homepageConfig?.rotateHomepageReviews ?? false}
+                    className="h-4 w-4 rounded border-charcoal/30 text-charcoal focus:ring-charcoal"
+                  />
+                  Enable rotating reviews carousel (max 3 reviews at a time)
+                </label>
+                <p className="text-xs text-charcoal/60 mt-1">
+                  When enabled and more than 3 reviews are pinned, reviews will automatically rotate in a carousel every 5 seconds. Users can also manually navigate with dots.
+                </p>
+              </div>
+
+              <div className="pt-2 border-t border-charcoal/5">
+                <label className="flex items-center gap-3 text-sm text-charcoal">
+                  <input
+                    type="checkbox"
+                    name="autoDeductStock"
+                    defaultChecked={homepageConfig?.autoDeductStock ?? false}
+                    className="h-4 w-4 rounded border-charcoal/30 text-charcoal focus:ring-charcoal"
+                  />
+                  Automatically deduct stock when orders are placed
+                </label>
+                <p className="text-xs text-charcoal/60 mt-1">
+                  When enabled, product stock will automatically decrease when customers place orders (online and in-person). When disabled, stock must be managed manually in the inventory page.
                 </p>
               </div>
             </fieldset>

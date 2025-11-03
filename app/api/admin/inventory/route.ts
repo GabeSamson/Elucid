@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
             name: true,
             price: true,
             active: true,
+            reservedStock: true,
           },
         },
       },
@@ -94,6 +95,51 @@ export async function PATCH(request: NextRequest) {
     console.error('Stock update error:', error);
     return NextResponse.json(
       { error: 'Failed to update stock' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    const session = await auth();
+    if (!session?.user || session.user.role !== 'admin') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { productId, action } = body;
+
+    if (!productId || action !== 'release') {
+      return NextResponse.json(
+        { error: 'Product ID and action are required' },
+        { status: 400 }
+      );
+    }
+
+    // Release all reserved stock for this product
+    const product = await prisma.product.findUnique({
+      where: { id: productId },
+      select: { reservedStock: true },
+    });
+
+    if (!product) {
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+    }
+
+    await prisma.product.update({
+      where: { id: productId },
+      data: { reservedStock: 0 },
+    });
+
+    return NextResponse.json({
+      success: true,
+      released: product.reservedStock,
+    });
+  } catch (error) {
+    console.error('Error releasing reserved stock:', error);
+    return NextResponse.json(
+      { error: 'Failed to release reserved stock' },
       { status: 500 }
     );
   }

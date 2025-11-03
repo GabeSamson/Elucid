@@ -56,6 +56,7 @@ model Product {
   shippingPrice   Float?    @map("shipping_price") // Optional: Amount customer pays for shipping (null = use site default)
   images          String    @default("[]") // JSON array as string
   stock           Int       @default(0)
+  reservedStock   Int       @default(0) @map("reserved_stock") // Stock in reserved state (pending orders)
   collectionId    String?   @map("collection_id")
   sizes           String    @default("[]") // JSON array as string
   colors          String    @default("[]") // JSON array with name and hexCode: [{"name": "Navy Blue", "hexCode": "#001F3F"}]
@@ -231,6 +232,8 @@ model HomepageConfig {
   purchasingEnabled    Boolean     @default(true) @map("purchasing_enabled")
   showFeedbackSection  Boolean     @default(false) @map("show_feedback_section")
   showFeedbackButton   Boolean     @default(false) @map("show_feedback_button")
+  rotateHomepageReviews Boolean    @default(false) @map("rotate_homepage_reviews") // Enable rotating carousel for reviews (max 3)
+  autoDeductStock      Boolean     @default(false) @map("auto_deduct_stock") // Automatically deduct stock when orders are placed
   createdAt            DateTime    @default(now()) @map("created_at")
   updatedAt            DateTime    @updatedAt @map("updated_at")
 

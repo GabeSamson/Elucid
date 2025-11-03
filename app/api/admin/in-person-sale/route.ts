@@ -106,13 +106,32 @@ export async function POST(request: NextRequest) {
         include: { items: true },
       });
 
+      // Check if auto-deduct stock is enabled
+      const homepageConfig = await tx.homepageConfig.findUnique({
+        where: { id: "main" },
+        select: { autoDeductStock: true },
+      });
+
+      const shouldDeductStock = homepageConfig?.autoDeductStock ?? false;
+
       for (const item of normalizedItems) {
-        await tx.product.update({
-          where: { id: item.productId },
-          data: {
-            stock: { decrement: item.quantity },
-          },
-        });
+        if (shouldDeductStock) {
+          // Auto-deduct stock
+          await tx.product.update({
+            where: { id: item.productId },
+            data: {
+              stock: { decrement: item.quantity },
+            },
+          });
+        } else {
+          // Reserve stock instead
+          await tx.product.update({
+            where: { id: item.productId },
+            data: {
+              reservedStock: { increment: item.quantity },
+            },
+          });
+        }
       }
 
       return created;

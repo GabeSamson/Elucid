@@ -79,18 +79,39 @@ export async function DELETE(
     }
 
     await prisma.$transaction(async (tx) => {
+      // Check if auto-deduct was enabled (to know what to restore)
+      const homepageConfig = await tx.homepageConfig.findUnique({
+        where: { id: "main" },
+        select: { autoDeductStock: true },
+      });
+
+      const wasAutoDeducted = homepageConfig?.autoDeductStock ?? false;
+
       for (const item of order.items) {
         if (!item.productId || item.quantity <= 0) continue;
 
         try {
-          await tx.product.update({
-            where: { id: item.productId },
-            data: {
-              stock: {
-                increment: item.quantity,
+          if (wasAutoDeducted) {
+            // Restore to available stock
+            await tx.product.update({
+              where: { id: item.productId },
+              data: {
+                stock: {
+                  increment: item.quantity,
+                },
               },
-            },
-          });
+            });
+          } else {
+            // Release from reserved stock
+            await tx.product.update({
+              where: { id: item.productId },
+              data: {
+                reservedStock: {
+                  decrement: item.quantity,
+                },
+              },
+            });
+          }
         } catch (stockError) {
           console.error(`Failed to restore stock for product ${item.productId}:`, stockError);
         }
