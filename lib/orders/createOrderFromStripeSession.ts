@@ -341,31 +341,21 @@ export async function createOrderFromStripeSession(
     }
   }
 
-  // Check if auto-deduct stock is enabled
+  // Check if reserve stock toggle is enabled
   const homepageConfig = await prisma.homepageConfig.findUnique({
     where: { id: "main" },
     select: { autoDeductStock: true },
   });
 
-  const shouldDeductStock = homepageConfig?.autoDeductStock ?? false;
+  const shouldReserveStock = homepageConfig?.autoDeductStock ?? false;
 
   if (orderItemsToCreate.length > 0) {
     for (const item of parsedItems) {
       if (!item?.productId || typeof item.quantity !== 'number') continue;
 
       try {
-        if (shouldDeductStock) {
-          // Auto-deduct stock
-          await prisma.product.update({
-            where: { id: item.productId },
-            data: {
-              stock: {
-                decrement: item.quantity,
-              },
-            },
-          });
-        } else {
-          // Reserve stock instead
+        if (shouldReserveStock) {
+          // Reserve stock when toggle is ON
           await prisma.product.update({
             where: { id: item.productId },
             data: {
@@ -374,10 +364,20 @@ export async function createOrderFromStripeSession(
               },
             },
           });
+        } else {
+          // Auto-deduct stock when toggle is OFF
+          await prisma.product.update({
+            where: { id: item.productId },
+            data: {
+              stock: {
+                decrement: item.quantity,
+              },
+            },
+          });
         }
       } catch (stockError) {
         console.error(
-          `Failed to ${shouldDeductStock ? 'decrement' : 'reserve'} stock for product ${item.productId}:`,
+          `Failed to ${shouldReserveStock ? 'reserve' : 'decrement'} stock for product ${item.productId}:`,
           stockError
         );
       }

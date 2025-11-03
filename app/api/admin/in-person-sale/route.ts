@@ -106,29 +106,29 @@ export async function POST(request: NextRequest) {
         include: { items: true },
       });
 
-      // Check if auto-deduct stock is enabled
+      // Check if reserve stock toggle is enabled
       const homepageConfig = await tx.homepageConfig.findUnique({
         where: { id: "main" },
         select: { autoDeductStock: true },
       });
 
-      const shouldDeductStock = homepageConfig?.autoDeductStock ?? false;
+      const shouldReserveStock = homepageConfig?.autoDeductStock ?? false;
 
       for (const item of normalizedItems) {
-        if (shouldDeductStock) {
-          // Auto-deduct stock
-          await tx.product.update({
-            where: { id: item.productId },
-            data: {
-              stock: { decrement: item.quantity },
-            },
-          });
-        } else {
-          // Reserve stock instead
+        if (shouldReserveStock) {
+          // Reserve stock when toggle is ON
           await tx.product.update({
             where: { id: item.productId },
             data: {
               reservedStock: { increment: item.quantity },
+            },
+          });
+        } else {
+          // Auto-deduct stock when toggle is OFF
+          await tx.product.update({
+            where: { id: item.productId },
+            data: {
+              stock: { decrement: item.quantity },
             },
           });
         }

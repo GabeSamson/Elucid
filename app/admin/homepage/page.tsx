@@ -568,10 +568,10 @@ export default async function AdminHomepagePage({ searchParams }: AdminHomepageP
                     defaultChecked={homepageConfig?.autoDeductStock ?? false}
                     className="h-4 w-4 rounded border-charcoal/30 text-charcoal focus:ring-charcoal"
                   />
-                  Automatically deduct stock when orders are placed
+                  Reserve stock automatically when orders are placed
                 </label>
                 <p className="text-xs text-charcoal/60 mt-1">
-                  When enabled, product stock will automatically decrease when customers place orders (online and in-person). When disabled, stock must be managed manually in the inventory page.
+                  When enabled, product stock will be moved to "Reserved" when customers place orders (online and in-person). When disabled, stock will be automatically deducted from available inventory.
                 </p>
               </div>
             </fieldset>
