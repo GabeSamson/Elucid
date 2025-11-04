@@ -1,17 +1,27 @@
-import { auth } from '@/auth';
-import { prisma } from '@/lib/prisma';
+"use client";
 
-export default async function Footer() {
-  const session = await auth();
-  const isAdmin = session?.user?.role === 'admin';
+import { useEffect, useState } from 'react';
 
-  // Fetch footer tagline from database
-  const homepageConfig = await prisma.homepageConfig.findUnique({
-    where: { id: 'main' },
-    select: { footerTagline: true },
-  });
+export default function Footer() {
+  const [footerTagline, setFooterTagline] = useState('Made in London');
+  const [isAdmin, setIsAdmin] = useState(false);
 
-  const footerTagline = homepageConfig?.footerTagline || 'Made in London';
+  useEffect(() => {
+    const fetchFooterData = async () => {
+      try {
+        const res = await fetch('/api/footer');
+        if (res.ok) {
+          const data = await res.json();
+          setFooterTagline(data.footerTagline || 'Made in London');
+          setIsAdmin(data.isAdmin || false);
+        }
+      } catch (error) {
+        console.error('Error fetching footer data:', error);
+      }
+    };
+
+    fetchFooterData();
+  }, []);
 
   return (
     <footer className="bg-charcoal-dark text-cream py-16 px-6">
