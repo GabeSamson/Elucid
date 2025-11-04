@@ -234,6 +234,7 @@ model HomepageConfig {
   showFeedbackButton   Boolean     @default(false) @map("show_feedback_button")
   rotateHomepageReviews Boolean    @default(false) @map("rotate_homepage_reviews") // Enable rotating carousel for reviews (max 3)
   autoDeductStock      Boolean     @default(false) @map("auto_deduct_stock") // Automatically deduct stock when orders are placed
+  footerTagline        String?     @default("Made in London") @map("footer_tagline") // Footer tagline text
   createdAt            DateTime    @default(now()) @map("created_at")
   updatedAt            DateTime    @updatedAt @map("updated_at")
 

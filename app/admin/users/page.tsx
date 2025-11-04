@@ -19,6 +19,10 @@ export default function AdminUsersPage() {
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [emailModal, setEmailModal] = useState<{ userId: string; email: string } | null>(null);
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailBody, setEmailBody] = useState('');
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   const loadUsers = async () => {
     setLoading(true);
@@ -109,6 +113,43 @@ export default function AdminUsersPage() {
     }
   };
 
+  const handleSendEmail = async () => {
+    if (!emailModal || !emailSubject.trim() || !emailBody.trim()) {
+      setFeedback({ type: 'error', message: 'Please fill in subject and body' });
+      return;
+    }
+
+    setSendingEmail(true);
+    setFeedback(null);
+
+    try {
+      const res = await fetch('/api/admin/users/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: emailModal.email,
+          subject: emailSubject,
+          body: emailBody,
+        }),
+      });
+
+      const payload = await res.json();
+
+      if (!res.ok) {
+        throw new Error(payload.error || 'Failed to send email');
+      }
+
+      setFeedback({ type: 'success', message: 'Email sent successfully!' });
+      setEmailModal(null);
+      setEmailSubject('');
+      setEmailBody('');
+    } catch (error: any) {
+      setFeedback({ type: 'error', message: error.message || 'Failed to send email' });
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
   const filteredUsers = users.filter(user =>
     user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (user.name && user.name.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -195,6 +236,13 @@ export default function AdminUsersPage() {
                     <td className="py-3 px-4">
                       <div className="flex gap-3">
                         <button
+                          onClick={() => setEmailModal({ userId: user.id, email: user.email })}
+                          disabled={updatingUserId === user.id}
+                          className="text-sm text-charcoal hover:underline disabled:opacity-50"
+                        >
+                          Email
+                        </button>
+                        <button
                           onClick={() => handleRoleChange(user.id, user.role)}
                           disabled={updatingUserId === user.id}
                           className="text-sm text-charcoal hover:underline disabled:opacity-50"
@@ -221,6 +269,65 @@ export default function AdminUsersPage() {
           </div>
         )}
       </div>
+
+      {emailModal && (
+        <div className="fixed inset-0 bg-charcoal/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-cream p-6 border border-charcoal max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <h2 className="font-serif text-2xl text-charcoal-dark mb-4">
+              Send Email to {emailModal.email}
+            </h2>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-charcoal mb-2">
+                  Subject
+                </label>
+                <input
+                  type="text"
+                  value={emailSubject}
+                  onChange={(e) => setEmailSubject(e.target.value)}
+                  placeholder="Email subject..."
+                  className="w-full px-4 py-3 bg-cream-light border border-charcoal/20 focus:border-charcoal focus:outline-none transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-charcoal mb-2">
+                  Body (HTML supported)
+                </label>
+                <textarea
+                  value={emailBody}
+                  onChange={(e) => setEmailBody(e.target.value)}
+                  placeholder="Email body (HTML tags allowed)..."
+                  rows={10}
+                  className="w-full px-4 py-3 bg-cream-light border border-charcoal/20 focus:border-charcoal focus:outline-none transition-colors font-mono text-sm"
+                />
+              </div>
+
+              <div className="flex gap-3 justify-end pt-4">
+                <button
+                  onClick={() => {
+                    setEmailModal(null);
+                    setEmailSubject('');
+                    setEmailBody('');
+                  }}
+                  disabled={sendingEmail}
+                  className="px-6 py-3 bg-cream-light text-charcoal hover:bg-beige transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSendEmail}
+                  disabled={sendingEmail || !emailSubject.trim() || !emailBody.trim()}
+                  className="px-6 py-3 bg-charcoal text-cream hover:bg-charcoal-dark transition-colors disabled:opacity-50"
+                >
+                  {sendingEmail ? 'Sending...' : 'Send Email'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

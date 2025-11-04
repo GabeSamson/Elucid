@@ -1,10 +1,17 @@
-'use client';
+import { auth } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 
-import { useSession } from 'next-auth/react';
-
-export default function Footer() {
-  const { data: session, status } = useSession();
+export default async function Footer() {
+  const session = await auth();
   const isAdmin = session?.user?.role === 'admin';
+
+  // Fetch footer tagline from database
+  const homepageConfig = await prisma.homepageConfig.findUnique({
+    where: { id: 'main' },
+    select: { footerTagline: true },
+  });
+
+  const footerTagline = homepageConfig?.footerTagline || 'Made in London';
 
   return (
     <footer className="bg-charcoal-dark text-cream py-16 px-6">
@@ -15,9 +22,11 @@ export default function Footer() {
             <p className="text-cream/60 text-sm mb-3">
               Modern streetwear.
             </p>
-            <p className="text-cream text-sm font-medium uppercase tracking-wider">
-              Made in London
-            </p>
+            {footerTagline && (
+              <p className="text-cream text-sm font-medium uppercase tracking-wider">
+                {footerTagline}
+              </p>
+            )}
           </div>
 
           <div>
@@ -28,7 +37,7 @@ export default function Footer() {
               <li><a href="/collections" className="hover:text-cream transition-colors">Collections</a></li>
               <li><a href="/about" className="hover:text-cream transition-colors">About</a></li>
               <li><a href="/reviews" className="hover:text-cream transition-colors">Feedback</a></li>
-              {status === 'loading' ? null : isAdmin && (
+              {isAdmin && (
                 <li><a href="/admin" className="hover:text-cream transition-colors">Admin</a></li>
               )}
             </ul>

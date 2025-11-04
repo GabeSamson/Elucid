@@ -306,7 +306,7 @@ export async function createOrderFromStripeSession(
       promoCodeCode: primaryAppliedPromo?.code ?? (promoCode ? normalizePromoCode(promoCode) : null),
       notes: null,
       stripePaymentId,
-      status: 'PROCESSING',
+      status: 'PENDING',
       items: {
         create: orderItemsToCreate,
       },

@@ -101,6 +101,10 @@ async function updateHomepageSettingsAction(formData: FormData) {
     ? formData.get("autoDeductStock") === "on"
     : existingConfig?.autoDeductStock ?? false;
 
+  const footerTagline = includesPurchasingFields
+    ? normalizeText(formData.get("footerTagline"))
+    : existingConfig?.footerTagline ?? "Made in London";
+
   const showCountdown = includesHeroFields
     ? formData.get("showCountdown") === "on"
     : existingConfig?.showCountdown ?? false;
@@ -160,6 +164,7 @@ async function updateHomepageSettingsAction(formData: FormData) {
       showFeedbackButton,
       rotateHomepageReviews,
       autoDeductStock,
+      footerTagline,
     },
     create: {
       id: "main",
@@ -181,6 +186,7 @@ async function updateHomepageSettingsAction(formData: FormData) {
       showFeedbackButton,
       rotateHomepageReviews,
       autoDeductStock,
+      footerTagline,
     },
   });
 
@@ -572,6 +578,27 @@ export default async function AdminHomepagePage({ searchParams }: AdminHomepageP
                 </label>
                 <p className="text-xs text-charcoal/60 mt-1">
                   When enabled, product stock will be moved to "Reserved" when customers place orders (online and in-person). When disabled, stock will be automatically deducted from available inventory.
+                </p>
+              </div>
+            </fieldset>
+
+            <fieldset className="space-y-3 rounded-xl border border-charcoal/10 bg-white px-5 py-4">
+              <legend className="px-2 text-sm font-semibold uppercase tracking-wider text-charcoal/70">
+                Footer
+              </legend>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-charcoal">
+                  Footer Tagline
+                </label>
+                <input
+                  type="text"
+                  name="footerTagline"
+                  defaultValue={homepageConfig?.footerTagline ?? "Made in London"}
+                  placeholder="e.g., Made in London"
+                  className="input-modern w-full"
+                />
+                <p className="text-xs text-charcoal/60 mt-1">
+                  This text appears in the footer of your website. Leave blank to hide.
                 </p>
               </div>
             </fieldset>
