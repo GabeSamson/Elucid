@@ -6,6 +6,7 @@ import { useSession, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import AuthModal from "./AuthModal";
 import CartModal from "./CartModal";
+import SearchBar from "./SearchBar";
 import { useCart } from "@/contexts/CartContext";
 import Link from "next/link";
 
@@ -109,12 +110,12 @@ export default function Navigation() {
         } ${navSurfaceClasses}`}
       >
         {/* Desktop Navigation */}
-        <div className={`${isLandscape ? 'grid' : 'hidden'} grid-cols-3 max-w-7xl mx-auto items-center w-full gap-4`}>
+        <div className={`${isLandscape ? 'flex' : 'hidden'} max-w-7xl mx-auto items-center w-full gap-6`}>
           <Link href="/" className={brandLinkClasses}>
             Elucid LDN
           </Link>
 
-          <div className="flex items-center justify-center gap-12">
+          <div className="flex items-center gap-8">
             <Link href="/shop" className={navLinkClasses}>
               Shop
             </Link>
@@ -126,7 +127,12 @@ export default function Navigation() {
             </Link>
           </div>
 
-          <div className="flex items-center justify-end gap-6">
+          {/* Search Bar */}
+          <div className="flex-1 max-w-md">
+            <SearchBar variant={navVariant} />
+          </div>
+
+          <div className="flex items-center gap-6">
             {status === "authenticated" && session?.user ? (
               <div className="flex items-center gap-4">
                 <Link href="/account" className={navLinkClasses}>
@@ -200,6 +206,11 @@ export default function Navigation() {
                 </div>
 
                 <nav className="flex-1 p-6 space-y-4">
+                  {/* Mobile Search */}
+                  <div className="pb-4 border-b border-charcoal/10">
+                    <SearchBar variant="light" onClose={() => setMobileMenuOpen(false)} />
+                  </div>
+
                   <Link
                     href="/shop"
                     onClick={() => setMobileMenuOpen(false)}

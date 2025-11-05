@@ -1,0 +1,13 @@
+# robots.txt for Elucid London
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /checkout
+Disallow: /account
+
+# Sitemap
+Sitemap: https://www.elucid.london/sitemap.xml
+
+# Crawl-delay (optional, helps with server load)
+Crawl-delay: 1

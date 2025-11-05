@@ -24,7 +24,10 @@ model User {
   createdAt              DateTime  @default(now()) @map("created_at")
   updatedAt              DateTime  @updatedAt @map("updated_at")
 
-  orders     Order[]
+  orders                 Order[]
+  wishlists              Wishlist[]
+  carts                  Cart[]
+  backInStockNotifications BackInStockNotification[]
 
   @@map("users")
 }
@@ -78,6 +81,9 @@ model Product {
   orderItems      OrderItem[]
   variants        ProductVariant[]
   reviews         Review[]
+  wishlists       Wishlist[]
+  cartItems       CartItem[]
+  backInStockNotifications BackInStockNotification[]
 
   @@map("products")
 }
@@ -363,4 +369,66 @@ enum ReviewPinLocation {
   AUTO
   HOME
   PRODUCT
+}
+
+model Wishlist {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  productId String   @map("product_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@map("wishlists")
+}
+
+model Cart {
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id") // null for guest carts
+  sessionId String?  @map("session_id") // For guest cart tracking
+  email     String?  // Optional email for abandoned cart recovery
+  expiresAt DateTime @map("expires_at") // Carts expire after X days
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+
+  @@index([userId])
+  @@index([sessionId])
+  @@map("carts")
+}
+
+model CartItem {
+  id        String   @id @default(uuid())
+  cartId    String   @map("cart_id")
+  productId String   @map("product_id")
+  quantity  Int      @default(1)
+  size      String?
+  color     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, productId, size, color])
+  @@map("cart_items")
+}
+
+model BackInStockNotification {
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id") // null if email-only subscription
+  email     String
+  productId String   @map("product_id")
+  notified  Boolean  @default(false) // Track if notification has been sent
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, notified])
+  @@map("back_in_stock_notifications")
 }
