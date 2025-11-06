@@ -125,6 +125,8 @@ model Order {
   shippedAt       DateTime?   @map("shipped_at")
   stripePaymentId String?     @map("stripe_payment_id")
   isInPerson      Boolean     @default(false) @map("is_in_person")
+  giftWrapping    Boolean     @default(false) @map("gift_wrapping") // Free gift wrapping requested
+  giftMessage     String?     @map("gift_message") // Optional gift message
   notes           String?
   createdAt       DateTime    @default(now()) @map("created_at")
   updatedAt       DateTime    @updatedAt @map("updated_at")
@@ -241,6 +243,10 @@ model HomepageConfig {
   rotateHomepageReviews Boolean    @default(false) @map("rotate_homepage_reviews") // Enable rotating carousel for reviews (max 3)
   autoDeductStock      Boolean     @default(false) @map("auto_deduct_stock") // Automatically deduct stock when orders are placed
   footerTagline        String?     @default("Made in London") @map("footer_tagline") // Footer tagline text
+  guestCheckoutEnabled Boolean     @default(false) @map("guest_checkout_enabled") // Allow checkout without account
+  shippingEmailsEnabled Boolean    @default(false) @map("shipping_emails_enabled") // Send shipping confirmation emails
+  showPhotoshootGallery Boolean    @default(false) @map("show_photoshoot_gallery") // Show photoshoot gallery on homepage
+  photoshootImages     String?     @map("photoshoot_images") // JSON array of image URLs
   createdAt            DateTime    @default(now()) @map("created_at")
   updatedAt            DateTime    @updatedAt @map("updated_at")
 

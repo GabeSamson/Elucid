@@ -3,14 +3,15 @@ import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 
 type Props = {
-  params: { id: string };
+  params: Promise<{ id: string }>;
   children: React.ReactNode;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   try {
+    const { id } = await params;
     const product = await prisma.product.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         reviews: {
           select: {
