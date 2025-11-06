@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       },
     });
 
-    if (!product || !product.isActive) {
+    if (!product || !product.active) {
       return {
         title: 'Product Not Found',
         description: 'The product you are looking for does not exist.',
@@ -33,8 +33,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       ? product.reviews.reduce((sum, review) => sum + review.rating, 0) / product.reviews.length
       : 0;
 
-    const firstImage = product.images && product.images.length > 0
-      ? (product.images as string[])[0]
+    const productImages = product.images
+      ? typeof product.images === 'string'
+        ? JSON.parse(product.images)
+        : product.images
+      : [];
+    const firstImage = Array.isArray(productImages) && productImages.length > 0
+      ? productImages[0]
       : '/icon.png';
 
     const productUrl = `https://www.elucid.london/products/${product.id}`;

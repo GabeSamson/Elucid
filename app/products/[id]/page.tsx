@@ -18,6 +18,8 @@ import {
   hasPriceOverrideForCurrency,
 } from "@/lib/productPricing";
 import ProductReviews from "@/components/ProductReviews";
+import WishlistButton from "@/components/WishlistButton";
+import SocialShareButtons from "@/components/SocialShareButtons";
 
 export default function ProductPage() {
   const params = useParams();
@@ -370,6 +372,16 @@ export default function ProductPage() {
                 <p className="text-charcoal-light leading-relaxed">
                   {product.description}
                 </p>
+              </div>
+
+              {/* Wishlist & Social Share */}
+              <div className="mb-8 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between pb-6 border-b border-charcoal/10">
+                <WishlistButton productId={product.id} variant="button" />
+                <SocialShareButtons
+                  url={`https://www.elucid.london/products/${product.id}`}
+                  title={product.name}
+                  description={product.description}
+                />
               </div>
 
               {/* Product Details (Materials & Size Dimensions) */}

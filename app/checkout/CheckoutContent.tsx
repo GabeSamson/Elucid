@@ -40,6 +40,8 @@ function CheckoutPageContent() {
   const [applyingPromo, setApplyingPromo] = useState(false);
   const [saveAddress, setSaveAddress] = useState(false);
   const [buyNowProduct, setBuyNowProduct] = useState<any>(null);
+  const [giftWrapping, setGiftWrapping] = useState(false);
+  const [giftMessage, setGiftMessage] = useState("");
 
   // Load Buy Now product from sessionStorage
   useEffect(() => {
@@ -379,6 +381,8 @@ useEffect(() => {
           promoCodes: promoCodesPayload,
           total,
           currency,
+          giftWrapping,
+          giftMessage: giftWrapping ? giftMessage.trim() : null,
         }),
       });
 
@@ -599,6 +603,45 @@ useEffect(() => {
                       />
                       <span>Save this address for next time</span>
                     </label>
+                  </div>
+
+                  {/* Gift Options */}
+                  <div className="pt-6 border-t border-charcoal/10">
+                    <h3 className="text-lg font-medium text-charcoal mb-4">Gift Options</h3>
+
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={giftWrapping}
+                        onChange={(e) => setGiftWrapping(e.target.checked)}
+                        className="mt-1 w-4 h-4 rounded border-charcoal/30 text-charcoal focus:ring-charcoal"
+                      />
+                      <div>
+                        <span className="text-sm font-medium text-charcoal">Free Gift Wrapping</span>
+                        <p className="text-xs text-charcoal/60 mt-1">
+                          Add complimentary gift wrapping to your order
+                        </p>
+                      </div>
+                    </label>
+
+                    {giftWrapping && (
+                      <div className="mt-4 pl-7">
+                        <label className="block text-sm font-medium text-charcoal mb-2">
+                          Gift Message (Optional)
+                        </label>
+                        <textarea
+                          value={giftMessage}
+                          onChange={(e) => setGiftMessage(e.target.value)}
+                          placeholder="Add a personal message..."
+                          rows={3}
+                          maxLength={500}
+                          className="w-full px-4 py-3 bg-cream-light border border-charcoal/20 focus:border-charcoal focus:outline-none resize-none"
+                        />
+                        <p className="text-xs text-charcoal/40 mt-1">
+                          {giftMessage.length}/500 characters
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
 

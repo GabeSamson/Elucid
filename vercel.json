@@ -3,6 +3,14 @@
     {
       "path": "/api/cron/release-products",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/back-in-stock",
+      "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/abandoned-cart",
+      "schedule": "0 * * * *"
     }
   ]
 }

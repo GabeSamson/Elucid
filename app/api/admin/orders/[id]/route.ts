@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 import { revalidatePath } from 'next/cache';
+import { sendShippingConfirmationEmail } from '@/lib/email/sendShippingConfirmationEmail';
 
 export async function PATCH(
   request: NextRequest,
@@ -40,7 +41,41 @@ export async function PATCH(
     const order = await prisma.order.update({
       where: { id },
       data: updateData,
+      include: {
+        items: true,
+      },
     });
+
+    // Send shipping confirmation email if order was marked as SHIPPED
+    if (status?.toUpperCase() === 'SHIPPED' && order.email && order.trackingNumber) {
+      try {
+        // Check if shipping emails are enabled
+        const config = await prisma.homepageConfig.findUnique({
+          where: { id: 'main' },
+          select: { shippingEmailsEnabled: true },
+        });
+
+        if (config?.shippingEmailsEnabled) {
+          const trackingUrl = `https://track.aftership.com/${order.trackingNumber}`;
+
+          await sendShippingConfirmationEmail({
+            email: order.email,
+            orderNumber: order.id.slice(0, 8).toUpperCase(),
+            trackingNumber: order.trackingNumber,
+            trackingUrl,
+            items: order.items.map(item => ({
+              name: item.productName,
+              quantity: item.quantity,
+              size: item.size || undefined,
+              color: item.color || undefined,
+            })),
+          });
+        }
+      } catch (emailError) {
+        console.error('Failed to send shipping confirmation email:', emailError);
+        // Don't fail the order update if email fails
+      }
+    }
 
     return NextResponse.json({ order }, { status: 200 });
   } catch (error) {

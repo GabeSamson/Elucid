@@ -307,6 +307,8 @@ export async function createOrderFromStripeSession(
       notes: null,
       stripePaymentId,
       status: 'PENDING',
+      giftWrapping: metadata.giftWrapping === 'true',
+      giftMessage: metadata.giftMessage || null,
       items: {
         create: orderItemsToCreate,
       },

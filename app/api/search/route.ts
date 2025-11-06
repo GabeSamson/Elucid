@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     // Fetch all active products
     const products = await prisma.product.findMany({
       where: {
-        isActive: true,
+        active: true,
       },
       select: {
         id: true,

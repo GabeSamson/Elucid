@@ -105,6 +105,33 @@ async function updateHomepageSettingsAction(formData: FormData) {
     ? normalizeText(formData.get("footerTagline"))
     : existingConfig?.footerTagline ?? "Made in London";
 
+  const guestCheckoutEnabled = includesPurchasingFields
+    ? formData.get("guestCheckoutEnabled") === "on"
+    : existingConfig?.guestCheckoutEnabled ?? false;
+
+  const shippingEmailsEnabled = includesPurchasingFields
+    ? formData.get("shippingEmailsEnabled") === "on"
+    : existingConfig?.shippingEmailsEnabled ?? false;
+
+  const showPhotoshootGallery = includesPurchasingFields
+    ? formData.get("showPhotoshootGallery") === "on"
+    : existingConfig?.showPhotoshootGallery ?? false;
+
+  // Parse photoshoot images (one URL per line)
+  let photoshootImages: string | null = null;
+  if (includesPurchasingFields) {
+    const rawImages = normalizeText(formData.get("photoshootImages"));
+    if (rawImages) {
+      const imageUrls = rawImages
+        .split('\n')
+        .map(url => url.trim())
+        .filter(url => url.length > 0);
+      photoshootImages = imageUrls.length > 0 ? JSON.stringify(imageUrls) : null;
+    }
+  } else {
+    photoshootImages = existingConfig?.photoshootImages ?? null;
+  }
+
   const showCountdown = includesHeroFields
     ? formData.get("showCountdown") === "on"
     : existingConfig?.showCountdown ?? false;
@@ -165,6 +192,10 @@ async function updateHomepageSettingsAction(formData: FormData) {
       rotateHomepageReviews,
       autoDeductStock,
       footerTagline,
+      guestCheckoutEnabled,
+      shippingEmailsEnabled,
+      showPhotoshootGallery,
+      photoshootImages,
     },
     create: {
       id: "main",
@@ -187,6 +218,10 @@ async function updateHomepageSettingsAction(formData: FormData) {
       rotateHomepageReviews,
       autoDeductStock,
       footerTagline,
+      guestCheckoutEnabled,
+      shippingEmailsEnabled,
+      showPhotoshootGallery,
+      photoshootImages,
     },
   });
 
@@ -603,12 +638,101 @@ export default async function AdminHomepagePage({ searchParams }: AdminHomepageP
               </div>
             </fieldset>
 
+            <fieldset className="space-y-3 rounded-xl border border-charcoal/10 bg-white px-5 py-4">
+              <legend className="px-2 text-sm font-semibold uppercase tracking-wider text-charcoal/70">
+                E-commerce Features
+              </legend>
+              <label className="flex items-center gap-3 text-sm text-charcoal">
+                <input
+                  type="checkbox"
+                  name="guestCheckoutEnabled"
+                  defaultChecked={homepageConfig?.guestCheckoutEnabled ?? false}
+                  className="h-4 w-4 rounded border-charcoal/30 text-charcoal focus:ring-charcoal"
+                />
+                Enable guest checkout
+              </label>
+              <p className="text-xs text-charcoal/60">
+                Allow customers to checkout without creating an account. Note: The checkout UI will still encourage account creation.
+              </p>
+
+              <div className="pt-2 border-t border-charcoal/5">
+                <label className="flex items-center gap-3 text-sm text-charcoal">
+                  <input
+                    type="checkbox"
+                    name="shippingEmailsEnabled"
+                    defaultChecked={homepageConfig?.shippingEmailsEnabled ?? false}
+                    className="h-4 w-4 rounded border-charcoal/30 text-charcoal focus:ring-charcoal"
+                  />
+                  Send shipping confirmation emails
+                </label>
+                <p className="text-xs text-charcoal/60 mt-1">
+                  Automatically send email notifications when orders are shipped with tracking information.
+                </p>
+              </div>
+
+              <div className="pt-2 border-t border-charcoal/5">
+                <label className="flex items-center gap-3 text-sm text-charcoal">
+                  <input
+                    type="checkbox"
+                    name="showPhotoshootGallery"
+                    defaultChecked={homepageConfig?.showPhotoshootGallery ?? false}
+                    className="h-4 w-4 rounded border-charcoal/30 text-charcoal focus:ring-charcoal"
+                  />
+                  Show photoshoot gallery on homepage
+                </label>
+                <p className="text-xs text-charcoal/60 mt-1">
+                  Display a photo gallery from your latest photoshoots on the homepage. Manage gallery images in the gallery section below.
+                </p>
+              </div>
+            </fieldset>
+
             <div className="flex flex-wrap justify-end gap-3">
               <button
                 type="submit"
                 className="px-7 py-3 bg-charcoal text-cream rounded-lg hover:bg-charcoal/90 transition-colors"
               >
                 Save settings
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <section className="mt-8 space-y-6 rounded-2xl border border-charcoal/10 bg-cream p-6">
+          <header>
+            <h2 className="text-xl font-semibold text-charcoal">Photoshoot Gallery</h2>
+            <p className="text-sm text-charcoal/70">
+              Manage images displayed in the homepage gallery. Add image URLs below (one per line).
+            </p>
+          </header>
+
+          <form action={updateHomepageSettingsAction} className="space-y-5">
+            <input type="hidden" name="formContext" value="purchasing" />
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-charcoal">
+                Gallery Images
+              </label>
+              <textarea
+                name="photoshootImages"
+                defaultValue={
+                  homepageConfig?.photoshootImages
+                    ? JSON.parse(homepageConfig.photoshootImages).join('\n')
+                    : ''
+                }
+                placeholder="Enter image URLs, one per line&#10;https://example.com/image1.jpg&#10;https://example.com/image2.jpg"
+                className="input-modern min-h-[200px] font-mono text-sm"
+              />
+              <p className="mt-2 text-xs text-charcoal/60">
+                Enter each image URL on a new line. Images will be displayed in the order they appear here.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap justify-end gap-3">
+              <button
+                type="submit"
+                className="px-7 py-3 bg-charcoal text-cream rounded-lg hover:bg-charcoal/90 transition-colors"
+              >
+                Save gallery images
               </button>
             </div>
           </form>

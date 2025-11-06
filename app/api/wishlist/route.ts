@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
             compareAtPrice: true,
             images: true,
             stock: true,
-            isActive: true,
+            active: true,
           },
         },
       },

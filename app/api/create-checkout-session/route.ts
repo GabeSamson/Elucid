@@ -24,6 +24,8 @@ export async function POST(request: NextRequest) {
       promoCodeId,
       promoCodes,
       currency: userCurrency,
+      giftWrapping,
+      giftMessage,
     } = body;
 
     if (!address || typeof address !== 'object') {
@@ -179,6 +181,8 @@ export async function POST(request: NextRequest) {
         promoCode: (promoCode || primaryPromo?.code || '').toString(),
         promoCodeId: (promoCodeId || primaryPromo?.id || '').toString(),
         promoCodes: JSON.stringify(normalizedPromoCodes),
+        giftWrapping: giftWrapping ? 'true' : 'false',
+        giftMessage: giftMessage || '',
       },
     });
 

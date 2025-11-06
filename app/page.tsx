@@ -3,6 +3,7 @@ import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
 import WritingSection from "@/components/WritingSection";
 import Featured from "@/components/Featured";
+import PhotoshootGallery from "@/components/PhotoshootGallery";
 import Reviews from "@/components/Reviews";
 import Newsletter from "@/components/Newsletter";
 import Footer from "@/components/Footer";
@@ -27,6 +28,19 @@ export default async function Home() {
   });
 
   const showFeedbackSection = config?.showFeedbackSection ?? false;
+  const showPhotoshootGallery = config?.showPhotoshootGallery ?? false;
+
+  let photoshootImages: string[] = [];
+  if (showPhotoshootGallery && config?.photoshootImages) {
+    try {
+      const parsed = JSON.parse(config.photoshootImages);
+      if (Array.isArray(parsed)) {
+        photoshootImages = parsed.filter((img): img is string => typeof img === 'string');
+      }
+    } catch (error) {
+      console.error('Failed to parse photoshoot images:', error);
+    }
+  }
 
   // Organization JSON-LD structured data
   const organizationSchema = {
@@ -63,6 +77,9 @@ export default async function Home() {
       <Hero />
       <WritingSection />
       <Featured />
+      {showPhotoshootGallery && photoshootImages.length > 0 && (
+        <PhotoshootGallery images={photoshootImages} />
+      )}
       {showFeedbackSection && <Reviews />}
       <Newsletter />
       <Footer />
