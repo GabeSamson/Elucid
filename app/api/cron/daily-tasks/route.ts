@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { sendBackInStockEmail } from '@/lib/email/sendBackInStockEmail';
 import { sendAbandonedCartEmail } from '@/lib/email/sendAbandonedCartEmail';
 
+/**
+ * Combined daily cron job for:
+ * - Back-in-stock notifications
+ * - Abandoned cart recovery
+ */
 export async function GET(request: NextRequest) {
   // Verify cron secret for security
   const authHeader = request.headers.get('authorization');
@@ -9,12 +15,74 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const results = {
+    backInStock: { sent: 0, errors: 0 },
+    abandonedCart: { sent: 0, skipped: 0, errors: 0 },
+  };
+
+  // ============================================
+  // TASK 1: Back-in-Stock Notifications
+  // ============================================
   try {
-    // Find carts that are:
-    // - More than 3 hours old
-    // - Less than 24 hours old (to avoid sending multiple emails)
-    // - Have items
-    // - Have an email address (either from user or guest)
+    const notifications = await prisma.backInStockNotification.findMany({
+      where: {
+        notified: false,
+        product: {
+          stock: { gt: 0 },
+          active: true,
+        },
+      },
+      include: {
+        product: {
+          select: {
+            id: true,
+            name: true,
+            price: true,
+            images: true,
+          },
+        },
+      },
+    });
+
+    for (const notification of notifications) {
+      try {
+        const productImages = notification.product.images
+          ? typeof notification.product.images === 'string'
+            ? JSON.parse(notification.product.images)
+            : notification.product.images
+          : [];
+        const firstImage = Array.isArray(productImages) ? productImages[0] : undefined;
+
+        await sendBackInStockEmail({
+          email: notification.email,
+          productName: notification.product.name,
+          productUrl: `https://www.elucid.london/products/${notification.product.id}`,
+          productImage: firstImage,
+          productPrice: `£${notification.product.price.toFixed(2)}`,
+        });
+
+        await prisma.backInStockNotification.update({
+          where: { id: notification.id },
+          data: { notified: true },
+        });
+
+        results.backInStock.sent++;
+
+        // Rate limit: 2 emails/second (Resend free tier)
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } catch (emailError) {
+        console.error(`Failed to send back-in-stock email for notification ${notification.id}:`, emailError);
+        results.backInStock.errors++;
+      }
+    }
+  } catch (error) {
+    console.error('Error in back-in-stock task:', error);
+  }
+
+  // ============================================
+  // TASK 2: Abandoned Cart Recovery
+  // ============================================
+  try {
     const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000);
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
@@ -25,7 +93,7 @@ export async function GET(request: NextRequest) {
           lte: threeHoursAgo,
         },
         items: {
-          some: {}, // Has at least one item
+          some: {},
         },
       },
       include: {
@@ -49,21 +117,17 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    let sentCount = 0;
-    let skippedCount = 0;
-
     for (const cart of abandonedCarts) {
       try {
-        // Get email and name (from user or cart email field for guests)
         const email = cart.user?.email || cart.email;
         const name = cart.user?.name;
 
         if (!email) {
-          skippedCount++;
+          results.abandonedCart.skipped++;
           continue;
         }
 
-        // Check if there's already an order for this cart session
+        // Check if order already exists
         const existingOrder = await prisma.order.findFirst({
           where: {
             OR: [
@@ -71,24 +135,21 @@ export async function GET(request: NextRequest) {
               cart.sessionId ? { stripePaymentId: { contains: cart.sessionId } } : {},
             ].filter(condition => Object.keys(condition).length > 0),
             createdAt: {
-              gte: cart.createdAt, // Order created after cart
+              gte: cart.createdAt,
             },
           },
         });
 
         if (existingOrder) {
-          // User already completed checkout
-          skippedCount++;
+          results.abandonedCart.skipped++;
           continue;
         }
 
-        // Calculate cart subtotal
         const subtotal = cart.items.reduce((sum, item) => {
           const price = item.product?.price || 0;
           return sum + price * item.quantity;
         }, 0);
 
-        // Prepare cart items for email
         const emailItems = cart.items.map((item) => {
           const productImages = item.product?.images
             ? typeof item.product.images === 'string'
@@ -107,7 +168,6 @@ export async function GET(request: NextRequest) {
           };
         });
 
-        // Send abandoned cart email
         await sendAbandonedCartEmail({
           email,
           name: name || undefined,
@@ -116,25 +176,22 @@ export async function GET(request: NextRequest) {
           cartId: cart.id,
         });
 
-        sentCount++;
+        results.abandonedCart.sent++;
 
-        // Rate limit: 2 emails/second (Resend free tier)
+        // Rate limit
         await new Promise(resolve => setTimeout(resolve, 500));
       } catch (emailError) {
         console.error(`Failed to send abandoned cart email for cart ${cart.id}:`, emailError);
-        skippedCount++;
-        // Continue with other carts even if one fails
+        results.abandonedCart.errors++;
       }
     }
-
-    return NextResponse.json({
-      success: true,
-      sentCount,
-      skippedCount,
-      message: `Sent ${sentCount} abandoned cart emails, skipped ${skippedCount}`,
-    });
   } catch (error) {
-    console.error('Error in abandoned cart cron:', error);
-    return NextResponse.json({ error: 'Failed to process abandoned carts' }, { status: 500 });
+    console.error('Error in abandoned cart task:', error);
   }
+
+  return NextResponse.json({
+    success: true,
+    results,
+    message: `Daily tasks completed: ${results.backInStock.sent} back-in-stock emails, ${results.abandonedCart.sent} abandoned cart emails`,
+  });
 }
