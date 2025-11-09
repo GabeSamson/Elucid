@@ -126,6 +126,9 @@ export default function Navigation() {
             <Link href="/about" className={navLinkClasses}>
               About
             </Link>
+            <Link href="/gallery" className={navLinkClasses}>
+              Gallery
+            </Link>
           </div>
 
           <div className="flex-1" />
@@ -239,6 +242,13 @@ export default function Navigation() {
                     className="block text-base uppercase tracking-wider text-charcoal-dark hover:text-charcoal transition-colors py-2"
                   >
                     About
+                  </Link>
+                  <Link
+                    href="/gallery"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block text-base uppercase tracking-wider text-charcoal-dark hover:text-charcoal transition-colors py-2"
+                  >
+                    Gallery
                   </Link>
 
                   <div className="pt-6 border-t border-charcoal/10 space-y-4">

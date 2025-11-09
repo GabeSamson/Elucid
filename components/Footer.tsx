@@ -46,6 +46,7 @@ export default function Footer() {
               <li><a href="/shop" className="hover:text-cream transition-colors">Shop</a></li>
               <li><a href="/collections" className="hover:text-cream transition-colors">Collections</a></li>
               <li><a href="/about" className="hover:text-cream transition-colors">About</a></li>
+              <li><a href="/gallery" className="hover:text-cream transition-colors">Gallery</a></li>
               <li><a href="/reviews" className="hover:text-cream transition-colors">Feedback</a></li>
               {isAdmin && (
                 <li><a href="/admin" className="hover:text-cream transition-colors">Admin</a></li>
