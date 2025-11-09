@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath, unstable_noStore as noStore } from "next/cache";
 import { redirect } from "next/navigation";
 import WritingSectionEditor from "@/components/WritingSectionEditor";
-import PhotoshootGalleryEditor from "@/components/admin/PhotoshootGalleryEditor";
+import PhotoshootGallerySelector from "@/components/admin/PhotoshootGallerySelector";
 
 export const dynamic = "force-dynamic";
 
@@ -216,24 +216,6 @@ async function updateHomepageSettingsAction(formData: FormData) {
   redirect("/admin/homepage?success=homepage-updated");
 }
 
-async function savePhotoshootImagesAction(images: string[]) {
-  "use server";
-
-  const photoshootImages = images.length > 0 ? JSON.stringify(images) : null;
-
-  await prisma.homepageConfig.upsert({
-    where: { id: "main" },
-    update: { photoshootImages },
-    create: {
-      id: "main",
-      photoshootImages,
-    },
-  });
-
-  revalidatePath("/");
-  revalidatePath("/admin/homepage");
-}
-
 interface AdminHomepagePageProps {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }
@@ -241,13 +223,16 @@ interface AdminHomepagePageProps {
 export default async function AdminHomepagePage({ searchParams }: AdminHomepagePageProps) {
   noStore();
 
-  const [collections, homepageConfig] = await Promise.all([
+  const [collections, homepageConfig, photoshootImages] = await Promise.all([
     prisma.collection.findMany({
       orderBy: { createdAt: "desc" },
     }),
     prisma.homepageConfig.findUnique({
       where: { id: "main" },
       include: { featuredCollection: true },
+    }),
+    prisma.photoshootImage.findMany({
+      orderBy: { displayOrder: "asc" },
     }),
   ]);
 
@@ -703,17 +688,19 @@ export default async function AdminHomepagePage({ searchParams }: AdminHomepageP
           <header>
             <h2 className="text-xl font-semibold text-charcoal">Photoshoot Gallery</h2>
             <p className="text-sm text-charcoal/70">
-              Upload and manage images for your homepage photoshoot gallery.
+              Select images from your gallery to display on the homepage.
             </p>
           </header>
 
-          <PhotoshootGalleryEditor
-            initialImages={
+          <PhotoshootGallerySelector
+            availableImages={photoshootImages}
+            selectedImageIds={
               homepageConfig?.photoshootImages
                 ? JSON.parse(homepageConfig.photoshootImages)
                 : []
             }
-            onSave={savePhotoshootImagesAction}
+            enableSlideshow={homepageConfig?.photoshootSlideshow ?? false}
+            onSave={async () => {}}
           />
         </section>
       </div>

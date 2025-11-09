@@ -29,16 +29,33 @@ export default async function Home() {
 
   const showFeedbackSection = config?.showFeedbackSection ?? false;
   const showPhotoshootGallery = config?.showPhotoshootGallery ?? false;
+  const photoshootSlideshow = config?.photoshootSlideshow ?? false;
 
-  let photoshootImages: string[] = [];
+  let photoshootImages: Array<{ id: string; imageUrl: string; title: string | null }> = [];
   if (showPhotoshootGallery && config?.photoshootImages) {
     try {
-      const parsed = JSON.parse(config.photoshootImages);
-      if (Array.isArray(parsed)) {
-        photoshootImages = parsed.filter((img): img is string => typeof img === 'string');
+      const selectedIds = JSON.parse(config.photoshootImages);
+      if (Array.isArray(selectedIds)) {
+        // Fetch the actual image records
+        const images = await prisma.photoshootImage.findMany({
+          where: {
+            id: { in: selectedIds },
+            active: true,
+          },
+          select: {
+            id: true,
+            imageUrl: true,
+            title: true,
+          },
+        });
+
+        // Sort by the order in selectedIds
+        photoshootImages = selectedIds
+          .map(id => images.find(img => img.id === id))
+          .filter((img): img is { id: string; imageUrl: string; title: string | null } => img !== undefined);
       }
     } catch (error) {
-      console.error('Failed to parse photoshoot images:', error);
+      console.error('Failed to load photoshoot images:', error);
     }
   }
 
@@ -78,7 +95,7 @@ export default async function Home() {
       <WritingSection />
       <Featured />
       {showPhotoshootGallery && photoshootImages.length > 0 && (
-        <PhotoshootGallery images={photoshootImages} />
+        <PhotoshootGallery images={photoshootImages} enableSlideshow={photoshootSlideshow} />
       )}
       {showFeedbackSection && <Reviews />}
       <Newsletter />

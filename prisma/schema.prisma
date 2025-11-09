@@ -246,13 +246,26 @@ model HomepageConfig {
   guestCheckoutEnabled Boolean     @default(false) @map("guest_checkout_enabled") // Allow checkout without account
   shippingEmailsEnabled Boolean    @default(false) @map("shipping_emails_enabled") // Send shipping confirmation emails
   showPhotoshootGallery Boolean    @default(false) @map("show_photoshoot_gallery") // Show photoshoot gallery on homepage
-  photoshootImages     String?     @map("photoshoot_images") // JSON array of image URLs
+  photoshootImages     String?     @map("photoshoot_images") // JSON array of PhotoshootImage IDs to display on homepage
+  photoshootSlideshow  Boolean     @default(false) @map("photoshoot_slideshow") // Enable slideshow for photoshoot gallery
   createdAt            DateTime    @default(now()) @map("created_at")
   updatedAt            DateTime    @updatedAt @map("updated_at")
 
   featuredCollection   Collection? @relation("HomepageFeaturedCollection", fields: [featuredCollectionId], references: [id])
 
   @@map("homepage_config")
+}
+
+model PhotoshootImage {
+  id          String   @id @default(uuid())
+  title       String?  // Optional title/name for the image
+  imageUrl    String   @map("image_url")
+  displayOrder Int     @default(0) @map("display_order") // Order in the gallery
+  active      Boolean  @default(true) // Active images shown in gallery
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("photoshoot_images")
 }
 
 model PendingUser {
