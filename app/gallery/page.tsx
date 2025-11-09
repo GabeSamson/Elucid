@@ -18,10 +18,6 @@ export const metadata: Metadata = {
 };
 
 export default async function GalleryPage() {
-  const config = await prisma.homepageConfig.findUnique({
-    where: { id: "main" },
-  });
-
   // Get all active gallery images
   const images = await prisma.photoshootImage.findMany({
     where: {
@@ -37,9 +33,10 @@ export default async function GalleryPage() {
     },
   });
 
-  const galleryTitle = config?.galleryTitle ?? "Gallery";
-  const gallerySubtitle = config?.gallerySubtitle ?? "Our latest photoshoots and creative work";
-  const galleryShowTitles = config?.galleryShowTitles ?? true; // Show titles by default on public gallery
+  // Public gallery page has its own separate title/subtitle
+  const galleryTitle = "Gallery";
+  const gallerySubtitle = "Explore our latest photoshoots and creative work";
+  const galleryShowTitles = true; // Show titles by default on public gallery
 
   return (
     <main>
