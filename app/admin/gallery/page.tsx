@@ -28,6 +28,19 @@ async function updatePhotoshootImageAction(id: string, title: string) {
   revalidatePath("/admin/gallery");
 }
 
+async function toggleSlideshowAction(id: string, showInSlideshow: boolean) {
+  "use server";
+
+  await prisma.photoshootImage.update({
+    where: { id },
+    data: { showInSlideshow },
+  });
+
+  revalidatePath("/admin/gallery");
+  revalidatePath("/admin/homepage");
+  revalidatePath("/");
+}
+
 async function reorderPhotoshootImagesAction(imageIds: string[]) {
   "use server";
 
@@ -101,6 +114,7 @@ export default async function AdminGalleryPage({ searchParams }: AdminGalleryPag
           images={images}
           onDelete={deletePhotoshootImageAction}
           onUpdate={updatePhotoshootImageAction}
+          onToggleSlideshow={toggleSlideshowAction}
           onReorder={reorderPhotoshootImagesAction}
           onCreate={createPhotoshootImageAction}
         />

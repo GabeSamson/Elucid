@@ -265,6 +265,7 @@ model PhotoshootImage {
   imageUrl    String   @map("image_url")
   displayOrder Int     @default(0) @map("display_order") // Order in the gallery
   active      Boolean  @default(true) // Active images shown in gallery
+  showInSlideshow Boolean @default(false) @map("show_in_slideshow") // Show in homepage slideshow
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 

@@ -10,6 +10,7 @@ interface PhotoshootImage {
   imageUrl: string;
   displayOrder: number;
   active: boolean;
+  showInSlideshow: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -18,6 +19,7 @@ interface PhotoshootGalleryManagerProps {
   images: PhotoshootImage[];
   onDelete: (id: string) => Promise<void>;
   onUpdate: (id: string, title: string) => Promise<void>;
+  onToggleSlideshow: (id: string, showInSlideshow: boolean) => Promise<void>;
   onReorder: (imageIds: string[]) => Promise<void>;
   onCreate: (imageUrl: string, title?: string) => Promise<void>;
 }
@@ -26,6 +28,7 @@ export default function PhotoshootGalleryManager({
   images: initialImages,
   onDelete,
   onUpdate,
+  onToggleSlideshow,
   onReorder,
   onCreate,
 }: PhotoshootGalleryManagerProps) {
@@ -84,6 +87,19 @@ export default function PhotoshootGalleryManager({
 
     startTransition(async () => {
       await onReorder(newImages.map(img => img.id));
+    });
+  };
+
+  const handleToggleSlideshow = (id: string, currentValue: boolean) => {
+    const newValue = !currentValue;
+
+    // Optimistically update UI
+    setImages(images.map(img =>
+      img.id === id ? { ...img, showInSlideshow: newValue } : img
+    ));
+
+    startTransition(async () => {
+      await onToggleSlideshow(id, newValue);
     });
   };
 
@@ -192,8 +208,8 @@ export default function PhotoshootGalleryManager({
                     </div>
                   </div>
 
-                  {/* Title */}
-                  <div className="p-3 bg-white">
+                  {/* Title and Controls */}
+                  <div className="p-3 bg-white space-y-2">
                     {editingId === image.id ? (
                       <div className="flex gap-2">
                         <input
@@ -221,6 +237,17 @@ export default function PhotoshootGalleryManager({
                         {image.title || `Photoshoot ${index + 1}`}
                       </p>
                     )}
+
+                    {/* Homepage Slideshow Toggle */}
+                    <label className="flex items-center gap-2 text-xs text-charcoal/70 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={image.showInSlideshow}
+                        onChange={() => handleToggleSlideshow(image.id, image.showInSlideshow)}
+                        className="rounded border-charcoal/30"
+                      />
+                      <span>Show in homepage slideshow</span>
+                    </label>
                   </div>
                 </motion.div>
               ))}

@@ -142,6 +142,19 @@ export default function PhotoshootGallery({
               </svg>
             </button>
           </div>
+
+          {/* Explore Full Gallery Button */}
+          <div className="mt-8 text-center">
+            <a
+              href="/gallery"
+              className="inline-flex items-center justify-center rounded-full border-2 border-cream/40 px-8 py-3 text-sm uppercase tracking-wider text-cream hover:bg-cream hover:text-charcoal-dark transition-all duration-300"
+            >
+              Explore Full Gallery
+              <svg className="w-4 h-4 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </a>
+          </div>
         </div>
       </section>
     );
