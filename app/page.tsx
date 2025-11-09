@@ -34,25 +34,45 @@ export default async function Home() {
   let photoshootImages: Array<{ id: string; imageUrl: string; title: string | null }> = [];
   if (showPhotoshootGallery && config?.photoshootImages) {
     try {
-      const selectedIds = JSON.parse(config.photoshootImages);
-      if (Array.isArray(selectedIds)) {
-        // Fetch the actual image records
-        const images = await prisma.photoshootImage.findMany({
-          where: {
-            id: { in: selectedIds },
-            active: true,
-          },
-          select: {
-            id: true,
-            imageUrl: true,
-            title: true,
-          },
-        });
+      const parsed = JSON.parse(config.photoshootImages);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        // Check if this is old format (URLs) or new format (IDs)
+        const isOldFormat = typeof parsed[0] === 'string' && (
+          parsed[0].startsWith('http://') ||
+          parsed[0].startsWith('https://') ||
+          parsed[0].startsWith('/')
+        );
 
-        // Sort by the order in selectedIds
-        photoshootImages = selectedIds
-          .map(id => images.find(img => img.id === id))
-          .filter((img): img is { id: string; imageUrl: string; title: string | null } => img !== undefined);
+        if (isOldFormat) {
+          // Old format: array of URL strings
+          // Convert to new format for display
+          photoshootImages = parsed
+            .filter((url): url is string => typeof url === 'string')
+            .map((url, index) => ({
+              id: `legacy-${index}`,
+              imageUrl: url,
+              title: null,
+            }));
+        } else {
+          // New format: array of IDs
+          // Fetch the actual image records
+          const images = await prisma.photoshootImage.findMany({
+            where: {
+              id: { in: parsed },
+              active: true,
+            },
+            select: {
+              id: true,
+              imageUrl: true,
+              title: true,
+            },
+          });
+
+          // Sort by the order in parsed IDs
+          photoshootImages = parsed
+            .map(id => images.find(img => img.id === id))
+            .filter((img): img is { id: string; imageUrl: string; title: string | null } => img !== undefined);
+        }
       }
     } catch (error) {
       console.error('Failed to load photoshoot images:', error);
