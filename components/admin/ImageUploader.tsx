@@ -7,7 +7,7 @@ interface ImageUploaderProps {
   images: string[];
   onChange: (images: string[]) => void;
   maxImages?: number;
-  folder?: 'products' | 'collections';
+  folder?: 'products' | 'collections' | 'photoshoot';
 }
 
 export default function ImageUploader({

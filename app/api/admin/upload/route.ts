@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const folderValue = formData.get('folder')?.toString();
-    const allowedFolders = ['products', 'collections'];
+    const allowedFolders = ['products', 'collections', 'photoshoot'];
     const targetFolder = allowedFolders.includes(folderValue ?? '') ? folderValue : 'products';
 
     if (!file) {
@@ -63,7 +63,8 @@ export async function POST(request: NextRequest) {
     // Generate unique filename with cryptographically secure randomness
     const timestamp = Date.now();
     const randomBytes = crypto.randomBytes(16).toString('hex'); // 32 characters
-    const filename = `${targetFolder}/${targetFolder === 'collections' ? 'collection' : 'product'}-${timestamp}-${randomBytes}.${extension}`;
+    const filePrefix = targetFolder === 'collections' ? 'collection' : targetFolder === 'photoshoot' ? 'photoshoot' : 'product';
+    const filename = `${targetFolder}/${filePrefix}-${timestamp}-${randomBytes}.${extension}`;
 
     // Upload to Vercel Blob
     const blob = await put(filename, file, {

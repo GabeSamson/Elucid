@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath, unstable_noStore as noStore } from "next/cache";
 import { redirect } from "next/navigation";
 import WritingSectionEditor from "@/components/WritingSectionEditor";
+import PhotoshootGalleryEditor from "@/components/admin/PhotoshootGalleryEditor";
 
 export const dynamic = "force-dynamic";
 
@@ -117,21 +118,6 @@ async function updateHomepageSettingsAction(formData: FormData) {
     ? formData.get("showPhotoshootGallery") === "on"
     : existingConfig?.showPhotoshootGallery ?? false;
 
-  // Parse photoshoot images (one URL per line)
-  let photoshootImages: string | null = null;
-  if (includesPurchasingFields) {
-    const rawImages = normalizeText(formData.get("photoshootImages"));
-    if (rawImages) {
-      const imageUrls = rawImages
-        .split('\n')
-        .map(url => url.trim())
-        .filter(url => url.length > 0);
-      photoshootImages = imageUrls.length > 0 ? JSON.stringify(imageUrls) : null;
-    }
-  } else {
-    photoshootImages = existingConfig?.photoshootImages ?? null;
-  }
-
   const showCountdown = includesHeroFields
     ? formData.get("showCountdown") === "on"
     : existingConfig?.showCountdown ?? false;
@@ -195,7 +181,6 @@ async function updateHomepageSettingsAction(formData: FormData) {
       guestCheckoutEnabled,
       shippingEmailsEnabled,
       showPhotoshootGallery,
-      photoshootImages,
     },
     create: {
       id: "main",
@@ -221,7 +206,6 @@ async function updateHomepageSettingsAction(formData: FormData) {
       guestCheckoutEnabled,
       shippingEmailsEnabled,
       showPhotoshootGallery,
-      photoshootImages,
     },
   });
 
@@ -230,6 +214,24 @@ async function updateHomepageSettingsAction(formData: FormData) {
   revalidatePath("/shop");
 
   redirect("/admin/homepage?success=homepage-updated");
+}
+
+async function savePhotoshootImagesAction(images: string[]) {
+  "use server";
+
+  const photoshootImages = images.length > 0 ? JSON.stringify(images) : null;
+
+  await prisma.homepageConfig.upsert({
+    where: { id: "main" },
+    update: { photoshootImages },
+    create: {
+      id: "main",
+      photoshootImages,
+    },
+  });
+
+  revalidatePath("/");
+  revalidatePath("/admin/homepage");
 }
 
 interface AdminHomepagePageProps {
@@ -701,41 +703,18 @@ export default async function AdminHomepagePage({ searchParams }: AdminHomepageP
           <header>
             <h2 className="text-xl font-semibold text-charcoal">Photoshoot Gallery</h2>
             <p className="text-sm text-charcoal/70">
-              Manage images displayed in the homepage gallery. Add image URLs below (one per line).
+              Upload and manage images for your homepage photoshoot gallery.
             </p>
           </header>
 
-          <form action={updateHomepageSettingsAction} className="space-y-5">
-            <input type="hidden" name="formContext" value="purchasing" />
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-charcoal">
-                Gallery Images
-              </label>
-              <textarea
-                name="photoshootImages"
-                defaultValue={
-                  homepageConfig?.photoshootImages
-                    ? JSON.parse(homepageConfig.photoshootImages).join('\n')
-                    : ''
-                }
-                placeholder="Enter image URLs, one per line&#10;https://example.com/image1.jpg&#10;https://example.com/image2.jpg"
-                className="input-modern min-h-[200px] font-mono text-sm"
-              />
-              <p className="mt-2 text-xs text-charcoal/60">
-                Enter each image URL on a new line. Images will be displayed in the order they appear here.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap justify-end gap-3">
-              <button
-                type="submit"
-                className="px-7 py-3 bg-charcoal text-cream rounded-lg hover:bg-charcoal/90 transition-colors"
-              >
-                Save gallery images
-              </button>
-            </div>
-          </form>
+          <PhotoshootGalleryEditor
+            initialImages={
+              homepageConfig?.photoshootImages
+                ? JSON.parse(homepageConfig.photoshootImages)
+                : []
+            }
+            onSave={savePhotoshootImagesAction}
+          />
         </section>
       </div>
     </div>
