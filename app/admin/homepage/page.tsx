@@ -120,11 +120,15 @@ async function updateHomepageSettingsAction(formData: FormData) {
 
   const galleryTitle = includesPurchasingFields
     ? normalizeText(formData.get("galleryTitle"))
-    : existingConfig?.galleryTitle ?? "Behind the Scenes";
+    : existingConfig?.galleryTitle ?? null;
 
   const gallerySubtitle = includesPurchasingFields
     ? normalizeText(formData.get("gallerySubtitle"))
-    : existingConfig?.gallerySubtitle ?? "A glimpse into our creative process";
+    : existingConfig?.gallerySubtitle ?? null;
+
+  const galleryShowTitles = includesPurchasingFields
+    ? formData.get("galleryShowTitles") === "on"
+    : existingConfig?.galleryShowTitles ?? false;
 
   const showCountdown = includesHeroFields
     ? formData.get("showCountdown") === "on"
@@ -191,6 +195,7 @@ async function updateHomepageSettingsAction(formData: FormData) {
       showPhotoshootGallery,
       galleryTitle,
       gallerySubtitle,
+      galleryShowTitles,
     },
     create: {
       id: "main",
@@ -218,6 +223,7 @@ async function updateHomepageSettingsAction(formData: FormData) {
       showPhotoshootGallery,
       galleryTitle,
       gallerySubtitle,
+      galleryShowTitles,
     },
   });
 
@@ -691,10 +697,11 @@ export default async function AdminHomepagePage({ searchParams }: AdminHomepageP
                     <input
                       type="text"
                       name="galleryTitle"
-                      defaultValue={homepageConfig?.galleryTitle ?? "Behind the Scenes"}
-                      placeholder="e.g., Behind the Scenes"
+                      defaultValue={homepageConfig?.galleryTitle ?? ""}
+                      placeholder="Leave empty for no title"
                       className="input-modern w-full"
                     />
+                    <p className="text-xs text-charcoal/60 mt-1">Leave empty to hide the section title</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-charcoal mb-1">
@@ -703,10 +710,25 @@ export default async function AdminHomepagePage({ searchParams }: AdminHomepageP
                     <input
                       type="text"
                       name="gallerySubtitle"
-                      defaultValue={homepageConfig?.gallerySubtitle ?? "A glimpse into our creative process"}
-                      placeholder="e.g., A glimpse into our creative process"
+                      defaultValue={homepageConfig?.gallerySubtitle ?? ""}
+                      placeholder="Leave empty for no subtitle"
                       className="input-modern w-full"
                     />
+                    <p className="text-xs text-charcoal/60 mt-1">Leave empty to hide the subtitle</p>
+                  </div>
+                  <div className="pt-2">
+                    <label className="flex items-center gap-3 text-sm text-charcoal">
+                      <input
+                        type="checkbox"
+                        name="galleryShowTitles"
+                        defaultChecked={homepageConfig?.galleryShowTitles ?? false}
+                        className="h-4 w-4 rounded border-charcoal/30 text-charcoal focus:ring-charcoal"
+                      />
+                      Show individual image titles on hover
+                    </label>
+                    <p className="text-xs text-charcoal/60 mt-1 ml-7">
+                      Display image titles when hovering over photos in the gallery
+                    </p>
                   </div>
                 </div>
               </div>

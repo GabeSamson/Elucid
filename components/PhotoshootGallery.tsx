@@ -13,15 +13,17 @@ interface PhotoshootImage {
 interface PhotoshootGalleryProps {
   images: PhotoshootImage[];
   enableSlideshow?: boolean;
-  title?: string;
-  subtitle?: string;
+  title?: string | null;
+  subtitle?: string | null;
+  showImageTitles?: boolean;
 }
 
 export default function PhotoshootGallery({
   images,
   enableSlideshow = false,
-  title = "Behind the Scenes",
-  subtitle = "A glimpse into our creative process"
+  title = null,
+  subtitle = null,
+  showImageTitles = false,
 }: PhotoshootGalleryProps) {
   const [selectedImage, setSelectedImage] = useState<PhotoshootImage | null>(null);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
@@ -51,22 +53,28 @@ export default function PhotoshootGallery({
 
   if (enableSlideshow) {
     return (
-      <section className="py-20 px-6 bg-cream">
+      <section className="py-20 px-6 bg-charcoal-dark">
         <div className="max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-12"
-          >
-            <h2 className="font-serif text-4xl md:text-6xl text-charcoal-dark mb-4">
-              {title}
-            </h2>
-            <p className="text-charcoal-light text-lg">
-              {subtitle}
-            </p>
-          </motion.div>
+          {(title || subtitle) && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+              className="text-center mb-12"
+            >
+              {title && (
+                <h2 className="font-serif text-4xl md:text-6xl text-cream mb-4">
+                  {title}
+                </h2>
+              )}
+              {subtitle && (
+                <p className="text-cream-light text-lg">
+                  {subtitle}
+                </p>
+              )}
+            </motion.div>
+          )}
 
           {/* Slideshow */}
           <div className="relative max-w-5xl mx-auto aspect-[16/10] overflow-hidden rounded-lg">
@@ -81,13 +89,13 @@ export default function PhotoshootGallery({
               >
                 <Image
                   src={images[currentSlideIndex].imageUrl}
-                  alt={images[currentSlideIndex].title || `Photoshoot ${currentSlideIndex + 1}`}
+                  alt={images[currentSlideIndex].title || `Gallery image ${currentSlideIndex + 1}`}
                   fill
                   className="object-cover"
                   sizes="(max-width: 1280px) 100vw, 1280px"
                   priority={currentSlideIndex === 0}
                 />
-                {images[currentSlideIndex].title && (
+                {showImageTitles && images[currentSlideIndex].title && (
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6">
                     <p className="text-cream text-xl font-medium">
                       {images[currentSlideIndex].title}
@@ -139,22 +147,28 @@ export default function PhotoshootGallery({
   }
 
   return (
-    <section className="py-20 px-6 bg-cream">
+    <section className="py-20 px-6 bg-charcoal-dark">
       <div className="max-w-7xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-          className="text-center mb-12"
-        >
-          <h2 className="font-serif text-4xl md:text-6xl text-charcoal-dark mb-4">
-            {title}
-          </h2>
-          <p className="text-charcoal-light text-lg">
-            {subtitle}
-          </p>
-        </motion.div>
+        {(title || subtitle) && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-12"
+          >
+            {title && (
+              <h2 className="font-serif text-4xl md:text-6xl text-cream mb-4">
+                {title}
+              </h2>
+            )}
+            {subtitle && (
+              <p className="text-cream-light text-lg">
+                {subtitle}
+              </p>
+            )}
+          </motion.div>
+        )}
 
         <div className={getGridClasses()}>
           {images.map((image, index) => (
@@ -169,13 +183,13 @@ export default function PhotoshootGallery({
             >
               <Image
                 src={image.imageUrl}
-                alt={image.title || `Photoshoot ${index + 1}`}
+                alt={image.title || `Gallery image ${index + 1}`}
                 fill
                 className="object-cover group-hover:scale-110 transition-transform duration-500"
                 sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
               />
-              <div className="absolute inset-0 bg-charcoal-dark/0 group-hover:bg-charcoal-dark/20 transition-colors duration-300" />
-              {image.title && (
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
+              {showImageTitles && image.title && (
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity">
                   <p className="text-cream text-sm font-medium truncate">{image.title}</p>
                 </div>
@@ -213,13 +227,13 @@ export default function PhotoshootGallery({
           <div className="relative max-w-5xl max-h-[90vh] w-full h-full">
             <Image
               src={selectedImage.imageUrl}
-              alt={selectedImage.title || "Photoshoot image"}
+              alt={selectedImage.title || "Gallery image"}
               fill
               className="object-contain"
               sizes="90vw"
               onClick={(e) => e.stopPropagation()}
             />
-            {selectedImage.title && (
+            {showImageTitles && selectedImage.title && (
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-6 text-center">
                 <p className="text-cream text-2xl font-medium">{selectedImage.title}</p>
               </div>
