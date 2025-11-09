@@ -248,6 +248,8 @@ model HomepageConfig {
   showPhotoshootGallery Boolean    @default(false) @map("show_photoshoot_gallery") // Show photoshoot gallery on homepage
   photoshootImages     String?     @map("photoshoot_images") // JSON array of PhotoshootImage IDs to display on homepage
   photoshootSlideshow  Boolean     @default(false) @map("photoshoot_slideshow") // Enable slideshow for photoshoot gallery
+  galleryTitle         String?     @default("Behind the Scenes") @map("gallery_title") // Title for photoshoot gallery section
+  gallerySubtitle      String?     @default("A glimpse into our creative process") @map("gallery_subtitle") // Subtitle for photoshoot gallery section
   createdAt            DateTime    @default(now()) @map("created_at")
   updatedAt            DateTime    @updatedAt @map("updated_at")
 

@@ -30,6 +30,8 @@ export default async function Home() {
   const showFeedbackSection = config?.showFeedbackSection ?? false;
   const showPhotoshootGallery = config?.showPhotoshootGallery ?? false;
   const photoshootSlideshow = config?.photoshootSlideshow ?? false;
+  const galleryTitle = config?.galleryTitle ?? "Behind the Scenes";
+  const gallerySubtitle = config?.gallerySubtitle ?? "A glimpse into our creative process";
 
   let photoshootImages: Array<{ id: string; imageUrl: string; title: string | null }> = [];
   if (showPhotoshootGallery && config?.photoshootImages) {
@@ -115,7 +117,12 @@ export default async function Home() {
       <WritingSection />
       <Featured />
       {showPhotoshootGallery && photoshootImages.length > 0 && (
-        <PhotoshootGallery images={photoshootImages} enableSlideshow={photoshootSlideshow} />
+        <PhotoshootGallery
+          images={photoshootImages}
+          enableSlideshow={photoshootSlideshow}
+          title={galleryTitle}
+          subtitle={gallerySubtitle}
+        />
       )}
       {showFeedbackSection && <Reviews />}
       <Newsletter />

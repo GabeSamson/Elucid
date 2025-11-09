@@ -118,6 +118,14 @@ async function updateHomepageSettingsAction(formData: FormData) {
     ? formData.get("showPhotoshootGallery") === "on"
     : existingConfig?.showPhotoshootGallery ?? false;
 
+  const galleryTitle = includesPurchasingFields
+    ? normalizeText(formData.get("galleryTitle"))
+    : existingConfig?.galleryTitle ?? "Behind the Scenes";
+
+  const gallerySubtitle = includesPurchasingFields
+    ? normalizeText(formData.get("gallerySubtitle"))
+    : existingConfig?.gallerySubtitle ?? "A glimpse into our creative process";
+
   const showCountdown = includesHeroFields
     ? formData.get("showCountdown") === "on"
     : existingConfig?.showCountdown ?? false;
@@ -181,6 +189,8 @@ async function updateHomepageSettingsAction(formData: FormData) {
       guestCheckoutEnabled,
       shippingEmailsEnabled,
       showPhotoshootGallery,
+      galleryTitle,
+      gallerySubtitle,
     },
     create: {
       id: "main",
@@ -206,6 +216,8 @@ async function updateHomepageSettingsAction(formData: FormData) {
       guestCheckoutEnabled,
       shippingEmailsEnabled,
       showPhotoshootGallery,
+      galleryTitle,
+      gallerySubtitle,
     },
   });
 
@@ -670,6 +682,33 @@ export default async function AdminHomepagePage({ searchParams }: AdminHomepageP
                 <p className="text-xs text-charcoal/60 mt-1">
                   Display a photo gallery from your latest photoshoots on the homepage. Manage gallery images in the gallery section below.
                 </p>
+
+                <div className="mt-4 space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-charcoal mb-1">
+                      Gallery Section Title
+                    </label>
+                    <input
+                      type="text"
+                      name="galleryTitle"
+                      defaultValue={homepageConfig?.galleryTitle ?? "Behind the Scenes"}
+                      placeholder="e.g., Behind the Scenes"
+                      className="input-modern w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-charcoal mb-1">
+                      Gallery Section Subtitle
+                    </label>
+                    <input
+                      type="text"
+                      name="gallerySubtitle"
+                      defaultValue={homepageConfig?.gallerySubtitle ?? "A glimpse into our creative process"}
+                      placeholder="e.g., A glimpse into our creative process"
+                      className="input-modern w-full"
+                    />
+                  </div>
+                </div>
               </div>
             </fieldset>
 

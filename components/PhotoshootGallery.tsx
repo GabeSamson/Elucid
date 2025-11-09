@@ -13,9 +13,16 @@ interface PhotoshootImage {
 interface PhotoshootGalleryProps {
   images: PhotoshootImage[];
   enableSlideshow?: boolean;
+  title?: string;
+  subtitle?: string;
 }
 
-export default function PhotoshootGallery({ images, enableSlideshow = false }: PhotoshootGalleryProps) {
+export default function PhotoshootGallery({
+  images,
+  enableSlideshow = false,
+  title = "Behind the Scenes",
+  subtitle = "A glimpse into our creative process"
+}: PhotoshootGalleryProps) {
   const [selectedImage, setSelectedImage] = useState<PhotoshootImage | null>(null);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
 
@@ -54,10 +61,10 @@ export default function PhotoshootGallery({ images, enableSlideshow = false }: P
             className="text-center mb-12"
           >
             <h2 className="font-serif text-4xl md:text-6xl text-charcoal-dark mb-4">
-              Behind the Scenes
+              {title}
             </h2>
             <p className="text-charcoal-light text-lg">
-              A glimpse into our creative process
+              {subtitle}
             </p>
           </motion.div>
 
@@ -142,10 +149,10 @@ export default function PhotoshootGallery({ images, enableSlideshow = false }: P
           className="text-center mb-12"
         >
           <h2 className="font-serif text-4xl md:text-6xl text-charcoal-dark mb-4">
-            Behind the Scenes
+            {title}
           </h2>
           <p className="text-charcoal-light text-lg">
-            A glimpse into our creative process
+            {subtitle}
           </p>
         </motion.div>
 
