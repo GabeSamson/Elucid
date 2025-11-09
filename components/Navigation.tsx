@@ -126,9 +126,6 @@ export default function Navigation() {
             <Link href="/about" className={navLinkClasses}>
               About
             </Link>
-            <Link href="/gallery" className={navLinkClasses}>
-              Gallery
-            </Link>
           </div>
 
           <div className="flex-1" />
