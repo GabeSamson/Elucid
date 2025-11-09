@@ -44,22 +44,24 @@ export default async function GalleryPage() {
         <Navigation />
       </Suspense>
 
-      {images.length > 0 ? (
-        <PhotoshootGallery
-          images={images}
-          enableSlideshow={false}
-          title={galleryTitle}
-          subtitle={gallerySubtitle}
-          showImageTitles={galleryShowTitles}
-        />
-      ) : (
-        <section className="min-h-screen py-20 px-6 bg-charcoal-dark flex items-center justify-center">
-          <div className="text-center">
-            <h1 className="font-serif text-4xl md:text-6xl text-cream mb-4">Gallery</h1>
-            <p className="text-cream-light text-lg">Coming soon - Check back later for our latest photoshoots</p>
-          </div>
-        </section>
-      )}
+      <div className="pt-24 md:pt-28">
+        {images.length > 0 ? (
+          <PhotoshootGallery
+            images={images}
+            enableSlideshow={false}
+            title={galleryTitle}
+            subtitle={gallerySubtitle}
+            showImageTitles={galleryShowTitles}
+          />
+        ) : (
+          <section className="min-h-screen py-20 px-6 bg-charcoal-dark flex items-center justify-center">
+            <div className="text-center">
+              <h1 className="font-serif text-4xl md:text-6xl text-cream mb-4">Gallery</h1>
+              <p className="text-cream-light text-lg">Coming soon - Check back later for our latest photoshoots</p>
+            </div>
+          </section>
+        )}
+      </div>
 
       <Footer />
     </main>
