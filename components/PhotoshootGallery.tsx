@@ -77,7 +77,7 @@ export default function PhotoshootGallery({
           )}
 
           {/* Slideshow */}
-          <div className="relative max-w-5xl mx-auto overflow-hidden rounded-lg bg-transparent">
+          <div className="relative max-w-5xl mx-auto overflow-hidden rounded-2xl bg-charcoal-dark/60">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentSlideIndex}
@@ -85,14 +85,14 @@ export default function PhotoshootGallery({
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -100 }}
                 transition={{ duration: 0.5 }}
-                className="relative w-full bg-transparent"
-                style={{ minHeight: '400px', maxHeight: '80vh' }}
+                className="relative w-full h-full bg-transparent rounded-2xl overflow-hidden"
+                style={{ minHeight: '400px', maxHeight: '80vh', aspectRatio: '16 / 9' }}
               >
                 <Image
                   src={images[currentSlideIndex].imageUrl}
                   alt={images[currentSlideIndex].title || `Gallery image ${currentSlideIndex + 1}`}
                   fill
-                  className="object-contain rounded-lg"
+                  className="object-cover"
                   sizes="(max-width: 1280px) 100vw, 1280px"
                   priority={currentSlideIndex === 0}
                 />
