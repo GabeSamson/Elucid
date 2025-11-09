@@ -700,7 +700,6 @@ export default async function AdminHomepagePage({ searchParams }: AdminHomepageP
                 : []
             }
             enableSlideshow={homepageConfig?.photoshootSlideshow ?? false}
-            onSave={async () => {}}
           />
         </section>
       </div>

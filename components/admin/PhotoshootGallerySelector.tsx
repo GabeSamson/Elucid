@@ -15,7 +15,6 @@ interface PhotoshootGallerySelectorProps {
   availableImages: PhotoshootImage[];
   selectedImageIds: string[];
   enableSlideshow: boolean;
-  onSave: (imageIds: string[], enableSlideshow: boolean) => Promise<void>;
 }
 
 export default function PhotoshootGallerySelector({
