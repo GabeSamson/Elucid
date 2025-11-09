@@ -18,6 +18,7 @@ export default function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
+  const [searchOpen, setSearchOpen] = useState(false);
   const [isLandscape, setIsLandscape] = useState(true);
   const [navVariant, setNavVariant] = useState<'dark' | 'light'>(() => (pathname === "/" ? "dark" : "light"));
 
@@ -127,12 +128,19 @@ export default function Navigation() {
             </Link>
           </div>
 
-          {/* Search Bar */}
-          <div className="flex-1 max-w-md">
-            <SearchBar variant={navVariant} />
-          </div>
+          <div className="flex-1" />
 
           <div className="flex items-center gap-6">
+            {/* Search Icon */}
+            <button
+              onClick={() => setSearchOpen(true)}
+              className={navLinkClasses}
+              aria-label="Search"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </button>
             {status === "authenticated" && session?.user ? (
               <div className="flex items-center gap-4">
                 <Link href="/account" className={navLinkClasses}>
@@ -271,6 +279,41 @@ export default function Navigation() {
           </>
         )}
       </motion.nav>
+
+      {/* Search Modal */}
+      {searchOpen && (
+        <>
+          <div
+            className="fixed inset-0 bg-charcoal-dark/80 backdrop-blur-sm z-50"
+            onClick={() => setSearchOpen(false)}
+          />
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.2 }}
+            className="fixed top-20 left-1/2 -translate-x-1/2 w-full max-w-2xl px-4 z-50"
+          >
+            <div className="bg-white rounded-lg shadow-2xl p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-light tracking-wider uppercase text-charcoal-dark">
+                  Search Products
+                </h3>
+                <button
+                  onClick={() => setSearchOpen(false)}
+                  className="p-2 text-charcoal-dark hover:text-charcoal transition-colors"
+                  aria-label="Close search"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <SearchBar variant="light" onClose={() => setSearchOpen(false)} />
+            </div>
+          </motion.div>
+        </>
+      )}
 
       {/* Auth Modal */}
       <AuthModal
