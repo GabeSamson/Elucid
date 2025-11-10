@@ -39,6 +39,8 @@ export default async function Hero() {
       countdownLabel={config?.countdownLabel}
       countdownTarget={config?.countdownTarget?.toISOString()}
       showFeedbackButton={config?.showFeedbackButton ?? false}
+      heroImageUrl={config?.heroImageUrl ?? null}
+      useCustomHeroImage={config?.useCustomHeroImage ?? false}
     />
   );
 }

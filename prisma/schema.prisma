@@ -232,6 +232,8 @@ model HomepageConfig {
   showCountdown        Boolean     @default(false) @map("show_countdown")
   countdownLabel       String?     @map("countdown_label")
   countdownTarget      DateTime?   @map("countdown_target")
+  heroImageUrl         String?     @map("hero_image_url") // Custom hero image URL
+  useCustomHeroImage   Boolean     @default(false) @map("use_custom_hero_image") // Toggle between default logo and custom image
   featuredCollectionId String?     @map("featured_collection_id")
   featuredTitle        String?     @map("featured_title")
   featuredSubtitle     String?     @map("featured_subtitle")

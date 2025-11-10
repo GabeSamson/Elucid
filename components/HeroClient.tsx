@@ -13,6 +13,8 @@ interface HeroClientProps {
   countdownLabel?: string | null;
   countdownTarget?: string;
   showFeedbackButton: boolean;
+  heroImageUrl?: string | null;
+  useCustomHeroImage?: boolean;
 }
 
 interface CountdownState {
@@ -51,6 +53,8 @@ export default function HeroClient({
   countdownLabel,
   countdownTarget,
   showFeedbackButton,
+  heroImageUrl,
+  useCustomHeroImage,
 }: HeroClientProps) {
   const [mounted, setMounted] = useState(false);
   const [countdown, setCountdown] = useState<CountdownState | null>(null);
@@ -109,11 +113,15 @@ export default function HeroClient({
           className="mb-6 sm:mb-8 flex justify-center"
         >
           <img
-            src="/logo.svg"
+            src={useCustomHeroImage && heroImageUrl ? heroImageUrl : "/logo.svg"}
             alt="Elucid LDN"
             draggable="false"
             onContextMenu={(e) => e.preventDefault()}
-            className="w-[90vw] max-w-[420px] sm:w-64 sm:max-w-none md:w-80 lg:w-[520px] xl:w-[640px] drop-shadow-2xl invert brightness-0 contrast-200 select-none pointer-events-none transform -translate-x-[10px]"
+            className={
+              useCustomHeroImage && heroImageUrl
+                ? "w-[90vw] max-w-[420px] sm:w-64 sm:max-w-none md:w-80 lg:w-[520px] xl:w-[640px] drop-shadow-2xl select-none pointer-events-none"
+                : "w-[90vw] max-w-[420px] sm:w-64 sm:max-w-none md:w-80 lg:w-[520px] xl:w-[640px] drop-shadow-2xl invert brightness-0 contrast-200 select-none pointer-events-none transform -translate-x-[10px]"
+            }
           />
         </motion.div>
 

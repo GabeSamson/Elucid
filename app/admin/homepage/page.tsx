@@ -36,7 +36,7 @@ async function updateHomepageSettingsAction(formData: FormData) {
 
   const includesHeroFields =
     formContext === "hero" ||
-    ["heroHeading", "heroSubheading", "customContent", "heroCtaLabel", "heroCtaHref", "featuredCollectionId", "showCountdown", "countdownLabel", "countdownTarget"].some((field) =>
+    ["heroHeading", "heroSubheading", "customContent", "heroCtaLabel", "heroCtaHref", "featuredCollectionId", "showCountdown", "countdownLabel", "countdownTarget", "heroImageUrl", "useCustomHeroImage"].some((field) =>
       formData.has(field)
     );
   const includesFeaturedFields =
@@ -64,6 +64,12 @@ async function updateHomepageSettingsAction(formData: FormData) {
   const heroCtaHref = includesHeroFields
     ? normalizeText(formData.get("heroCtaHref"))
     : existingConfig?.heroCtaHref ?? null;
+  const heroImageUrl = includesHeroFields
+    ? normalizeText(formData.get("heroImageUrl"))
+    : existingConfig?.heroImageUrl ?? null;
+  const useCustomHeroImage = includesHeroFields
+    ? formData.get("useCustomHeroImage") === "on"
+    : existingConfig?.useCustomHeroImage ?? false;
   const featuredCollectionId = includesHeroFields
     ? normalizeText(formData.get("featuredCollectionId"))
     : existingConfig?.featuredCollectionId ?? null;
@@ -176,6 +182,8 @@ async function updateHomepageSettingsAction(formData: FormData) {
       customContent,
       heroCtaLabel,
       heroCtaHref: finalCtaHref,
+      heroImageUrl,
+      useCustomHeroImage,
       showCountdown,
       countdownLabel,
       countdownTarget,
@@ -204,6 +212,8 @@ async function updateHomepageSettingsAction(formData: FormData) {
       customContent,
       heroCtaLabel,
       heroCtaHref: finalCtaHref,
+      heroImageUrl,
+      useCustomHeroImage,
       showCountdown,
       countdownLabel,
       countdownTarget,
@@ -317,6 +327,47 @@ export default async function AdminHomepagePage({ searchParams }: AdminHomepageP
                 className="input-modern min-h-[120px]"
               />
             </div>
+
+            <fieldset className="space-y-3 rounded-xl border border-charcoal/10 bg-white px-5 py-4">
+              <legend className="px-2 text-sm font-semibold uppercase tracking-wider text-charcoal/70">
+                Hero Image
+              </legend>
+              <label className="flex items-center gap-3 text-sm text-charcoal">
+                <input
+                  type="checkbox"
+                  name="useCustomHeroImage"
+                  defaultChecked={homepageConfig?.useCustomHeroImage ?? false}
+                  className="h-4 w-4 rounded border-charcoal/30 text-charcoal focus:ring-charcoal"
+                />
+                Use custom hero image instead of default logo
+              </label>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-charcoal">
+                  Custom Image URL
+                </label>
+                <input
+                  name="heroImageUrl"
+                  defaultValue={homepageConfig?.heroImageUrl ?? ""}
+                  placeholder="https://example.com/image.jpg or /uploads/image.jpg"
+                  className="input-modern"
+                />
+                <p className="mt-1 text-xs text-charcoal/60">
+                  Enter the URL of your custom hero image. This will be used when the toggle above is enabled.
+                </p>
+              </div>
+
+              {homepageConfig?.heroImageUrl && (
+                <div className="mt-3">
+                  <p className="mb-2 text-xs font-medium text-charcoal/70">Preview:</p>
+                  <img
+                    src={homepageConfig.heroImageUrl}
+                    alt="Custom hero preview"
+                    className="max-h-32 rounded-lg border border-charcoal/10"
+                  />
+                </div>
+              )}
+            </fieldset>
 
             <div className="grid gap-4 md:grid-cols-2">
               <div>
@@ -724,10 +775,10 @@ export default async function AdminHomepagePage({ searchParams }: AdminHomepageP
                         defaultChecked={homepageConfig?.galleryShowTitles ?? false}
                         className="h-4 w-4 rounded border-charcoal/30 text-charcoal focus:ring-charcoal"
                       />
-                      Show individual image titles on hover
+                      Show slideshow image titles
                     </label>
                     <p className="text-xs text-charcoal/60 mt-1 ml-7">
-                      Display image titles when hovering over photos in the gallery
+                      Display image titles on top of each slide in the homepage carousel
                     </p>
                   </div>
                 </div>
