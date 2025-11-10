@@ -47,7 +47,7 @@ async function updateHomepageSettingsAction(formData: FormData) {
   const includesWritingFields =
     formContext === "writing" || formData.has("writingSection");
   const includesPurchasingFields =
-    formContext === "purchasing" || formData.has("purchasingEnabled");
+    formContext === "purchasing" || formData.has("purchasingEnabled") || formData.has("faviconUrl");
 
   const heroHeading = includesHeroFields
     ? normalizeText(formData.get("heroHeading"))
@@ -136,6 +136,10 @@ async function updateHomepageSettingsAction(formData: FormData) {
     ? formData.get("galleryShowTitles") === "on"
     : existingConfig?.galleryShowTitles ?? false;
 
+  const faviconUrl = includesPurchasingFields
+    ? normalizeText(formData.get("faviconUrl"))
+    : existingConfig?.faviconUrl ?? null;
+
   const showCountdown = includesHeroFields
     ? formData.get("showCountdown") === "on"
     : existingConfig?.showCountdown ?? false;
@@ -204,6 +208,7 @@ async function updateHomepageSettingsAction(formData: FormData) {
       galleryTitle,
       gallerySubtitle,
       galleryShowTitles,
+      faviconUrl,
     },
     create: {
       id: "main",
@@ -234,6 +239,7 @@ async function updateHomepageSettingsAction(formData: FormData) {
       galleryTitle,
       gallerySubtitle,
       galleryShowTitles,
+      faviconUrl,
     },
   });
 
@@ -692,6 +698,38 @@ export default async function AdminHomepagePage({ searchParams }: AdminHomepageP
                   This text appears in the footer of your website. Leave blank to hide.
                 </p>
               </div>
+            </fieldset>
+
+            <fieldset className="space-y-3 rounded-xl border border-charcoal/10 bg-white px-5 py-4">
+              <legend className="px-2 text-sm font-semibold uppercase tracking-wider text-charcoal/70">
+                Branding
+              </legend>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-charcoal">
+                  Custom Favicon URL
+                </label>
+                <input
+                  type="text"
+                  name="faviconUrl"
+                  defaultValue={homepageConfig?.faviconUrl ?? ""}
+                  placeholder="https://example.com/favicon.ico or /uploads/favicon.png"
+                  className="input-modern w-full"
+                />
+                <p className="text-xs text-charcoal/60 mt-1">
+                  Enter the URL of your custom favicon (the small icon that appears in browser tabs). Leave blank to use the default favicon. Recommended size: 32x32 or 16x16 pixels.
+                </p>
+              </div>
+
+              {homepageConfig?.faviconUrl && (
+                <div className="mt-3">
+                  <p className="mb-2 text-xs font-medium text-charcoal/70">Preview:</p>
+                  <img
+                    src={homepageConfig.faviconUrl}
+                    alt="Custom favicon preview"
+                    className="h-8 w-8 rounded border border-charcoal/10"
+                  />
+                </div>
+              )}
             </fieldset>
 
             <fieldset className="space-y-3 rounded-xl border border-charcoal/10 bg-white px-5 py-4">
