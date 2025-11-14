@@ -113,6 +113,37 @@ interface TrafficAnalyticsData {
     conversionRate: number;
     revenue: number;
   }>;
+  sourceConversions: Array<{
+    source: TrafficSourceKey;
+    visits: number;
+    orders: number;
+    revenue: number;
+    conversionRate: number;
+    avgOrderValue: number;
+  }>;
+  conversionSegments: ConversionSegment[];
+  channelConversionTimeline: Array<{
+    date: string;
+    Direct: number;
+    Social: number;
+    Search: number;
+    Referral: number;
+    Campaign: number;
+    totalOrders: number;
+  }>;
+}
+
+type ConversionSegmentType = 'referrer' | 'campaign';
+
+interface ConversionSegment {
+  key: string;
+  label: string;
+  type: ConversionSegmentType;
+  source: TrafficSourceKey;
+  visits: number;
+  orders: number;
+  revenue: number;
+  conversionRate: number;
 }
 
 const TRAFFIC_SOURCE_COLORS: Record<TrafficSourceKey, string> = {
@@ -159,6 +190,18 @@ function AdminAnalyticsContent() {
   const [resetting, setResetting] = useState(false);
   const [resetStatus, setResetStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const activeCurrency = getActiveCurrency();
+
+  const conversionSegments = trafficData?.conversionSegments || [];
+  const MIN_LAGGARD_VISITS = 10;
+  const topConversionSegments = conversionSegments.filter((segment) => segment.orders > 0).slice(0, 5);
+  const laggardCandidates = conversionSegments.filter((segment) => segment.visits >= MIN_LAGGARD_VISITS);
+  const worstConversionSegments = laggardCandidates.length > 0
+    ? laggardCandidates.slice(-5).reverse()
+    : [];
+  const bestPerformer = topConversionSegments[0] || conversionSegments[0] || null;
+  const worstPerformer = worstConversionSegments[0] || (conversionSegments.length > 0 ? conversionSegments[conversionSegments.length - 1] : null);
+  const channelConversionTimeline = trafficData?.channelConversionTimeline || [];
+  const channelConversionSummary = trafficData?.sourceConversions || [];
 
   const sumCounts = (items?: Array<{ count: number }>) =>
     Array.isArray(items) ? items.reduce((sum, item) => sum + item.count, 0) : 0;
@@ -968,6 +1011,214 @@ function AdminAnalyticsContent() {
                   No conversion data for this period
                 </div>
               )}
+            </div>
+
+            {/* Conversion Attribution */}
+            <div className="bg-white p-8 rounded-lg border border-charcoal/10 shadow-md mb-8">
+              <div className="mb-6">
+                <h3 className="font-serif text-xl text-charcoal">Conversion Attribution</h3>
+                <p className="text-sm text-charcoal/70">Identify which sources and campaigns are winning (or lagging) and how channel conversion changes over time.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                <div className="bg-cream-light p-5 rounded-lg border border-charcoal/20">
+                  <div className="text-xs uppercase tracking-wider text-charcoal/60 mb-2">Top converter</div>
+                  {bestPerformer ? (
+                    <>
+                      <div className="text-2xl font-serif text-charcoal mb-1">{bestPerformer.label}</div>
+                      <div className="text-sm text-charcoal/70 mb-1">
+                        {bestPerformer.conversionRate.toFixed(2)}% from {bestPerformer.visits.toLocaleString()} visits
+                      </div>
+                      <div className="text-xs text-charcoal/60">
+                        {bestPerformer.orders.toLocaleString()} orders · {bestPerformer.type === 'campaign' ? 'Campaign' : 'Referrer'} · {bestPerformer.source}
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-sm text-charcoal/60">Not enough conversion data yet.</p>
+                  )}
+                </div>
+
+                <div className="bg-cream-light p-5 rounded-lg border border-charcoal/20">
+                  <div className="text-xs uppercase tracking-wider text-charcoal/60 mb-2">Needs attention</div>
+                  {worstPerformer ? (
+                    <>
+                      <div className="text-2xl font-serif text-charcoal mb-1">{worstPerformer.label}</div>
+                      <div className="text-sm text-charcoal/70 mb-1">
+                        {worstPerformer.conversionRate.toFixed(2)}% from {worstPerformer.visits.toLocaleString()} visits
+                      </div>
+                      <div className="text-xs text-charcoal/60">
+                        {worstPerformer.orders.toLocaleString()} orders · {worstPerformer.type === 'campaign' ? 'Campaign' : 'Referrer'} · {worstPerformer.source}
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-sm text-charcoal/60">Insufficient visit volume to pinpoint lagging sources.</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <div className="bg-cream p-6 rounded-lg border border-charcoal/20">
+                  <h4 className="font-serif text-lg text-charcoal mb-4">Who converts best</h4>
+                  {topConversionSegments.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b border-charcoal/10">
+                            <th className="text-left py-2 px-4 text-xs uppercase tracking-wider text-charcoal/60">Source</th>
+                            <th className="text-right py-2 px-4 text-xs uppercase tracking-wider text-charcoal/60">Visits</th>
+                            <th className="text-right py-2 px-4 text-xs uppercase tracking-wider text-charcoal/60">Orders</th>
+                            <th className="text-right py-2 px-4 text-xs uppercase tracking-wider text-charcoal/60">Conv%</th>
+                            <th className="text-right py-2 px-4 text-xs uppercase tracking-wider text-charcoal/60">Revenue</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {topConversionSegments.map((segment) => (
+                            <tr key={segment.key} className="border-b border-charcoal/10 last:border-0">
+                              <td className="py-2 px-4">
+                                <div className="text-sm font-medium text-charcoal">{segment.label}</div>
+                                <div className="flex items-center gap-2 text-xs text-charcoal/60 mt-1">
+                                  <span className="px-2 py-0.5 rounded-full bg-cream-dark text-charcoal/70 text-[10px] uppercase tracking-wide">
+                                    {segment.type === 'campaign' ? 'Campaign' : 'Referrer'}
+                                  </span>
+                                  <span>{segment.source}</span>
+                                </div>
+                              </td>
+                              <td className="py-2 px-4 text-sm text-right text-charcoal">{segment.visits.toLocaleString()}</td>
+                              <td className="py-2 px-4 text-sm text-right text-charcoal">{segment.orders.toLocaleString()}</td>
+                              <td className="py-2 px-4 text-sm text-right text-charcoal">{segment.conversionRate.toFixed(2)}%</td>
+                              <td className="py-2 px-4 text-sm text-right text-charcoal">{formatCurrency(segment.revenue)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-charcoal/60">No conversion segments yet.</p>
+                  )}
+                </div>
+
+                <div className="bg-cream p-6 rounded-lg border border-charcoal/20">
+                  <h4 className="font-serif text-lg text-charcoal mb-4">Underperforming sources</h4>
+                  {worstConversionSegments.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b border-charcoal/10">
+                            <th className="text-left py-2 px-4 text-xs uppercase tracking-wider text-charcoal/60">Source</th>
+                            <th className="text-right py-2 px-4 text-xs uppercase tracking-wider text-charcoal/60">Visits</th>
+                            <th className="text-right py-2 px-4 text-xs uppercase tracking-wider text-charcoal/60">Orders</th>
+                            <th className="text-right py-2 px-4 text-xs uppercase tracking-wider text-charcoal/60">Conv%</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {worstConversionSegments.map((segment) => (
+                            <tr key={segment.key} className="border-b border-charcoal/10 last:border-0">
+                              <td className="py-2 px-4">
+                                <div className="text-sm font-medium text-charcoal">{segment.label}</div>
+                                <div className="flex items-center gap-2 text-xs text-charcoal/60 mt-1">
+                                  <span className="px-2 py-0.5 rounded-full bg-cream-dark text-charcoal/70 text-[10px] uppercase tracking-wide">
+                                    {segment.type === 'campaign' ? 'Campaign' : 'Referrer'}
+                                  </span>
+                                  <span>{segment.source}</span>
+                                </div>
+                              </td>
+                              <td className="py-2 px-4 text-sm text-right text-charcoal">{segment.visits.toLocaleString()}</td>
+                              <td className="py-2 px-4 text-sm text-right text-charcoal">{segment.orders.toLocaleString()}</td>
+                              <td className="py-2 px-4 text-sm text-right text-charcoal">{segment.conversionRate.toFixed(2)}%</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-charcoal/60">Need at least {MIN_LAGGARD_VISITS}+ visits to highlight lagging sources.</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <div className="bg-cream p-6 rounded-lg border border-charcoal/20">
+                  <h4 className="font-serif text-lg text-charcoal mb-4">Channel conversion summary</h4>
+                  {channelConversionSummary.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b border-charcoal/10">
+                            <th className="text-left py-2 px-4 text-xs uppercase tracking-wider text-charcoal/60">Channel</th>
+                            <th className="text-right py-2 px-4 text-xs uppercase tracking-wider text-charcoal/60">Visits</th>
+                            <th className="text-right py-2 px-4 text-xs uppercase tracking-wider text-charcoal/60">Orders</th>
+                            <th className="text-right py-2 px-4 text-xs uppercase tracking-wider text-charcoal/60">Conv%</th>
+                            <th className="text-right py-2 px-4 text-xs uppercase tracking-wider text-charcoal/60">Avg Order</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {channelConversionSummary.map((channel) => (
+                            <tr key={channel.source} className="border-b border-charcoal/10 last:border-0">
+                              <td className="py-2 px-4 text-sm text-charcoal font-medium">{channel.source}</td>
+                              <td className="py-2 px-4 text-sm text-charcoal text-right">{channel.visits.toLocaleString()}</td>
+                              <td className="py-2 px-4 text-sm text-charcoal text-right">{channel.orders.toLocaleString()}</td>
+                              <td className="py-2 px-4 text-sm text-charcoal text-right">{channel.conversionRate.toFixed(2)}%</td>
+                              <td className="py-2 px-4 text-sm text-charcoal text-right">{formatCurrency(channel.avgOrderValue)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-charcoal/60">Channel conversion data will appear once attribution is captured.</p>
+                  )}
+                </div>
+
+                <div className="bg-cream p-6 rounded-lg border border-charcoal/20">
+                  <h4 className="font-serif text-lg text-charcoal mb-4">Channel conversion trend</h4>
+                  {channelConversionTimeline.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <LineChart data={channelConversionTimeline}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#D4C9BA" />
+                        <XAxis
+                          dataKey="date"
+                          stroke="#2B2826"
+                          tick={{ fill: '#6B6560' }}
+                          tickFormatter={(value) => new Date(value).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' })}
+                        />
+                        <YAxis
+                          stroke="#2B2826"
+                          tick={{ fill: '#6B6560' }}
+                          tickFormatter={(value) => `${value}%`}
+                          domain={[0, (dataMax: number) => Math.max(Number(dataMax) || 5, 5)]}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: '#F5F3EE',
+                            border: '1px solid #D4C9BA',
+                            borderRadius: '8px',
+                          }}
+                          labelFormatter={(value) => new Date(value).toLocaleDateString('en-GB', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          })}
+                          formatter={(value: number, name: string) => [`${value.toFixed(2)}%`, `${name} conversion`]} 
+                        />
+                        <Legend />
+                        {TRAFFIC_SOURCE_ORDER.map((source) => (
+                          <Line
+                            key={`conversion-line-${source}`}
+                            type="monotone"
+                            dataKey={source}
+                            name={`${source}`}
+                            stroke={TRAFFIC_SOURCE_COLORS[source]}
+                            strokeWidth={2}
+                            dot={false}
+                          />
+                        ))}
+                      </LineChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <p className="text-sm text-charcoal/60">No channel conversion trend data for this period.</p>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Traffic Breakdown Tables */}

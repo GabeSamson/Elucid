@@ -26,6 +26,7 @@ export async function POST(request: NextRequest) {
       currency: userCurrency,
       giftWrapping,
       giftMessage,
+      attribution,
     } = body;
 
     if (!address || typeof address !== 'object') {
@@ -158,6 +159,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Create Stripe checkout session
+    let attributionPayload: string | null = null;
+    if (attribution && typeof attribution === 'object') {
+      try {
+        attributionPayload = JSON.stringify(attribution);
+      } catch (error) {
+        console.error('Failed to serialize attribution payload:', error);
+      }
+    }
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: lineItems,
@@ -183,6 +193,7 @@ export async function POST(request: NextRequest) {
         promoCodes: JSON.stringify(normalizedPromoCodes),
         giftWrapping: giftWrapping ? 'true' : 'false',
         giftMessage: giftMessage || '',
+        ...(attributionPayload ? { attribution: attributionPayload } : {}),
       },
     });
 

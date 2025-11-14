@@ -43,6 +43,23 @@ function CheckoutPageContent() {
   const [giftWrapping, setGiftWrapping] = useState(false);
   const [giftMessage, setGiftMessage] = useState("");
 
+  const getStoredAttribution = () => {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+
+    try {
+      const raw = window.localStorage.getItem('elucid_attribution');
+      if (!raw) {
+        return null;
+      }
+      return JSON.parse(raw);
+    } catch (error) {
+      console.error('Failed to read attribution data:', error);
+      return null;
+    }
+  };
+
   // Load Buy Now product from sessionStorage
   useEffect(() => {
     if (isBuyNow && typeof window !== 'undefined') {
@@ -346,6 +363,8 @@ useEffect(() => {
         };
       });
 
+      const attribution = getStoredAttribution();
+
       // Create Stripe checkout session
       const res = await fetch('/api/create-checkout-session', {
         method: 'POST',
@@ -383,6 +402,7 @@ useEffect(() => {
           currency,
           giftWrapping,
           giftMessage: giftWrapping ? giftMessage.trim() : null,
+          attribution: attribution || null,
         }),
       });
 

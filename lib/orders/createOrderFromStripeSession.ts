@@ -8,6 +8,104 @@ interface CreateOrderOptions {
   fallbackUserId?: string | null;
 }
 
+type AttributionTouch = {
+  path?: string | null;
+  referrer?: string | null;
+  utmSource?: string | null;
+  utmMedium?: string | null;
+  utmCampaign?: string | null;
+};
+
+type StoredAttributionPayload = {
+  firstTouch?: AttributionTouch | null;
+  lastTouch?: AttributionTouch | null;
+  visitCount?: number;
+};
+
+const parseAttributionPayload = (
+  raw: string | null | undefined
+): StoredAttributionPayload | null => {
+  if (!raw || typeof raw !== 'string') {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object') {
+      return parsed as StoredAttributionPayload;
+    }
+  } catch (error) {
+    console.error('Failed to parse attribution payload from Stripe metadata:', error);
+  }
+  return null;
+};
+
+const normalizeAttributionTouch = (
+  touch: AttributionTouch | null | undefined
+) => {
+  if (!touch || typeof touch !== 'object') {
+    return null;
+  }
+
+  const sanitize = (value: unknown) => {
+    if (typeof value !== 'string') {
+      return null;
+    }
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  };
+
+  const normalized = {
+    referrer: sanitize(touch.referrer),
+    utmSource: sanitize(touch.utmSource),
+    utmMedium: sanitize(touch.utmMedium),
+    utmCampaign: sanitize(touch.utmCampaign),
+  };
+
+  if (
+    !normalized.referrer &&
+    !normalized.utmSource &&
+    !normalized.utmMedium &&
+    !normalized.utmCampaign
+  ) {
+    return null;
+  }
+
+  return normalized;
+};
+
+const persistOrderAttribution = async (
+  orderId: string,
+  payload: StoredAttributionPayload | null
+) => {
+  if (!payload) {
+    return;
+  }
+
+  const touch =
+    normalizeAttributionTouch(payload.lastTouch) ||
+    normalizeAttributionTouch(payload.firstTouch);
+
+  if (!touch) {
+    return;
+  }
+
+  try {
+    await prisma.orderReferral.deleteMany({ where: { orderId } });
+    await prisma.orderReferral.create({
+      data: {
+        orderId,
+        referrer: touch.referrer,
+        utmSource: touch.utmSource,
+        utmMedium: touch.utmMedium,
+        utmCampaign: touch.utmCampaign,
+      },
+    });
+  } catch (error) {
+    console.error('Failed to store order attribution data:', error);
+  }
+};
+
 interface ParsedCartItem {
   productId?: string;
   productName?: string;
@@ -23,6 +121,7 @@ export async function createOrderFromStripeSession(
   options: CreateOrderOptions = {}
 ) {
   const metadata = session.metadata || {};
+  const attributionPayload = parseAttributionPayload(metadata.attribution);
   const paymentIntentId =
     typeof session.payment_intent === 'string'
       ? session.payment_intent
@@ -342,6 +441,8 @@ export async function createOrderFromStripeSession(
       }
     }
   }
+
+  await persistOrderAttribution(order.id, attributionPayload);
 
   // Check if reserve stock toggle is enabled
   const homepageConfig = await prisma.homepageConfig.findUnique({

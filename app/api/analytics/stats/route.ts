@@ -68,6 +68,7 @@ export async function GET(request: NextRequest) {
       ordersSummary,
       ordersByDayRaw,
       ordersForCustomers,
+      orderReferrals,
       previousViewsCount,
       previousUniqueGrouped,
       previousOrdersCount,
@@ -146,6 +147,7 @@ export async function GET(request: NextRequest) {
         select: {
           referrer: true,
           utmSource: true,
+          utmCampaign: true,
           visitorHash: true,
           createdAt: true,
         },
@@ -192,6 +194,23 @@ export async function GET(request: NextRequest) {
           id: true,
           userId: true,
           email: true,
+          total: true,
+          createdAt: true,
+        },
+      }),
+      prisma.orderReferral.findMany({
+        where: {
+          createdAt: {
+            gte: dateFrom,
+          },
+        },
+        select: {
+          orderId: true,
+          referrer: true,
+          utmSource: true,
+          utmMedium: true,
+          utmCampaign: true,
+          createdAt: true,
         },
       }),
       prisma.pageView.count({ where: previousWhereClause }),
@@ -219,6 +238,14 @@ export async function GET(request: NextRequest) {
       "Referral",
       "Campaign",
     ];
+
+    const emptySourceRecord = (): Record<SourceKey, number> => ({
+      Direct: 0,
+      Social: 0,
+      Search: 0,
+      Referral: 0,
+      Campaign: 0,
+    });
 
     const SOCIAL_DOMAINS = [
       "instagram.com",
@@ -309,13 +336,46 @@ export async function GET(request: NextRequest) {
       sourceTotals.set(key, { views: 0, uniqueVisitors: new Set() })
     );
 
-    const timeline = new Map<
+    const timeline = new Map<string, Record<SourceKey, number>>();
+    const orderTimeline = new Map<string, Record<SourceKey, number>>();
+
+    const sourceOrderTotals = new Map<
+      SourceKey,
+      { orders: number; revenue: number }
+    >();
+    SOURCE_KEYS.forEach((key) =>
+      sourceOrderTotals.set(key, { orders: 0, revenue: 0 })
+    );
+
+    const referrerVisitMap = new Map<
       string,
-      Record<SourceKey, number>
+      { label: string; source: SourceKey; visits: number }
+    >();
+    const referrerOrderMap = new Map<
+      string,
+      { label: string; source: SourceKey; orders: number; revenue: number }
+    >();
+    const campaignVisitMap = new Map<
+      string,
+      { label: string; visits: number }
+    >();
+    const campaignOrderMap = new Map<
+      string,
+      { label: string; orders: number; revenue: number }
     >();
 
     const socialReferrersMap = new Map<string, number>();
     const searchReferrersMap = new Map<string, number>();
+
+    const formatReferrerKey = (value: string) => `ref:${value}`;
+    const formatCampaignKey = (
+      source: string,
+      campaign?: string | null
+    ) => `utm:${source.toLowerCase()}|${(campaign || "").toLowerCase()}`;
+    const buildCampaignLabel = (
+      source: string,
+      campaign?: string | null
+    ) => (campaign ? `${source} · ${campaign}` : source);
 
     classifiedViews.forEach((view) => {
       const source = classifySource(view.referrer, view.utmSource);
@@ -329,17 +389,35 @@ export async function GET(request: NextRequest) {
 
       const dateKey = view.createdAt.toISOString().split("T")[0];
       if (!timeline.has(dateKey)) {
-        timeline.set(dateKey, {
-          Direct: 0,
-          Social: 0,
-          Search: 0,
-          Referral: 0,
-          Campaign: 0,
-        });
+        timeline.set(dateKey, emptySourceRecord());
       }
       const dayRecord = timeline.get(dateKey);
       if (dayRecord) {
         dayRecord[source] = (dayRecord[source] || 0) + 1;
+      }
+
+      if (view.utmSource) {
+        const campaignKey = formatCampaignKey(
+          view.utmSource,
+          view.utmCampaign
+        );
+        const visitEntry = campaignVisitMap.get(campaignKey) || {
+          label: buildCampaignLabel(view.utmSource, view.utmCampaign),
+          visits: 0,
+        };
+        visitEntry.visits += 1;
+        campaignVisitMap.set(campaignKey, visitEntry);
+      } else {
+        const host = hostFromUrl(view.referrer) || "direct";
+        const label = host === "direct" ? "Direct" : host;
+        const refKey = formatReferrerKey(host);
+        const visitEntry = referrerVisitMap.get(refKey) || {
+          label,
+          source: classifySource(view.referrer, null),
+          visits: 0,
+        };
+        visitEntry.visits += 1;
+        referrerVisitMap.set(refKey, visitEntry);
       }
 
       if (source === "Social" || source === "Search") {
@@ -351,6 +429,67 @@ export async function GET(request: NextRequest) {
             searchReferrersMap.set(host, (searchReferrersMap.get(host) || 0) + 1);
           }
         }
+      }
+    });
+
+    const orderMetaById = ordersForCustomers.reduce(
+      (acc, order) => {
+        acc.set(order.id, {
+          total: Number(order.total || 0),
+          createdAt: order.createdAt,
+        });
+        return acc;
+      },
+      new Map<string, { total: number; createdAt: Date }>()
+    );
+
+    orderReferrals.forEach((referral) => {
+      const orderMeta = orderMetaById.get(referral.orderId);
+      if (!orderMeta) {
+        return;
+      }
+
+      const source = classifySource(referral.referrer, referral.utmSource);
+      const totals = sourceOrderTotals.get(source);
+      if (totals) {
+        totals.orders += 1;
+        totals.revenue += orderMeta.total;
+      }
+
+      const dateKey = orderMeta.createdAt.toISOString().split("T")[0];
+      if (!orderTimeline.has(dateKey)) {
+        orderTimeline.set(dateKey, emptySourceRecord());
+      }
+      const orderRecord = orderTimeline.get(dateKey);
+      if (orderRecord) {
+        orderRecord[source] = (orderRecord[source] || 0) + 1;
+      }
+
+      if (referral.utmSource) {
+        const campaignKey = formatCampaignKey(
+          referral.utmSource,
+          referral.utmCampaign
+        );
+        const entry = campaignOrderMap.get(campaignKey) || {
+          label: buildCampaignLabel(referral.utmSource, referral.utmCampaign),
+          orders: 0,
+          revenue: 0,
+        };
+        entry.orders += 1;
+        entry.revenue += orderMeta.total;
+        campaignOrderMap.set(campaignKey, entry);
+      } else {
+        const host = hostFromUrl(referral.referrer) || "direct";
+        const refKey = formatReferrerKey(host);
+        const entry = referrerOrderMap.get(refKey) || {
+          label: host === "direct" ? "Direct" : host,
+          source: classifySource(referral.referrer, null),
+          orders: 0,
+          revenue: 0,
+        };
+        entry.orders += 1;
+        entry.revenue += orderMeta.total;
+        referrerOrderMap.set(refKey, entry);
       }
     });
 
@@ -377,6 +516,118 @@ export async function GET(request: NextRequest) {
         Referral: counts.Referral || 0,
         Campaign: counts.Campaign || 0,
       }));
+
+    const sourceConversions = SOURCE_KEYS.map((key) => {
+      const visitTotals = sourceTotals.get(key)!;
+      const orderTotals = sourceOrderTotals.get(key)!;
+      const visits = visitTotals.views;
+      const orders = orderTotals.orders;
+      const revenue = Number(orderTotals.revenue.toFixed(2));
+      return {
+        source: key,
+        visits,
+        orders,
+        revenue,
+        conversionRate:
+          visits > 0
+            ? Number(((orders / visits) * 100).toFixed(2))
+            : 0,
+        avgOrderValue:
+          orders > 0
+            ? Number((orderTotals.revenue / orders).toFixed(2))
+            : 0,
+      };
+    });
+
+    const MIN_SEGMENT_VISITS = 3;
+
+    const referrerSegments = Array.from(referrerVisitMap.entries()).map(
+      ([key, visit]) => {
+        const orderEntry = referrerOrderMap.get(key);
+        const orders = orderEntry?.orders ?? 0;
+        const revenue = orderEntry
+          ? Number(orderEntry.revenue.toFixed(2))
+          : 0;
+        return {
+          key,
+          label: visit.label,
+          type: "referrer" as const,
+          source: visit.source,
+          visits: visit.visits,
+          orders,
+          revenue,
+          conversionRate:
+            visit.visits > 0
+              ? Number(((orders / visit.visits) * 100).toFixed(2))
+              : 0,
+        };
+      }
+    );
+
+    const campaignSegments = Array.from(campaignVisitMap.entries()).map(
+      ([key, visit]) => {
+        const orderEntry = campaignOrderMap.get(key);
+        const orders = orderEntry?.orders ?? 0;
+        const revenue = orderEntry
+          ? Number(orderEntry.revenue.toFixed(2))
+          : 0;
+        return {
+          key,
+          label: visit.label,
+          type: "campaign" as const,
+          source: "Campaign" as SourceKey,
+          visits: visit.visits,
+          orders,
+          revenue,
+          conversionRate:
+            visit.visits > 0
+              ? Number(((orders / visit.visits) * 100).toFixed(2))
+              : 0,
+        };
+      }
+    );
+
+    const conversionSegments = [...referrerSegments, ...campaignSegments]
+      .filter((segment) => segment.visits >= MIN_SEGMENT_VISITS || segment.orders > 0)
+      .sort((a, b) => b.conversionRate - a.conversionRate);
+
+    const channelConversionTimeline = Array.from(
+      new Set([...timeline.keys(), ...orderTimeline.keys()])
+    )
+      .sort((a, b) => a.localeCompare(b))
+      .map((date) => {
+        const viewCounts = timeline.get(date) || emptySourceRecord();
+        const orderCounts = orderTimeline.get(date) || emptySourceRecord();
+        let totalOrdersForDay = 0;
+        const record: {
+          date: string;
+          Direct: number;
+          Social: number;
+          Search: number;
+          Referral: number;
+          Campaign: number;
+          totalOrders: number;
+        } = {
+          date,
+          Direct: 0,
+          Social: 0,
+          Search: 0,
+          Referral: 0,
+          Campaign: 0,
+          totalOrders: 0,
+        };
+
+        SOURCE_KEYS.forEach((key) => {
+          const orders = orderCounts[key] || 0;
+          const visits = viewCounts[key] || 0;
+          const rate = visits > 0 ? Number(((orders / visits) * 100).toFixed(2)) : 0;
+          record[key] = rate;
+          totalOrdersForDay += orders;
+        });
+
+        record.totalOrders = totalOrdersForDay;
+        return record;
+      });
 
     const ordersByDayMap = ordersByDayRaw.reduce<
       Record<
@@ -550,6 +801,9 @@ export async function GET(request: NextRequest) {
         uniqueCustomers,
       },
       trend,
+      sourceConversions,
+      conversionSegments,
+      channelConversionTimeline,
       sourceBreakdown,
       sourceTimeline,
       socialReferrers: topSocialReferrers,
