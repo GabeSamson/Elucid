@@ -202,6 +202,9 @@ function AdminAnalyticsContent() {
   const worstPerformer = worstConversionSegments[0] || (conversionSegments.length > 0 ? conversionSegments[conversionSegments.length - 1] : null);
   const channelConversionTimeline = trafficData?.channelConversionTimeline || [];
   const channelConversionSummary = trafficData?.sourceConversions || [];
+  const sortedChannelSummary = [...channelConversionSummary].sort((a, b) => b.conversionRate - a.conversionRate);
+  const channelLeader = sortedChannelSummary.length > 0 ? sortedChannelSummary[0] : null;
+  const channelLaggard = sortedChannelSummary.length > 1 ? sortedChannelSummary[sortedChannelSummary.length - 1] : null;
 
   const sumCounts = (items?: Array<{ count: number }>) =>
     Array.isArray(items) ? items.reduce((sum, item) => sum + item.count, 0) : 0;
@@ -1055,6 +1058,36 @@ function AdminAnalyticsContent() {
                   )}
                 </div>
               </div>
+
+              {(channelLeader || channelLaggard) && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                  {channelLeader && (
+                    <div className="bg-cream p-5 rounded-lg border border-charcoal/20">
+                      <div className="text-xs uppercase tracking-wider text-charcoal/60 mb-2">Best converting channel</div>
+                      <div className="text-2xl font-serif text-charcoal mb-1">{channelLeader.source}</div>
+                      <div className="text-sm text-charcoal/70 mb-1">
+                        {channelLeader.conversionRate.toFixed(2)}% from {channelLeader.visits.toLocaleString()} visits
+                      </div>
+                      <div className="text-xs text-charcoal/60">
+                        {channelLeader.orders.toLocaleString()} orders · Avg order {formatCurrency(channelLeader.avgOrderValue)}
+                      </div>
+                    </div>
+                  )}
+
+                  {channelLaggard && (
+                    <div className="bg-cream-dark p-5 rounded-lg border border-charcoal/30">
+                      <div className="text-xs uppercase tracking-wider text-charcoal/60 mb-2">Lowest converting channel</div>
+                      <div className="text-2xl font-serif text-charcoal mb-1">{channelLaggard.source}</div>
+                      <div className="text-sm text-charcoal/70 mb-1">
+                        {channelLaggard.conversionRate.toFixed(2)}% from {channelLaggard.visits.toLocaleString()} visits
+                      </div>
+                      <div className="text-xs text-charcoal/60">
+                        {channelLaggard.orders.toLocaleString()} orders · Avg order {formatCurrency(channelLaggard.avgOrderValue)}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                 <div className="bg-cream p-6 rounded-lg border border-charcoal/20">
