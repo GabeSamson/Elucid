@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const folderValue = formData.get('folder')?.toString();
-    const allowedFolders = ['products', 'collections', 'photoshoot'];
+    const allowedFolders = ['products', 'collections', 'photoshoot', 'hero', 'branding'];
     const targetFolder = allowedFolders.includes(folderValue ?? '') ? folderValue : 'products';
 
     if (!file) {
@@ -26,10 +26,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate file type
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/x-icon', 'image/vnd.microsoft.icon'];
     if (!validTypes.includes(file.type)) {
       return NextResponse.json(
-        { error: 'Invalid file type. Only JPEG, PNG, and WebP are allowed.' },
+        { error: 'Invalid file type. Only JPEG, PNG, WebP, and ICO are allowed.' },
         { status: 400 }
       );
     }
@@ -49,6 +49,8 @@ export async function POST(request: NextRequest) {
       'image/jpg': 'jpg',
       'image/png': 'png',
       'image/webp': 'webp',
+      'image/x-icon': 'ico',
+      'image/vnd.microsoft.icon': 'ico',
     };
 
     // Get safe extension from MIME type (not from user input)
@@ -63,7 +65,14 @@ export async function POST(request: NextRequest) {
     // Generate unique filename with cryptographically secure randomness
     const timestamp = Date.now();
     const randomBytes = crypto.randomBytes(16).toString('hex'); // 32 characters
-    const filePrefix = targetFolder === 'collections' ? 'collection' : targetFolder === 'photoshoot' ? 'photoshoot' : 'product';
+    const folderPrefixMap: { [key: string]: string } = {
+      'collections': 'collection',
+      'photoshoot': 'photoshoot',
+      'hero': 'hero',
+      'branding': 'branding',
+      'products': 'product',
+    };
+    const filePrefix = folderPrefixMap[targetFolder] || 'product';
     const filename = `${targetFolder}/${filePrefix}-${timestamp}-${randomBytes}.${extension}`;
 
     // Upload to Vercel Blob

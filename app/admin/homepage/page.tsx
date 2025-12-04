@@ -4,6 +4,7 @@ import { revalidatePath, unstable_noStore as noStore } from "next/cache";
 import { redirect } from "next/navigation";
 import WritingSectionEditor from "@/components/WritingSectionEditor";
 import PhotoshootGallerySelector from "@/components/admin/PhotoshootGallerySelector";
+import SingleImageUploader from "@/components/admin/SingleImageUploader";
 
 export const dynamic = "force-dynamic";
 
@@ -350,29 +351,17 @@ export default async function AdminHomepagePage({ searchParams }: AdminHomepageP
 
               <div>
                 <label className="mb-2 block text-sm font-medium text-charcoal">
-                  Custom Image URL
+                  Custom Hero Image
                 </label>
-                <input
-                  name="heroImageUrl"
-                  defaultValue={homepageConfig?.heroImageUrl ?? ""}
-                  placeholder="https://example.com/image.jpg or /uploads/image.jpg"
-                  className="input-modern"
+                <SingleImageUploader
+                  currentImageUrl={homepageConfig?.heroImageUrl}
+                  fieldName="heroImageUrl"
+                  folder="hero"
                 />
                 <p className="mt-1 text-xs text-charcoal/60">
-                  Enter the URL of your custom hero image. This will be used when the toggle above is enabled.
+                  Upload an image to use as your custom hero image. This will be used when the toggle above is enabled.
                 </p>
               </div>
-
-              {homepageConfig?.heroImageUrl && (
-                <div className="mt-3">
-                  <p className="mb-2 text-xs font-medium text-charcoal/70">Preview:</p>
-                  <img
-                    src={homepageConfig.heroImageUrl}
-                    alt="Custom hero preview"
-                    className="max-h-32 rounded-lg border border-charcoal/10"
-                  />
-                </div>
-              )}
             </fieldset>
 
             <div className="grid gap-4 md:grid-cols-2">
@@ -706,30 +695,20 @@ export default async function AdminHomepagePage({ searchParams }: AdminHomepageP
               </legend>
               <div>
                 <label className="mb-2 block text-sm font-medium text-charcoal">
-                  Custom Favicon URL
+                  Custom Favicon
                 </label>
-                <input
-                  type="text"
-                  name="faviconUrl"
-                  defaultValue={homepageConfig?.faviconUrl ?? ""}
-                  placeholder="https://example.com/favicon.ico or /uploads/favicon.png"
-                  className="input-modern w-full"
+                <SingleImageUploader
+                  currentImageUrl={homepageConfig?.faviconUrl}
+                  fieldName="faviconUrl"
+                  folder="branding"
+                  maxHeight="h-16 w-16"
+                  acceptedFormats="PNG, ICO (16x16 or 32x32)"
+                  maxSizeText="1MB"
                 />
                 <p className="text-xs text-charcoal/60 mt-1">
-                  Enter the URL of your custom favicon (the small icon that appears in browser tabs). Leave blank to use the default favicon. Recommended size: 32x32 or 16x16 pixels.
+                  Upload your custom favicon (the small icon that appears in browser tabs). Recommended size: 32x32 or 16x16 pixels.
                 </p>
               </div>
-
-              {homepageConfig?.faviconUrl && (
-                <div className="mt-3">
-                  <p className="mb-2 text-xs font-medium text-charcoal/70">Preview:</p>
-                  <img
-                    src={homepageConfig.faviconUrl}
-                    alt="Custom favicon preview"
-                    className="h-8 w-8 rounded border border-charcoal/10"
-                  />
-                </div>
-              )}
             </fieldset>
 
             <fieldset className="space-y-3 rounded-xl border border-charcoal/10 bg-white px-5 py-4">
