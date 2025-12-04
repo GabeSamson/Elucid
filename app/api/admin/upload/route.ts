@@ -15,8 +15,8 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const folderValue = formData.get('folder')?.toString();
-    const allowedFolders = ['products', 'collections', 'photoshoot', 'hero', 'branding'];
-    const targetFolder = allowedFolders.includes(folderValue ?? '') ? folderValue : 'products';
+    const allowedFolders = ['products', 'collections', 'photoshoot', 'hero', 'branding'] as const;
+    const targetFolder: string = allowedFolders.includes(folderValue as any) ? (folderValue as string) : 'products';
 
     if (!file) {
       return NextResponse.json(
