@@ -10,7 +10,12 @@ import SearchBar from "./SearchBar";
 import { useCart } from "@/contexts/CartContext";
 import Link from "next/link";
 
-export default function Navigation() {
+interface NavigationProps {
+  locked?: boolean;
+  isAdmin?: boolean;
+}
+
+export default function Navigation({ locked = false, isAdmin = false }: NavigationProps) {
   const { data: session, status } = useSession();
   const { totalItems, openCart } = useCart();
   const pathname = usePathname();
@@ -94,6 +99,7 @@ export default function Navigation() {
   const mobileMenuButtonClasses = `p-2 transition-colors ${
     isDarkSurface ? "text-cream-light" : "text-charcoal-dark"
   }`;
+  const showFullNav = !locked || isAdmin;
 
   return (
     <>
@@ -116,31 +122,35 @@ export default function Navigation() {
             Elucid LDN
           </Link>
 
-          <div className="flex items-center gap-8">
-            <Link href="/shop" className={navLinkClasses}>
-              Shop
-            </Link>
-            <Link href="/collections" className={navLinkClasses}>
-              Collections
-            </Link>
-            <Link href="/about" className={navLinkClasses}>
-              About
-            </Link>
-          </div>
+          {showFullNav && (
+            <div className="flex items-center gap-8">
+              <Link href="/shop" className={navLinkClasses}>
+                Shop
+              </Link>
+              <Link href="/collections" className={navLinkClasses}>
+                Collections
+              </Link>
+              <Link href="/about" className={navLinkClasses}>
+                About
+              </Link>
+            </div>
+          )}
 
           <div className="flex-1" />
 
           <div className="flex items-center gap-6">
             {/* Search Icon */}
-            <button
-              onClick={() => setSearchOpen(true)}
-              className={navLinkClasses}
-              aria-label="Search"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </button>
+            {showFullNav && (
+              <button
+                onClick={() => setSearchOpen(true)}
+                className={navLinkClasses}
+                aria-label="Search"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </button>
+            )}
             {status === "authenticated" && session?.user ? (
               <div className="flex items-center gap-4">
                 <Link href="/account" className={navLinkClasses}>
@@ -149,15 +159,22 @@ export default function Navigation() {
                 <button onClick={handleSignOut} className={navLinkClasses}>
                   Sign Out
                 </button>
+                {isAdmin && (
+                  <Link href="/admin" className={navLinkClasses}>
+                    Admin
+                  </Link>
+                )}
               </div>
             ) : (
               <button onClick={() => openAuthModal('signin')} className={navLinkClasses}>
                 Sign In
               </button>
             )}
-            <button onClick={openCart} className={navLinkClasses}>
-              Cart ({totalItems})
-            </button>
+            {showFullNav && (
+              <button onClick={openCart} className={navLinkClasses}>
+                Cart ({totalItems})
+              </button>
+            )}
           </div>
         </div>
 
@@ -168,18 +185,22 @@ export default function Navigation() {
           </Link>
 
           <div className="flex items-center gap-4">
-            <button
-              onClick={() => setSearchOpen(true)}
-              className={mobileMenuButtonClasses}
-              aria-label="Search"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </button>
-            <button onClick={openCart} className={mobileActionClasses}>
-              Cart ({totalItems})
-            </button>
+            {showFullNav && (
+              <button
+                onClick={() => setSearchOpen(true)}
+                className={mobileMenuButtonClasses}
+                aria-label="Search"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </button>
+            )}
+            {showFullNav && (
+              <button onClick={openCart} className={mobileActionClasses}>
+                Cart ({totalItems})
+              </button>
+            )}
             <button
               onClick={() => setMobileMenuOpen(true)}
               className={mobileMenuButtonClasses}
@@ -225,37 +246,50 @@ export default function Navigation() {
                 <nav className="flex-1 p-6 space-y-4">
                   {/* Mobile Search */}
                   <div className="pb-4 border-b border-charcoal/10">
-                    <SearchBar variant="light" onClose={() => setMobileMenuOpen(false)} />
+                    {showFullNav && <SearchBar variant="light" onClose={() => setMobileMenuOpen(false)} />}
                   </div>
 
-                  <Link
-                    href="/shop"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block text-base uppercase tracking-wider text-charcoal-dark hover:text-charcoal transition-colors py-2"
-                  >
-                    Shop
-                  </Link>
-                  <Link
-                    href="/collections"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block text-base uppercase tracking-wider text-charcoal-dark hover:text-charcoal transition-colors py-2"
-                  >
-                    Collections
-                  </Link>
-                  <Link
-                    href="/about"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block text-base uppercase tracking-wider text-charcoal-dark hover:text-charcoal transition-colors py-2"
-                  >
-                    About
-                  </Link>
-                  <Link
-                    href="/gallery"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block text-base uppercase tracking-wider text-charcoal-dark hover:text-charcoal transition-colors py-2"
-                  >
-                    Gallery
-                  </Link>
+                  {showFullNav && (
+                    <>
+                      <Link
+                        href="/shop"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="block text-base uppercase tracking-wider text-charcoal-dark hover:text-charcoal transition-colors py-2"
+                      >
+                        Shop
+                      </Link>
+                      <Link
+                        href="/collections"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="block text-base uppercase tracking-wider text-charcoal-dark hover:text-charcoal transition-colors py-2"
+                      >
+                        Collections
+                      </Link>
+                      <Link
+                        href="/about"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="block text-base uppercase tracking-wider text-charcoal-dark hover:text-charcoal transition-colors py-2"
+                      >
+                        About
+                      </Link>
+                      <Link
+                        href="/gallery"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="block text-base uppercase tracking-wider text-charcoal-dark hover:text-charcoal transition-colors py-2"
+                      >
+                        Gallery
+                      </Link>
+                    </>
+                  )}
+                  {isAdmin && (
+                    <Link
+                      href="/admin"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block text-base uppercase tracking-wider text-charcoal-dark hover:text-charcoal transition-colors py-2"
+                    >
+                      Admin
+                    </Link>
+                  )}
 
                   <div className="pt-6 border-t border-charcoal/10 space-y-4">
                     {status === "authenticated" && session?.user ? (

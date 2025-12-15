@@ -254,6 +254,7 @@ model HomepageConfig {
   galleryTitle         String?     @map("gallery_title") // Title for photoshoot gallery section (null = no title)
   gallerySubtitle      String?     @map("gallery_subtitle") // Subtitle for photoshoot gallery section (null = no subtitle)
   galleryShowTitles    Boolean     @default(false) @map("gallery_show_titles") // Show individual image titles on homepage gallery
+  lockHomepage         Boolean     @default(false) @map("lock_homepage") // Lock site to countdown/images only
   createdAt            DateTime    @default(now()) @map("created_at")
   updatedAt            DateTime    @updatedAt @map("updated_at")
 

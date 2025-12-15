@@ -3,7 +3,12 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-export default async function Hero() {
+interface HeroProps {
+  locked?: boolean;
+  isAdmin?: boolean;
+}
+
+export default async function Hero({ locked = false, isAdmin = false }: HeroProps) {
 
   const config = await prisma.homepageConfig.findUnique({
     where: { id: "main" },
@@ -41,6 +46,8 @@ export default async function Hero() {
       showFeedbackButton={config?.showFeedbackButton ?? false}
       heroImageUrl={config?.heroImageUrl ?? null}
       useCustomHeroImage={config?.useCustomHeroImage ?? false}
+      locked={locked}
+      isAdmin={isAdmin}
     />
   );
 }

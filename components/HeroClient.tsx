@@ -15,6 +15,8 @@ interface HeroClientProps {
   showFeedbackButton: boolean;
   heroImageUrl?: string | null;
   useCustomHeroImage?: boolean;
+  locked?: boolean;
+  isAdmin?: boolean;
 }
 
 interface CountdownState {
@@ -55,6 +57,8 @@ export default function HeroClient({
   showFeedbackButton,
   heroImageUrl,
   useCustomHeroImage,
+  locked = false,
+  isAdmin = false,
 }: HeroClientProps) {
   const [mounted, setMounted] = useState(false);
   const [countdown, setCountdown] = useState<CountdownState | null>(null);
@@ -99,8 +103,8 @@ export default function HeroClient({
 
   return (
     <section
-      className="relative flex min-h-screen min-h-[100dvh] items-center justify-center overflow-hidden bg-charcoal-dark pb-16 pt-24 sm:pt-28"
-      style={{ paddingTop: 'max(6rem, calc(env(safe-area-inset-top) + 4rem))' }}
+      className="relative flex min-h-screen min-h-[100dvh] items-center justify-center overflow-hidden bg-charcoal-dark pb-10"
+      style={{ paddingTop: 'max(5.5rem, calc(env(safe-area-inset-top) + 3.5rem))' }}
       data-nav-tone="dark"
     >
       <div className="absolute inset-0 film-grain opacity-20" />
@@ -131,17 +135,17 @@ export default function HeroClient({
           transition={{ duration: 0.9, delay: 0.1 }}
           className="space-y-6"
         >
-          {heading && (
+          {heading && !locked && (
             <h1 className="font-serif text-3xl text-cream-light md:text-5xl lg:text-6xl">
               {heading}
             </h1>
           )}
-          {subheading && (
+          {subheading && !locked && (
             <p className="text-cream-light/70 text-base md:text-lg font-light tracking-[0.35em] uppercase">
               {subheading}
             </p>
           )}
-          {customContent && (
+          {customContent && !locked && (
             <p className="mx-auto max-w-xl text-sm text-cream-light/70 md:text-base">
               {customContent}
             </p>
@@ -170,21 +174,35 @@ export default function HeroClient({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.5 }}
-          className="mt-16"
+          className="mt-12"
         >
-          <a
-            href={ctaHref}
-            className="inline-flex items-center justify-center rounded-2xl border border-cream-light/30 px-14 py-4 text-sm uppercase tracking-[0.35em] text-cream-light transition-all duration-300 hover:bg-cream-light hover:text-charcoal-dark"
-          >
-            {ctaLabel}
-          </a>
-          {showFeedbackButton && (
-            <div className="mt-6">
+          {!locked && (
+            <>
               <a
-                href="/reviews"
-                className="inline-flex items-center justify-center gap-3 rounded-full border border-cream-light/20 px-6 py-3 text-xs uppercase tracking-[0.3em] text-cream-light/80 hover:text-cream-light"
+                href={ctaHref}
+                className="inline-flex items-center justify-center rounded-2xl border border-cream-light/30 px-14 py-4 text-sm uppercase tracking-[0.35em] text-cream-light transition-all duration-300 hover:bg-cream-light hover:text-charcoal-dark"
               >
-                Share Feedback
+                {ctaLabel}
+              </a>
+              {showFeedbackButton && (
+                <div className="mt-6">
+                  <a
+                    href="/reviews"
+                    className="inline-flex items-center justify-center gap-3 rounded-full border border-cream-light/20 px-6 py-3 text-xs uppercase tracking-[0.3em] text-cream-light/80 hover:text-cream-light"
+                  >
+                    Share Feedback
+                  </a>
+                </div>
+              )}
+            </>
+          )}
+          {locked && isAdmin && (
+            <div className="mt-4">
+              <a
+                href="/admin"
+                className="inline-flex items-center justify-center rounded-full border border-cream-light/30 px-6 py-2 text-xs uppercase tracking-[0.3em] text-cream-light/80 hover:text-cream-light"
+              >
+                Go to Admin
               </a>
             </div>
           )}

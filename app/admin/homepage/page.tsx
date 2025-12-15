@@ -48,7 +48,7 @@ async function updateHomepageSettingsAction(formData: FormData) {
   const includesWritingFields =
     formContext === "writing" || formData.has("writingSection");
   const includesPurchasingFields =
-    formContext === "purchasing" || formData.has("purchasingEnabled") || formData.has("faviconUrl");
+    formContext === "purchasing" || formData.has("purchasingEnabled") || formData.has("faviconUrl") || formData.has("lockHomepage");
 
   const heroHeading = includesHeroFields
     ? normalizeText(formData.get("heroHeading"))
@@ -142,6 +142,10 @@ async function updateHomepageSettingsAction(formData: FormData) {
     ? formData.get("galleryShowTitles") === "on"
     : existingConfig?.galleryShowTitles ?? false;
 
+  const lockHomepage = includesPurchasingFields
+    ? formData.get("lockHomepage") === "on"
+    : existingConfig?.lockHomepage ?? false;
+
   const faviconUrl = includesPurchasingFields
     ? normalizeText(formData.get("faviconUrl"))
     : existingConfig?.faviconUrl ?? null;
@@ -215,6 +219,7 @@ async function updateHomepageSettingsAction(formData: FormData) {
       gallerySubtitle,
       galleryShowTitles,
       faviconUrl,
+      lockHomepage,
     },
     create: {
       id: "main",
@@ -246,6 +251,7 @@ async function updateHomepageSettingsAction(formData: FormData) {
       gallerySubtitle,
       galleryShowTitles,
       faviconUrl,
+      lockHomepage,
     },
   });
 
@@ -593,6 +599,24 @@ export default async function AdminHomepagePage({ searchParams }: AdminHomepageP
 
           <form action={updateHomepageSettingsAction} className="space-y-5">
             <input type="hidden" name="formContext" value="purchasing" />
+
+            <fieldset className="space-y-3 rounded-xl border border-charcoal/10 bg-white px-5 py-4">
+              <legend className="px-2 text-sm font-semibold uppercase tracking-wider text-charcoal/70">
+                Site Lockdown
+              </legend>
+              <label className="flex items-center gap-3 text-sm text-charcoal">
+                <input
+                  type="checkbox"
+                  name="lockHomepage"
+                  defaultChecked={homepageConfig?.lockHomepage ?? false}
+                  className="h-4 w-4 rounded border-charcoal/30 text-charcoal focus:ring-charcoal"
+                />
+                Lock site to countdown and hero imagery only
+              </label>
+              <p className="text-xs text-charcoal/60">
+                Hides shop and content sections for visitors, showing only the hero with countdown and optional gallery images. Admins will still be able to access the dashboard at /admin.
+              </p>
+            </fieldset>
 
             <fieldset className="space-y-3 rounded-xl border border-charcoal/10 bg-white px-5 py-4">
               <legend className="px-2 text-sm font-semibold uppercase tracking-wider text-charcoal/70">

@@ -9,6 +9,7 @@ import Newsletter from "@/components/Newsletter";
 import Footer from "@/components/Footer";
 import { prisma } from "@/lib/prisma";
 import { Metadata } from "next";
+import { auth } from "@/auth";
 
 export const dynamic = 'force-dynamic';
 
@@ -23,9 +24,14 @@ export const metadata: Metadata = {
 };
 
 export default async function Home() {
-  const config = await prisma.homepageConfig.findUnique({
-    where: { id: "main" },
-  });
+  const [config, session] = await Promise.all([
+    prisma.homepageConfig.findUnique({
+      where: { id: "main" },
+    }),
+    auth(),
+  ]);
+
+  const isAdmin = session?.user?.role === "admin";
 
   const showFeedbackSection = config?.showFeedbackSection ?? false;
   const showPhotoshootGallery = config?.showPhotoshootGallery ?? false;
@@ -33,6 +39,7 @@ export default async function Home() {
   const galleryTitle = config?.galleryTitle ?? null;
   const gallerySubtitle = config?.gallerySubtitle ?? null;
   const galleryShowTitles = config?.galleryShowTitles ?? false;
+  const lockHomepage = config?.lockHomepage ?? false;
 
   let photoshootImages: Array<{ id: string; imageUrl: string; title: string | null }> = [];
   if (showPhotoshootGallery && config?.photoshootImages) {
@@ -113,12 +120,28 @@ export default async function Home() {
       />
 
       <Suspense fallback={<div className="h-20" />}>
-        <Navigation />
+        <Navigation locked={lockHomepage} isAdmin={!!isAdmin} />
       </Suspense>
-      <Hero />
-      <WritingSection />
-      <Featured />
-      {showPhotoshootGallery && photoshootImages.length > 0 && (
+      <Hero locked={lockHomepage} isAdmin={!!isAdmin} />
+      {!lockHomepage && (
+        <>
+          <WritingSection />
+          <Featured />
+          {showPhotoshootGallery && photoshootImages.length > 0 && (
+            <PhotoshootGallery
+              images={photoshootImages}
+              enableSlideshow={photoshootSlideshow}
+              title={galleryTitle}
+              subtitle={gallerySubtitle}
+              showImageTitles={galleryShowTitles}
+            />
+          )}
+          {showFeedbackSection && <Reviews />}
+          <Newsletter />
+          <Footer />
+        </>
+      )}
+      {lockHomepage && showPhotoshootGallery && photoshootImages.length > 0 && (
         <PhotoshootGallery
           images={photoshootImages}
           enableSlideshow={photoshootSlideshow}
@@ -127,9 +150,6 @@ export default async function Home() {
           showImageTitles={galleryShowTitles}
         />
       )}
-      {showFeedbackSection && <Reviews />}
-      <Newsletter />
-      <Footer />
     </main>
   );
 }
