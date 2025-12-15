@@ -15,9 +15,9 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const folderValue = formData.get('folder')?.toString();
-    const allowedFolders = ['products', 'collections', 'photoshoot', 'hero', 'branding'] as const;
+    const allowedFolders = ['products', 'collections', 'photoshoot', 'hero', 'branding', 'lock'] as const;
     const targetFolder: string = allowedFolders.includes(folderValue as any) ? (folderValue as string) : 'products';
-    const allowSvg = targetFolder === 'hero';
+    const allowSvg = targetFolder === 'hero' || targetFolder === 'lock';
 
     if (!file) {
       return NextResponse.json(
@@ -73,6 +73,7 @@ export async function POST(request: NextRequest) {
       'photoshoot': 'photoshoot',
       'hero': 'hero',
       'branding': 'branding',
+      'lock': 'lock',
       'products': 'product',
     };
     const filePrefix = folderPrefixMap[targetFolder] || 'product';

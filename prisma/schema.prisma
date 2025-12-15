@@ -255,6 +255,8 @@ model HomepageConfig {
   gallerySubtitle      String?     @map("gallery_subtitle") // Subtitle for photoshoot gallery section (null = no subtitle)
   galleryShowTitles    Boolean     @default(false) @map("gallery_show_titles") // Show individual image titles on homepage gallery
   lockHomepage         Boolean     @default(false) @map("lock_homepage") // Lock site to countdown/images only
+  lockImages           String?     @map("lock_images") // JSON array of URLs for lock screen carousel
+  lockSlideshow        Boolean     @default(false) @map("lock_slideshow") // Enable lock screen slideshow
   createdAt            DateTime    @default(now()) @map("created_at")
   updatedAt            DateTime    @updatedAt @map("updated_at")
 

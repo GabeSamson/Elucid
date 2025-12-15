@@ -99,7 +99,7 @@ export default function Navigation({ locked = false, isAdmin = false }: Navigati
   const mobileMenuButtonClasses = `p-2 transition-colors ${
     isDarkSurface ? "text-cream-light" : "text-charcoal-dark"
   }`;
-  const showFullNav = !locked || isAdmin;
+  const showFullNav = !locked;
 
   return (
     <>

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import WritingSectionEditor from "@/components/WritingSectionEditor";
 import PhotoshootGallerySelector from "@/components/admin/PhotoshootGallerySelector";
 import SingleImageUploader from "@/components/admin/SingleImageUploader";
+import LockImagesUploader from "@/components/admin/LockImagesUploader";
 
 export const dynamic = "force-dynamic";
 
@@ -48,7 +49,8 @@ async function updateHomepageSettingsAction(formData: FormData) {
   const includesWritingFields =
     formContext === "writing" || formData.has("writingSection");
   const includesPurchasingFields =
-    formContext === "purchasing" || formData.has("purchasingEnabled") || formData.has("faviconUrl") || formData.has("lockHomepage");
+    formContext === "purchasing" ||
+    ["purchasingEnabled", "faviconUrl", "lockHomepage", "lockImages", "lockSlideshow"].some((field) => formData.has(field));
 
   const heroHeading = includesHeroFields
     ? normalizeText(formData.get("heroHeading"))
@@ -146,6 +148,21 @@ async function updateHomepageSettingsAction(formData: FormData) {
     ? formData.get("lockHomepage") === "on"
     : existingConfig?.lockHomepage ?? false;
 
+  const lockImagesRaw = includesPurchasingFields ? formData.get("lockImages")?.toString() ?? "[]" : existingConfig?.lockImages ?? "[]";
+  let lockImages: string[] = [];
+  try {
+    const parsed = JSON.parse(lockImagesRaw);
+    if (Array.isArray(parsed)) {
+      lockImages = parsed.filter((url): url is string => typeof url === "string" && url.trim() !== "");
+    }
+  } catch (err) {
+    lockImages = [];
+  }
+
+  const lockSlideshow = includesPurchasingFields
+    ? formData.get("lockSlideshow") === "on"
+    : existingConfig?.lockSlideshow ?? false;
+
   const faviconUrl = includesPurchasingFields
     ? normalizeText(formData.get("faviconUrl"))
     : existingConfig?.faviconUrl ?? null;
@@ -220,6 +237,8 @@ async function updateHomepageSettingsAction(formData: FormData) {
       galleryShowTitles,
       faviconUrl,
       lockHomepage,
+      lockImages: lockImages.length ? JSON.stringify(lockImages) : null,
+      lockSlideshow,
     },
     create: {
       id: "main",
@@ -252,6 +271,8 @@ async function updateHomepageSettingsAction(formData: FormData) {
       galleryShowTitles,
       faviconUrl,
       lockHomepage,
+      lockImages: lockImages.length ? JSON.stringify(lockImages) : null,
+      lockSlideshow,
     },
   });
 
@@ -614,8 +635,43 @@ export default async function AdminHomepagePage({ searchParams }: AdminHomepageP
                 Lock site to countdown and hero imagery only
               </label>
               <p className="text-xs text-charcoal/60">
-                Hides shop and content sections for visitors, showing only the hero with countdown and optional gallery images (enable slideshow in the gallery section below). Admins will still be able to access the dashboard at /admin.
+                Hides shop and content sections for visitors, showing only the hero with countdown and optional lock screen images (upload below). Admins will still be able to access the dashboard at /admin.
               </p>
+            </fieldset>
+
+            <fieldset className="space-y-3 rounded-xl border border-charcoal/10 bg-white px-5 py-4">
+              <legend className="px-2 text-sm font-semibold uppercase tracking-wider text-charcoal/70">
+                Lock Screen Images
+              </legend>
+              <p className="text-xs text-charcoal/70">
+                Upload images to show under the hero when the site is locked. SVGs are auto-whitened for the dark background.
+              </p>
+              <LockImagesUploader
+                initialImages={
+                  homepageConfig?.lockImages
+                    ? (() => {
+                        try {
+                          const parsed = JSON.parse(homepageConfig.lockImages);
+                          return Array.isArray(parsed) ? parsed : [];
+                        } catch {
+                          return [];
+                        }
+                      })()
+                    : []
+                }
+                fieldName="lockImages"
+                folder="lock"
+                allowSvg
+              />
+              <label className="flex items-center gap-3 text-sm text-charcoal">
+                <input
+                  type="checkbox"
+                  name="lockSlideshow"
+                  defaultChecked={homepageConfig?.lockSlideshow ?? false}
+                  className="h-4 w-4 rounded border-charcoal/30 text-charcoal focus:ring-charcoal"
+                />
+                Cycle lock images in a slideshow
+              </label>
             </fieldset>
 
             <fieldset className="space-y-3 rounded-xl border border-charcoal/10 bg-white px-5 py-4">

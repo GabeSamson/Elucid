@@ -10,6 +10,7 @@ import Footer from "@/components/Footer";
 import { prisma } from "@/lib/prisma";
 import { Metadata } from "next";
 import { auth } from "@/auth";
+import LockCarousel from "@/components/LockCarousel";
 
 export const dynamic = 'force-dynamic';
 
@@ -40,6 +41,19 @@ export default async function Home() {
   const gallerySubtitle = config?.gallerySubtitle ?? null;
   const galleryShowTitles = config?.galleryShowTitles ?? false;
   const lockHomepage = config?.lockHomepage ?? false;
+  const lockSlideshow = config?.lockSlideshow ?? false;
+
+  let lockImages: string[] = [];
+  if (config?.lockImages) {
+    try {
+      const parsed = JSON.parse(config.lockImages);
+      if (Array.isArray(parsed)) {
+        lockImages = parsed.filter((url): url is string => typeof url === "string" && url.trim() !== "");
+      }
+    } catch (err) {
+      console.error("Failed to parse lock images", err);
+    }
+  }
 
   let photoshootImages: Array<{ id: string; imageUrl: string; title: string | null }> = [];
   if (showPhotoshootGallery && config?.photoshootImages) {
@@ -125,7 +139,11 @@ export default async function Home() {
         <Navigation locked={lockHomepage} isAdmin={!!isAdmin} />
       </Suspense>
       <Hero locked={lockHomepage} isAdmin={!!isAdmin} />
-      {!lockHomepage && (
+      {lockHomepage ? (
+        lockImages.length > 0 && (
+          <LockCarousel images={lockImages} enableSlideshow={lockSlideshow || lockImages.length > 1} />
+        )
+      ) : (
         <>
           <WritingSection />
           <Featured />
@@ -142,15 +160,6 @@ export default async function Home() {
           <Newsletter />
           <Footer />
         </>
-      )}
-      {lockHomepage && lockGalleryEnabled && (
-        <PhotoshootGallery
-          images={photoshootImages}
-          enableSlideshow={photoshootSlideshow || lockHomepage}
-          title={galleryTitle}
-          subtitle={gallerySubtitle}
-          showImageTitles={galleryShowTitles}
-        />
       )}
     </main>
   );
