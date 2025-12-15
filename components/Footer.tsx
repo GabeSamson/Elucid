@@ -57,8 +57,8 @@ export default function Footer() {
           <div>
             <h4 className="text-sm uppercase tracking-wider mb-4">Follow</h4>
             <ul className="space-y-2 text-cream/60 text-sm">
-              <li><a href="https://www.instagram.com/elucid.ldn?igsh=cW5id2NraDQ5Y2Ri&utm_source=qr" target="_blank" rel="noopener noreferrer" className="hover:text-cream transition-colors">Instagram</a></li>
-              <li><a href="https://www.tiktok.com/@elucid.ldn6?_t=ZN-90liqr57uBK&_r=1" target="_blank" rel="noopener noreferrer" className="hover:text-cream transition-colors">TikTok</a></li>
+              <li><a href="https://www.instagram.com/elucid.london/" target="_blank" rel="noopener noreferrer" className="hover:text-cream transition-colors">Instagram</a></li>
+              <li><a href="https://www.tiktok.com/@elucid.london" target="_blank" rel="noopener noreferrer" className="hover:text-cream transition-colors">TikTok</a></li>
             </ul>
           </div>
 

@@ -357,9 +357,11 @@ export default async function AdminHomepagePage({ searchParams }: AdminHomepageP
                   currentImageUrl={homepageConfig?.heroImageUrl}
                   fieldName="heroImageUrl"
                   folder="hero"
+                  acceptedFormats="PNG, JPG, WebP, SVG"
+                  allowSvg
                 />
                 <p className="mt-1 text-xs text-charcoal/60">
-                  Upload an image to use as your custom hero image. This will be used when the toggle above is enabled.
+                  Upload an image to use as your custom hero image. SVG logos are automatically converted to white for the dark hero background.
                 </p>
               </div>
             </fieldset>

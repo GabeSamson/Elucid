@@ -9,6 +9,7 @@ interface SingleImageUploaderProps {
   maxHeight?: string;
   acceptedFormats?: string;
   maxSizeText?: string;
+  allowSvg?: boolean;
 }
 
 export default function SingleImageUploader({
@@ -18,6 +19,7 @@ export default function SingleImageUploader({
   maxHeight = 'max-h-48',
   acceptedFormats = 'PNG, JPG, WebP',
   maxSizeText = '5MB',
+  allowSvg = false,
 }: SingleImageUploaderProps) {
   const [uploading, setUploading] = useState(false);
   const [imageUrl, setImageUrl] = useState(currentImageUrl || '');
@@ -29,8 +31,11 @@ export default function SingleImageUploader({
 
     // Validate file type
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/x-icon', 'image/vnd.microsoft.icon'];
+    if (allowSvg) {
+      validTypes.push('image/svg+xml');
+    }
     if (!validTypes.includes(file.type)) {
-      setError('Invalid file type. Only JPEG, PNG, WebP, and ICO are allowed.');
+      setError(`Invalid file type. Only ${acceptedFormats} are allowed.`);
       return;
     }
 
@@ -106,24 +111,24 @@ export default function SingleImageUploader({
 
       {!imageUrl ? (
         // Upload Area
-        <div
-          className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-all ${
-            dragActive
-              ? 'border-charcoal bg-cream-light'
-              : 'border-charcoal/30 hover:border-charcoal/50'
-          } ${uploading ? 'opacity-50 pointer-events-none' : ''}`}
-          onDragEnter={handleDrag}
-          onDragLeave={handleDrag}
-          onDragOver={handleDrag}
-          onDrop={handleDrop}
-        >
-          <input
-            type="file"
-            accept="image/*,.ico"
-            onChange={handleFileInput}
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-            disabled={uploading}
-          />
+      <div
+        className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-all ${
+          dragActive
+            ? 'border-charcoal bg-cream-light'
+            : 'border-charcoal/30 hover:border-charcoal/50'
+        } ${uploading ? 'opacity-50 pointer-events-none' : ''}`}
+        onDragEnter={handleDrag}
+        onDragLeave={handleDrag}
+        onDragOver={handleDrag}
+        onDrop={handleDrop}
+      >
+        <input
+          type="file"
+          accept={allowSvg ? 'image/*,.ico,.svg' : 'image/*,.ico'}
+          onChange={handleFileInput}
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+          disabled={uploading}
+        />
 
           <div className="space-y-2">
             <svg
@@ -152,7 +157,7 @@ export default function SingleImageUploader({
         </div>
       ) : (
         // Image Preview
-        <div className="relative group">
+        <div className={`relative group ${allowSvg ? 'bg-charcoal p-4 rounded-lg' : ''}`}>
           <img
             src={imageUrl}
             alt="Uploaded image preview"
