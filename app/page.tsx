@@ -40,6 +40,7 @@ export default async function Home() {
   const gallerySubtitle = config?.gallerySubtitle ?? null;
   const galleryShowTitles = config?.galleryShowTitles ?? false;
   const lockHomepage = config?.lockHomepage ?? false;
+  const lockGalleryEnabled = lockHomepage && photoshootImages.length > 0 && (photoshootSlideshow || showPhotoshootGallery);
 
   let photoshootImages: Array<{ id: string; imageUrl: string; title: string | null }> = [];
   if (showPhotoshootGallery && config?.photoshootImages) {
@@ -141,10 +142,10 @@ export default async function Home() {
           <Footer />
         </>
       )}
-      {lockHomepage && showPhotoshootGallery && photoshootImages.length > 0 && (
+      {lockHomepage && lockGalleryEnabled && (
         <PhotoshootGallery
           images={photoshootImages}
-          enableSlideshow={photoshootSlideshow}
+          enableSlideshow={photoshootSlideshow || lockHomepage}
           title={galleryTitle}
           subtitle={gallerySubtitle}
           showImageTitles={galleryShowTitles}

@@ -614,7 +614,7 @@ export default async function AdminHomepagePage({ searchParams }: AdminHomepageP
                 Lock site to countdown and hero imagery only
               </label>
               <p className="text-xs text-charcoal/60">
-                Hides shop and content sections for visitors, showing only the hero with countdown and optional gallery images. Admins will still be able to access the dashboard at /admin.
+                Hides shop and content sections for visitors, showing only the hero with countdown and optional gallery images (enable slideshow in the gallery section below). Admins will still be able to access the dashboard at /admin.
               </p>
             </fieldset>
 
