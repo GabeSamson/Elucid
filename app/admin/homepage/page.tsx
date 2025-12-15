@@ -68,9 +68,14 @@ async function updateHomepageSettingsAction(formData: FormData) {
   const heroImageUrl = includesHeroFields
     ? normalizeText(formData.get("heroImageUrl"))
     : existingConfig?.heroImageUrl ?? null;
-  const useCustomHeroImage = includesHeroFields
+  let useCustomHeroImage = includesHeroFields
     ? formData.get("useCustomHeroImage") === "on"
     : existingConfig?.useCustomHeroImage ?? false;
+
+  // Auto-enable custom hero images when a new image is provided
+  if (includesHeroFields && heroImageUrl && !useCustomHeroImage) {
+    useCustomHeroImage = true;
+  }
   const featuredCollectionId = includesHeroFields
     ? normalizeText(formData.get("featuredCollectionId"))
     : existingConfig?.featuredCollectionId ?? null;
