@@ -5,6 +5,7 @@ import { Providers } from "@/components/Providers";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import MarketingPixels from "@/components/MarketingPixels";
 import { prisma } from "@/lib/prisma";
+import { unstable_noStore as noStore } from "next/cache";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -19,12 +20,23 @@ const playfair = Playfair_Display({
 });
 
 export async function generateMetadata(): Promise<Metadata> {
+  noStore();
+
   const config = await prisma.homepageConfig.findUnique({
     where: { id: "main" },
-    select: { faviconUrl: true },
+    select: { faviconUrl: true, updatedAt: true },
   });
 
-  const faviconUrl = config?.faviconUrl || '/icon.png';
+  const faviconUrl = config?.faviconUrl || "/icon.png";
+  const faviconVersion = config?.updatedAt ? config.updatedAt.getTime().toString() : "1";
+
+  const withCacheBuster = (url: string) => {
+    const separator = url.includes("?") ? "&" : "?";
+    return `${url}${separator}v=${encodeURIComponent(faviconVersion)}`;
+  };
+
+  const cacheBustedFaviconUrl = withCacheBuster(faviconUrl);
+  const cacheBustedFaviconIcoUrl = withCacheBuster("/favicon.ico");
 
   return {
     metadataBase: new URL('https://www.elucid.london'),
@@ -44,11 +56,11 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     icons: {
       icon: [
-        { url: faviconUrl, type: 'image/png' },
-        { url: '/favicon.ico', sizes: 'any' },
+        { url: cacheBustedFaviconUrl, type: "image/png" },
+        { url: cacheBustedFaviconIcoUrl, sizes: "any" },
       ],
-      shortcut: faviconUrl,
-      apple: faviconUrl,
+      shortcut: cacheBustedFaviconUrl,
+      apple: cacheBustedFaviconUrl,
     },
     openGraph: {
       type: 'website',
