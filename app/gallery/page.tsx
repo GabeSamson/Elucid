@@ -18,20 +18,45 @@ export const metadata: Metadata = {
 };
 
 export default async function GalleryPage() {
-  // Get all active gallery images
-  const images = await prisma.photoshootImage.findMany({
-    where: {
-      active: true,
-    },
-    orderBy: {
-      displayOrder: 'asc',
-    },
-    select: {
-      id: true,
-      imageUrl: true,
-      title: true,
-    },
+  const homepageConfig = await prisma.homepageConfig.findUnique({
+    where: { id: "main" },
+    select: { photoshootImages: true },
   });
+
+  let images: Array<{ id: string; imageUrl: string; title: string | null }> = [];
+  if (homepageConfig?.photoshootImages) {
+    try {
+      const parsed = JSON.parse(homepageConfig.photoshootImages);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const isOldFormat = typeof parsed[0] === "string" && (parsed[0].startsWith("http://") || parsed[0].startsWith("https://") || parsed[0].startsWith("/"));
+
+        if (isOldFormat) {
+          images = parsed
+            .filter((url): url is string => typeof url === "string" && url.trim() !== "")
+            .map((url, index) => ({ id: `legacy-${index}`, imageUrl: url, title: null }));
+        } else {
+          const selectedIds = parsed.filter((id): id is string => typeof id === "string" && id.trim() !== "");
+          const selectedImages = await prisma.photoshootImage.findMany({
+            where: {
+              id: { in: selectedIds },
+              active: true,
+            },
+            select: {
+              id: true,
+              imageUrl: true,
+              title: true,
+            },
+          });
+
+          images = selectedIds
+            .map((id) => selectedImages.find((img) => img.id === id))
+            .filter((img): img is { id: string; imageUrl: string; title: string | null } => img !== undefined);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to parse homepage photoshoot images:", error);
+    }
+  }
 
   // Public gallery page has its own separate title/subtitle
   const galleryTitle = "Gallery";

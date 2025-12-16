@@ -79,12 +79,11 @@ export default async function Home() {
             }));
         } else {
           // New format: array of IDs
-          // Fetch the actual image records that are enabled for slideshow
+          // Fetch the actual image records selected in the homepage config
           const images = await prisma.photoshootImage.findMany({
             where: {
               id: { in: parsed },
               active: true,
-              showInSlideshow: true,
             },
             select: {
               id: true,

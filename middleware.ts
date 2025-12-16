@@ -3,6 +3,10 @@ import type { NextRequest } from 'next/server';
 
 const LOCK_ALLOWLIST_PATHS = new Set([
   '/',
+  '/account',
+  '/forgot-password',
+  '/reset-password',
+  '/verify-email',
   '/sitemap.xml',
   '/robots.txt',
   '/favicon.ico',
@@ -11,7 +15,15 @@ const LOCK_ALLOWLIST_PATHS = new Set([
   '/logo.svg',
 ]);
 
-const LOCK_ALLOWLIST_PREFIXES = ['/api', '/_next', '/uploads', '/.well-known', '/static', '/images'];
+const LOCK_ALLOWLIST_PREFIXES = [
+  '/api',
+  '/_next',
+  '/uploads',
+  '/.well-known',
+  '/static',
+  '/images',
+  '/account/',
+];
 
 function getRequestOrigin(request: NextRequest) {
   const protocol = request.headers.get('x-forwarded-proto') || request.nextUrl.protocol.replace(':', '');
