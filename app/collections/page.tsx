@@ -48,7 +48,7 @@ export default function CollectionsPage() {
               Collections
             </h1>
             <p className="text-charcoal-light text-lg max-w-2xl">
-              Explore curated drops, limited releases, and seasonal edits from Elucid London.
+              Explore curated drops, limited releases, and seasonal edits.
             </p>
           </motion.div>
 

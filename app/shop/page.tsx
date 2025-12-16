@@ -80,7 +80,7 @@ export default function ShopPage() {
 
   const activeCollectionSubtitle =
     activeCollection === ""
-      ? "Browse the full range — new arrivals, essentials, and limited drops crafted in London."
+      ? "Browse the full range - new arrivals, essentials, and limited drops designed in London."
       : collections.find((collection) => collection.id === activeCollection)?.description?.trim() ||
         `Shop ${activeCollectionName} — curated pieces, available while they last.`;
 
