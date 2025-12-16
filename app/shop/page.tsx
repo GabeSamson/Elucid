@@ -78,6 +78,12 @@ export default function ShopPage() {
       ? "All"
       : collections.find((collection) => collection.id === activeCollection)?.name ?? "All";
 
+  const activeCollectionSubtitle =
+    activeCollection === ""
+      ? "Browse the full range — new arrivals, essentials, and limited drops crafted in London."
+      : collections.find((collection) => collection.id === activeCollection)?.description?.trim() ||
+        `Shop ${activeCollectionName} — curated pieces, available while they last.`;
+
   return (
     <main className="min-h-screen bg-cream">
       <Suspense fallback={<div className="h-20" />}>
@@ -97,7 +103,7 @@ export default function ShopPage() {
               {`Shop ${activeCollectionName}`}
             </h1>
             <p className="text-charcoal-light text-lg max-w-2xl">
-              Subtitle here
+              {activeCollectionSubtitle}
             </p>
           </motion.div>
 
