@@ -3,9 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath, unstable_noStore as noStore } from "next/cache";
 import { redirect } from "next/navigation";
 import WritingSectionEditor from "@/components/WritingSectionEditor";
-import PhotoshootGallerySelector from "@/components/admin/PhotoshootGallerySelector";
 import SingleImageUploader from "@/components/admin/SingleImageUploader";
-import LockImagesUploader from "@/components/admin/LockImagesUploader";
 
 export const dynamic = "force-dynamic";
 
@@ -50,7 +48,7 @@ async function updateHomepageSettingsAction(formData: FormData) {
     formContext === "writing" || formData.has("writingSection");
   const includesPurchasingFields =
     formContext === "purchasing" ||
-    ["purchasingEnabled", "faviconUrl", "lockHomepage", "lockImages", "lockSlideshow"].some((field) => formData.has(field));
+    ["purchasingEnabled", "faviconUrl", "lockHomepage"].some((field) => formData.has(field));
 
   const heroHeading = includesHeroFields
     ? normalizeText(formData.get("heroHeading"))
@@ -128,40 +126,9 @@ async function updateHomepageSettingsAction(formData: FormData) {
     ? formData.get("shippingEmailsEnabled") === "on"
     : existingConfig?.shippingEmailsEnabled ?? false;
 
-  const showPhotoshootGallery = includesPurchasingFields
-    ? formData.get("showPhotoshootGallery") === "on"
-    : existingConfig?.showPhotoshootGallery ?? false;
-
-  const galleryTitle = includesPurchasingFields
-    ? normalizeText(formData.get("galleryTitle"))
-    : existingConfig?.galleryTitle ?? null;
-
-  const gallerySubtitle = includesPurchasingFields
-    ? normalizeText(formData.get("gallerySubtitle"))
-    : existingConfig?.gallerySubtitle ?? null;
-
-  const galleryShowTitles = includesPurchasingFields
-    ? formData.get("galleryShowTitles") === "on"
-    : existingConfig?.galleryShowTitles ?? false;
-
   const lockHomepage = includesPurchasingFields
     ? formData.get("lockHomepage") === "on"
     : existingConfig?.lockHomepage ?? false;
-
-  const lockImagesRaw = includesPurchasingFields ? formData.get("lockImages")?.toString() ?? "[]" : existingConfig?.lockImages ?? "[]";
-  let lockImages: string[] = [];
-  try {
-    const parsed = JSON.parse(lockImagesRaw);
-    if (Array.isArray(parsed)) {
-      lockImages = parsed.filter((url): url is string => typeof url === "string" && url.trim() !== "");
-    }
-  } catch (err) {
-    lockImages = [];
-  }
-
-  const lockSlideshow = includesPurchasingFields
-    ? formData.get("lockSlideshow") === "on"
-    : existingConfig?.lockSlideshow ?? false;
 
   const faviconUrl = includesPurchasingFields
     ? normalizeText(formData.get("faviconUrl"))
@@ -231,14 +198,8 @@ async function updateHomepageSettingsAction(formData: FormData) {
       footerTagline,
       guestCheckoutEnabled,
       shippingEmailsEnabled,
-      showPhotoshootGallery,
-      galleryTitle,
-      gallerySubtitle,
-      galleryShowTitles,
       faviconUrl,
       lockHomepage,
-      lockImages: lockImages.length ? JSON.stringify(lockImages) : null,
-      lockSlideshow,
     },
     create: {
       id: "main",
@@ -265,14 +226,8 @@ async function updateHomepageSettingsAction(formData: FormData) {
       footerTagline,
       guestCheckoutEnabled,
       shippingEmailsEnabled,
-      showPhotoshootGallery,
-      galleryTitle,
-      gallerySubtitle,
-      galleryShowTitles,
       faviconUrl,
       lockHomepage,
-      lockImages: lockImages.length ? JSON.stringify(lockImages) : null,
-      lockSlideshow,
     },
   });
 
@@ -290,16 +245,13 @@ interface AdminHomepagePageProps {
 export default async function AdminHomepagePage({ searchParams }: AdminHomepagePageProps) {
   noStore();
 
-  const [collections, homepageConfig, photoshootImages] = await Promise.all([
+  const [collections, homepageConfig] = await Promise.all([
     prisma.collection.findMany({
       orderBy: { createdAt: "desc" },
     }),
     prisma.homepageConfig.findUnique({
       where: { id: "main" },
       include: { featuredCollection: true },
-    }),
-    prisma.photoshootImage.findMany({
-      orderBy: { displayOrder: "asc" },
     }),
   ]);
 
@@ -635,43 +587,8 @@ export default async function AdminHomepagePage({ searchParams }: AdminHomepageP
                 Lock site to countdown and hero imagery only
               </label>
               <p className="text-xs text-charcoal/60">
-                Hides shop and content sections for visitors, showing only the hero with countdown and optional lock screen images (upload below). Admins will still be able to access the dashboard at /admin.
+                Hides shop and content sections for visitors, showing only the hero with countdown. Admins will still be able to access the dashboard at /admin.
               </p>
-            </fieldset>
-
-            <fieldset className="space-y-3 rounded-xl border border-charcoal/10 bg-white px-5 py-4">
-              <legend className="px-2 text-sm font-semibold uppercase tracking-wider text-charcoal/70">
-                Lock Screen Images
-              </legend>
-              <p className="text-xs text-charcoal/70">
-                Upload images to show under the hero when the site is locked. SVGs are auto-whitened for the dark background.
-              </p>
-              <LockImagesUploader
-                initialImages={
-                  homepageConfig?.lockImages
-                    ? (() => {
-                        try {
-                          const parsed = JSON.parse(homepageConfig.lockImages);
-                          return Array.isArray(parsed) ? parsed : [];
-                        } catch {
-                          return [];
-                        }
-                      })()
-                    : []
-                }
-                fieldName="lockImages"
-                folder="lock"
-                allowSvg
-              />
-              <label className="flex items-center gap-3 text-sm text-charcoal">
-                <input
-                  type="checkbox"
-                  name="lockSlideshow"
-                  defaultChecked={homepageConfig?.lockSlideshow ?? false}
-                  className="h-4 w-4 rounded border-charcoal/30 text-charcoal focus:ring-charcoal"
-                />
-                Cycle lock images in a slideshow
-              </label>
             </fieldset>
 
             <fieldset className="space-y-3 rounded-xl border border-charcoal/10 bg-white px-5 py-4">
@@ -829,64 +746,6 @@ export default async function AdminHomepagePage({ searchParams }: AdminHomepageP
                   Automatically send email notifications when orders are shipped with tracking information.
                 </p>
               </div>
-
-              <div className="pt-2 border-t border-charcoal/5">
-                <label className="flex items-center gap-3 text-sm text-charcoal">
-                  <input
-                    type="checkbox"
-                    name="showPhotoshootGallery"
-                    defaultChecked={homepageConfig?.showPhotoshootGallery ?? false}
-                    className="h-4 w-4 rounded border-charcoal/30 text-charcoal focus:ring-charcoal"
-                  />
-                  Show photoshoot gallery on homepage
-                </label>
-                <p className="text-xs text-charcoal/60 mt-1">
-                  Display a photo gallery from your latest photoshoots on the homepage. Manage gallery images in the gallery section below.
-                </p>
-
-                <div className="mt-4 space-y-3">
-                  <div>
-                    <label className="block text-sm font-medium text-charcoal mb-1">
-                      Gallery Section Title
-                    </label>
-                    <input
-                      type="text"
-                      name="galleryTitle"
-                      defaultValue={homepageConfig?.galleryTitle ?? ""}
-                      placeholder="Leave empty for no title"
-                      className="input-modern w-full"
-                    />
-                    <p className="text-xs text-charcoal/60 mt-1">Leave empty to hide the section title</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-charcoal mb-1">
-                      Gallery Section Subtitle
-                    </label>
-                    <input
-                      type="text"
-                      name="gallerySubtitle"
-                      defaultValue={homepageConfig?.gallerySubtitle ?? ""}
-                      placeholder="Leave empty for no subtitle"
-                      className="input-modern w-full"
-                    />
-                    <p className="text-xs text-charcoal/60 mt-1">Leave empty to hide the subtitle</p>
-                  </div>
-                  <div className="pt-2">
-                    <label className="flex items-center gap-3 text-sm text-charcoal">
-                      <input
-                        type="checkbox"
-                        name="galleryShowTitles"
-                        defaultChecked={homepageConfig?.galleryShowTitles ?? false}
-                        className="h-4 w-4 rounded border-charcoal/30 text-charcoal focus:ring-charcoal"
-                      />
-                      Show slideshow image titles
-                    </label>
-                    <p className="text-xs text-charcoal/60 mt-1 ml-7">
-                      Display image titles on top of each slide in the homepage carousel
-                    </p>
-                  </div>
-                </div>
-              </div>
             </fieldset>
 
             <div className="flex flex-wrap justify-end gap-3">
@@ -898,25 +757,6 @@ export default async function AdminHomepagePage({ searchParams }: AdminHomepageP
               </button>
             </div>
           </form>
-        </section>
-
-        <section className="mt-8 space-y-6 rounded-2xl border border-charcoal/10 bg-cream p-6">
-          <header>
-            <h2 className="text-xl font-semibold text-charcoal">Photoshoot Gallery</h2>
-            <p className="text-sm text-charcoal/70">
-              Select images from your gallery to display on the homepage.
-            </p>
-          </header>
-
-          <PhotoshootGallerySelector
-            availableImages={photoshootImages}
-            selectedImageIds={
-              homepageConfig?.photoshootImages
-                ? JSON.parse(homepageConfig.photoshootImages)
-                : []
-            }
-            enableSlideshow={homepageConfig?.photoshootSlideshow ?? false}
-          />
         </section>
       </div>
     </div>

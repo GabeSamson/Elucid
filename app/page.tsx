@@ -3,14 +3,12 @@ import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
 import WritingSection from "@/components/WritingSection";
 import Featured from "@/components/Featured";
-import PhotoshootGallery from "@/components/PhotoshootGallery";
 import Reviews from "@/components/Reviews";
 import Newsletter from "@/components/Newsletter";
 import Footer from "@/components/Footer";
 import { prisma } from "@/lib/prisma";
 import { Metadata } from "next";
 import { auth } from "@/auth";
-import LockCarousel from "@/components/LockCarousel";
 
 export const dynamic = 'force-dynamic';
 
@@ -35,75 +33,7 @@ export default async function Home() {
   const isAdmin = session?.user?.role === "admin";
 
   const showFeedbackSection = config?.showFeedbackSection ?? false;
-  const showPhotoshootGallery = config?.showPhotoshootGallery ?? false;
-  const photoshootSlideshow = config?.photoshootSlideshow ?? false;
-  const galleryTitle = config?.galleryTitle ?? null;
-  const gallerySubtitle = config?.gallerySubtitle ?? null;
-  const galleryShowTitles = config?.galleryShowTitles ?? false;
   const lockHomepage = config?.lockHomepage ?? false;
-  const lockSlideshow = config?.lockSlideshow ?? false;
-
-  let lockImages: string[] = [];
-  if (config?.lockImages) {
-    try {
-      const parsed = JSON.parse(config.lockImages);
-      if (Array.isArray(parsed)) {
-        lockImages = parsed.filter((url): url is string => typeof url === "string" && url.trim() !== "");
-      }
-    } catch (err) {
-      console.error("Failed to parse lock images", err);
-    }
-  }
-
-  let photoshootImages: Array<{ id: string; imageUrl: string; title: string | null }> = [];
-  if (showPhotoshootGallery && config?.photoshootImages) {
-    try {
-      const parsed = JSON.parse(config.photoshootImages);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        // Check if this is old format (URLs) or new format (IDs)
-        const isOldFormat = typeof parsed[0] === 'string' && (
-          parsed[0].startsWith('http://') ||
-          parsed[0].startsWith('https://') ||
-          parsed[0].startsWith('/')
-        );
-
-        if (isOldFormat) {
-          // Old format: array of URL strings
-          // Convert to new format for display
-          photoshootImages = parsed
-            .filter((url): url is string => typeof url === 'string')
-            .map((url, index) => ({
-              id: `legacy-${index}`,
-              imageUrl: url,
-              title: null,
-            }));
-        } else {
-          // New format: array of IDs
-          // Fetch the actual image records selected in the homepage config
-          const images = await prisma.photoshootImage.findMany({
-            where: {
-              id: { in: parsed },
-              active: true,
-            },
-            select: {
-              id: true,
-              imageUrl: true,
-              title: true,
-            },
-          });
-
-          // Sort by the order in parsed IDs
-          photoshootImages = parsed
-            .map(id => images.find(img => img.id === id))
-            .filter((img): img is { id: string; imageUrl: string; title: string | null } => img !== undefined);
-        }
-      }
-    } catch (error) {
-      console.error('Failed to load photoshoot images:', error);
-    }
-  }
-
-  const lockGalleryEnabled = lockHomepage && photoshootImages.length > 0 && (photoshootSlideshow || showPhotoshootGallery);
 
   // Organization JSON-LD structured data
   const organizationSchema = {
@@ -138,23 +68,10 @@ export default async function Home() {
         <Navigation locked={lockHomepage} isAdmin={!!isAdmin} />
       </Suspense>
       <Hero locked={lockHomepage} isAdmin={!!isAdmin} />
-      {lockHomepage ? (
-        lockImages.length > 0 && (
-          <LockCarousel images={lockImages} enableSlideshow={lockSlideshow || lockImages.length > 1} />
-        )
-      ) : (
+      {lockHomepage ? null : (
         <>
           <WritingSection />
           <Featured />
-          {showPhotoshootGallery && photoshootImages.length > 0 && (
-            <PhotoshootGallery
-              images={photoshootImages}
-              enableSlideshow={photoshootSlideshow}
-              title={galleryTitle}
-              subtitle={gallerySubtitle}
-              showImageTitles={galleryShowTitles}
-            />
-          )}
           {showFeedbackSection && <Reviews />}
           <Newsletter />
           <Footer />

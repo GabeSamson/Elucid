@@ -68,6 +68,24 @@ export default function HeroClient({
   }, []);
 
   useEffect(() => {
+    const updateViewportHeight = () => {
+      document.documentElement.style.setProperty(
+        "--app-viewport-height",
+        `${window.innerHeight}px`
+      );
+    };
+
+    updateViewportHeight();
+    window.addEventListener("resize", updateViewportHeight);
+    window.addEventListener("orientationchange", updateViewportHeight);
+
+    return () => {
+      window.removeEventListener("resize", updateViewportHeight);
+      window.removeEventListener("orientationchange", updateViewportHeight);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!showCountdown || !countdownTarget || !mounted) {
       setCountdown(null);
       return;
@@ -101,10 +119,18 @@ export default function HeroClient({
     ));
   }, [countdown]);
 
+  const heroLogoClasses = useCustomHeroImage && heroImageUrl
+    ? "mx-auto h-auto w-[clamp(240px,80vw,720px)] drop-shadow-2xl select-none pointer-events-none"
+    : "mx-auto h-auto w-[clamp(240px,80vw,720px)] drop-shadow-2xl invert brightness-0 contrast-200 select-none pointer-events-none transform -translate-x-[10px]";
+
   return (
     <section
-      className="relative flex min-h-screen min-h-[100dvh] items-center justify-center overflow-hidden bg-charcoal-dark pb-10"
-      style={{ paddingTop: 'max(5.5rem, calc(env(safe-area-inset-top) + 3.5rem))' }}
+      className="relative flex min-h-screen min-h-[100svh] min-h-[100dvh] items-center justify-center overflow-hidden bg-charcoal-dark"
+      style={{
+        height: "var(--app-viewport-height, 100dvh)",
+        paddingTop: "max(5.5rem, calc(env(safe-area-inset-top) + 3.5rem))",
+        paddingBottom: "max(2.5rem, env(safe-area-inset-bottom))",
+      }}
       data-nav-tone="dark"
     >
       <div className="absolute inset-0 film-grain opacity-20" />
@@ -121,11 +147,7 @@ export default function HeroClient({
             alt="Elucid LDN"
             draggable="false"
             onContextMenu={(e) => e.preventDefault()}
-            className={
-              useCustomHeroImage && heroImageUrl
-                ? "w-[90vw] max-w-[420px] sm:w-64 sm:max-w-none md:w-80 lg:w-[520px] xl:w-[640px] drop-shadow-2xl select-none pointer-events-none"
-                : "w-[90vw] max-w-[420px] sm:w-64 sm:max-w-none md:w-80 lg:w-[520px] xl:w-[640px] drop-shadow-2xl invert brightness-0 contrast-200 select-none pointer-events-none transform -translate-x-[10px]"
-            }
+            className={heroLogoClasses}
           />
         </motion.div>
 

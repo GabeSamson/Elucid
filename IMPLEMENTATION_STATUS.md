@@ -79,8 +79,6 @@
 - ✅ **HomepageConfig Model Updates**: Added toggle fields
   - `guestCheckoutEnabled` (default: false)
   - `shippingEmailsEnabled` (default: false)
-  - `showPhotoshootGallery` (default: false)
-  - `photoshootImages` (JSON array of URLs)
 
 ---
 
@@ -172,17 +170,6 @@ Add form fields for new toggles:
   </label>
 </div>
 
-<div>
-  <label className="flex items-center gap-3 cursor-pointer">
-    <input
-      type="checkbox"
-      name="showPhotoshootGallery"
-      defaultChecked={homepageConfig?.showPhotoshootGallery ?? false}
-      className="rounded"
-    />
-    <span className="text-sm text-charcoal">Show Photoshoot Gallery on Homepage</span>
-  </label>
-</div>
 ```
 
 And update the `updateHomepageSettingsAction` to handle these fields:
@@ -195,10 +182,6 @@ const guestCheckoutEnabled = includesPurchasingFields
 const shippingEmailsEnabled = includesPurchasingFields
   ? formData.get("shippingEmailsEnabled") === "on"
   : existingConfig?.shippingEmailsEnabled ?? false;
-
-const showPhotoshootGallery = includesPurchasingFields
-  ? formData.get("showPhotoshootGallery") === "on"
-  : existingConfig?.showPhotoshootGallery ?? false;
 ```
 
 #### Product Cost Editor (`/app/admin/products/[id]/edit/page.tsx`)
@@ -423,13 +406,7 @@ Add to `vercel.json`:
 - Send recovery email with cart contents
 - Include "Complete Your Purchase" CTA
 
-### 4. Homepage Photoshoot Gallery
-- Create gallery component for homepage
-- Admin UI to upload photoshoot images
-- Store URLs in `photoshootImages` JSON field
-- Toggle visibility with `showPhotoshootGallery`
-
-### 5. Wishlist Page
+### 4. Wishlist Page
 - Create `/app/account/wishlist/page.tsx`
 - Display user's wishlist items
 - "Add to Cart" and "Remove" buttons
@@ -456,7 +433,6 @@ Add to `vercel.json`:
 | Guest Checkout | ⏳ Pending | - | Need implementation |
 | Address Validation | ⏳ Pending | - | Need API integration |
 | Abandoned Cart | ⏳ Pending | - | Need cron job |
-| Photoshoot Gallery | ⏳ Pending | - | Need component & admin UI |
 | Wishlist Page | ⏳ Pending | - | Need page creation |
 
 ---
