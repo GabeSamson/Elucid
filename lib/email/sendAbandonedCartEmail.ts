@@ -129,7 +129,7 @@ export async function sendAbandonedCartEmail({
 
                     <p style="margin: 30px 0 0; color: #999; font-size: 14px; line-height: 1.6; text-align: center;">
                       If you have any questions, feel free to reply to this email or contact us at
-                      <a href="mailto:Elucid.Ldn@gmail.com" style="color: #2b2b2b; text-decoration: none;">Elucid.Ldn@gmail.com</a>
+                      <a href="mailto:info@elucid.london" style="color: #2b2b2b; text-decoration: none;">info@elucid.london</a>
                     </p>
                   </td>
                 </tr>

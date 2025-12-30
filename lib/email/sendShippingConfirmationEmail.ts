@@ -87,7 +87,7 @@ export async function sendShippingConfirmationEmail({
 
               <p style="font-size: 14px; color: #666; margin-top: 25px;">
                 You'll receive your order soon. If you have any questions about your shipment, please don't hesitate to contact us at
-                <a href="mailto:Elucid.Ldn@gmail.com" style="color: #2c2c2c;">Elucid.Ldn@gmail.com</a>.
+                <a href="mailto:info@elucid.london" style="color: #2c2c2c;">info@elucid.london</a>.
               </p>
             </div>
 
@@ -131,7 +131,7 @@ ${item.name} × ${item.quantity}
 ${item.size ? `Size: ${item.size}` : ''} ${item.color ? `Color: ${item.color}` : ''}
 `.trim()).join('\n')}
 
-You'll receive your order soon. If you have any questions about your shipment, please don't hesitate to contact us at Elucid.Ldn@gmail.com.
+You'll receive your order soon. If you have any questions about your shipment, please don't hesitate to contact us at info@elucid.london.
 
 ELUCID LONDON
 Contemporary Streetwear Crafted in London

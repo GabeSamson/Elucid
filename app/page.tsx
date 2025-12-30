@@ -44,7 +44,7 @@ export default async function Home() {
     url: 'https://www.elucid.london',
     logo: 'https://www.elucid.london/icon.png',
     description: 'Contemporary streetwear crafted in London',
-    email: 'Elucid.Ldn@gmail.com',
+    email: 'info@elucid.london',
     sameAs: [
       'https://www.instagram.com/elucid.ldn',
       'https://www.tiktok.com/@elucid.ldn6',

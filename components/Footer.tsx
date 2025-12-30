@@ -64,7 +64,7 @@ export default function Footer() {
           <div>
             <h4 className="text-sm uppercase tracking-wider mb-4">Contact</h4>
             <ul className="space-y-2 text-cream/60 text-sm">
-              <li><a href="mailto:Elucid.Ldn@gmail.com" className="hover:text-cream transition-colors">Elucid.Ldn@gmail.com</a></li>
+              <li><a href="mailto:info@elucid.london" className="hover:text-cream transition-colors">info@elucid.london</a></li>
             </ul>
             <div className="mt-4">
               <a
