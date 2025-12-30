@@ -176,25 +176,54 @@ export async function POST(request: NextRequest) {
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/checkout`,
       customer_email: email,
       discounts: couponId ? [{ coupon: couponId }] : undefined,
-      metadata: {
-        customerName: name,
-        address: JSON.stringify(trimmedAddress),
-        items: JSON.stringify(items),
-        subtotal: subtotal.toString(),
-        subtotalAfterDiscount: subtotalAfterDiscount !== undefined
-          ? subtotalAfterDiscount.toString()
-          : Math.max(Number(subtotal) - discountValue, 0).toString(),
-        shipping: normalizedShipping.toString(),
-        tax: tax.toString(),
-        total: total.toString(),
-        discount: discountValue.toString(),
-        promoCode: (promoCode || primaryPromo?.code || '').toString(),
-        promoCodeId: (promoCodeId || primaryPromo?.id || '').toString(),
-        promoCodes: JSON.stringify(normalizedPromoCodes),
-        giftWrapping: giftWrapping ? 'true' : 'false',
-        giftMessage: giftMessage || '',
-        ...(attributionPayload ? { attribution: attributionPayload } : {}),
-      },
+      metadata: (() => {
+        const metadata: Record<string, string> = {
+          customerName: name,
+          address: JSON.stringify(trimmedAddress),
+          subtotal: subtotal.toString(),
+          subtotalAfterDiscount: subtotalAfterDiscount !== undefined
+            ? subtotalAfterDiscount.toString()
+            : Math.max(Number(subtotal) - discountValue, 0).toString(),
+          shipping: normalizedShipping.toString(),
+          tax: tax.toString(),
+          total: total.toString(),
+          discount: discountValue.toString(),
+          promoCode: (promoCode || primaryPromo?.code || '').toString(),
+          promoCodeId: (promoCodeId || primaryPromo?.id || '').toString(),
+          promoCodes: JSON.stringify(normalizedPromoCodes),
+          giftWrapping: giftWrapping ? 'true' : 'false',
+          giftMessage: giftMessage || '',
+          ...(attributionPayload ? { attribution: attributionPayload } : {}),
+        };
+
+        // Stripe limits metadata values to 500 characters. Store a compact
+        // representation of items and fall back to per-item keys if needed.
+        const compactItems = Array.isArray(items)
+          ? items.map((item: any) => ({
+              productId: item.productId,
+              quantity: item.quantity,
+              size: item.size ?? null,
+              color: item.color ?? null,
+              priceAtPurchase: item.priceAtPurchase,
+            }))
+          : [];
+
+        const compactItemsJson = JSON.stringify(compactItems);
+        if (compactItemsJson.length <= 500) {
+          metadata.items = compactItemsJson;
+        } else {
+          metadata.itemsFormat = 'chunked-v1';
+          metadata.itemCount = compactItems.length.toString();
+          compactItems.slice(0, 50).forEach((item: any, index: number) => {
+            const itemJson = JSON.stringify(item);
+            if (itemJson.length <= 500) {
+              metadata[`item_${index}`] = itemJson;
+            }
+          });
+        }
+
+        return metadata;
+      })(),
     });
 
     return NextResponse.json({ sessionId: session.id, url: session.url }, { status: 200 });

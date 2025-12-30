@@ -167,6 +167,22 @@ export async function createOrderFromStripeSession(
       console.error('Failed to parse items metadata:', parseError);
     }
   }
+  if (parsedItems.length === 0 && metadata.itemsFormat === 'chunked-v1') {
+    const count = Number(metadata.itemCount) || 0;
+    const limit = Math.min(count, 50);
+    for (let index = 0; index < limit; index += 1) {
+      const raw = metadata[`item_${index}`];
+      if (!raw) continue;
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+          parsedItems.push(parsed as ParsedCartItem);
+        }
+      } catch (parseError) {
+        console.error('Failed to parse chunked item metadata:', parseError);
+      }
+    }
+  }
 
   const uniqueProductIds = Array.from(
     new Set(
