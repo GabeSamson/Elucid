@@ -611,6 +611,24 @@ export default async function AdminHomepagePage({ searchParams }: AdminHomepageP
 
             <fieldset className="space-y-3 rounded-xl border border-charcoal/10 bg-white px-5 py-4">
               <legend className="px-2 text-sm font-semibold uppercase tracking-wider text-charcoal/70">
+                Inventory
+              </legend>
+              <label className="flex items-center gap-3 text-sm text-charcoal">
+                <input
+                  type="checkbox"
+                  name="autoDeductStock"
+                  defaultChecked={homepageConfig?.autoDeductStock ?? false}
+                  className="h-4 w-4 rounded border-charcoal/30 text-charcoal focus:ring-charcoal"
+                />
+                Reserve stock automatically when orders are placed
+              </label>
+              <p className="text-xs text-charcoal/60">
+                When enabled, product stock will be moved to "Reserved" when customers place orders (online and in-person). When disabled, stock will be automatically deducted from available inventory.
+              </p>
+            </fieldset>
+
+            <fieldset className="space-y-3 rounded-xl border border-charcoal/10 bg-white px-5 py-4">
+              <legend className="px-2 text-sm font-semibold uppercase tracking-wider text-charcoal/70">
                 Feedback
               </legend>
               <label className="flex items-center gap-3 text-sm text-charcoal">
@@ -653,21 +671,6 @@ export default async function AdminHomepagePage({ searchParams }: AdminHomepageP
                 </label>
                 <p className="text-xs text-charcoal/60 mt-1">
                   When enabled and more than 3 reviews are pinned, reviews will automatically rotate in a carousel every 5 seconds. Users can also manually navigate with dots.
-                </p>
-              </div>
-
-              <div className="pt-2 border-t border-charcoal/5">
-                <label className="flex items-center gap-3 text-sm text-charcoal">
-                  <input
-                    type="checkbox"
-                    name="autoDeductStock"
-                    defaultChecked={homepageConfig?.autoDeductStock ?? false}
-                    className="h-4 w-4 rounded border-charcoal/30 text-charcoal focus:ring-charcoal"
-                  />
-                  Reserve stock automatically when orders are placed
-                </label>
-                <p className="text-xs text-charcoal/60 mt-1">
-                  When enabled, product stock will be moved to "Reserved" when customers place orders (online and in-person). When disabled, stock will be automatically deducted from available inventory.
                 </p>
               </div>
             </fieldset>

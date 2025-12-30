@@ -111,9 +111,9 @@ export default function HeroClient({
     return segments.map((segment) => (
       <div
         key={segment.label}
-        className="flex h-16 w-16 flex-col items-center justify-center rounded-xl border border-cream-light/30 bg-charcoal/80 text-cream-light shadow-sm backdrop-blur"
+        className="flex h-14 w-14 flex-col items-center justify-center rounded-xl border border-cream-light/30 bg-charcoal/80 text-cream-light shadow-sm backdrop-blur sm:h-16 sm:w-16"
       >
-        <span className="text-2xl font-semibold tabular-nums">{segment.value.toString().padStart(2, "0")}</span>
+        <span className="text-xl font-semibold tabular-nums sm:text-2xl">{segment.value.toString().padStart(2, "0")}</span>
         <span className="text-xs uppercase tracking-[0.2em] text-cream-light/70">{segment.label}</span>
       </div>
     ));
@@ -129,7 +129,7 @@ export default function HeroClient({
       style={{
         height: "var(--app-viewport-height, 100dvh)",
         paddingTop: "max(5.5rem, calc(env(safe-area-inset-top) + 3.5rem))",
-        paddingBottom: "max(2.5rem, env(safe-area-inset-bottom))",
+        paddingBottom: "max(4rem, calc(env(safe-area-inset-bottom) + 1.5rem))",
       }}
       data-nav-tone="dark"
     >
@@ -155,7 +155,7 @@ export default function HeroClient({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.9, delay: 0.1 }}
-          className="space-y-6"
+          className="space-y-4 sm:space-y-6"
         >
           {heading && !locked && (
             <h1 className="font-serif text-3xl text-cream-light md:text-5xl lg:text-6xl">
@@ -179,7 +179,7 @@ export default function HeroClient({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.3 }}
-            className="mx-auto mt-12 max-w-4xl space-y-4"
+            className="mx-auto mt-8 max-w-4xl space-y-4 sm:mt-10 md:mt-12"
           >
             {countdownLabel && (
               <p className="text-sm uppercase tracking-[0.35em] text-cream-light/60">
@@ -196,7 +196,7 @@ export default function HeroClient({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.5 }}
-          className="mt-12"
+          className="mt-8 sm:mt-10 md:mt-12"
         >
           {!locked && (
             <>
@@ -207,7 +207,7 @@ export default function HeroClient({
                 {ctaLabel}
               </a>
               {showFeedbackButton && (
-                <div className="mt-6">
+                <div className="mt-4 sm:mt-6">
                   <a
                     href="/reviews"
                     className="inline-flex items-center justify-center gap-3 rounded-full border border-cream-light/20 px-6 py-3 text-xs uppercase tracking-[0.3em] text-cream-light/80 hover:text-cream-light"
