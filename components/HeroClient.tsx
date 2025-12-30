@@ -120,8 +120,8 @@ export default function HeroClient({
   }, [countdown]);
 
   const heroLogoClasses = useCustomHeroImage && heroImageUrl
-    ? "mx-auto h-auto w-[clamp(240px,80vw,720px)] drop-shadow-2xl select-none pointer-events-none"
-    : "mx-auto h-auto w-[clamp(240px,80vw,720px)] drop-shadow-2xl invert brightness-0 contrast-200 select-none pointer-events-none transform -translate-x-[10px]";
+    ? "mx-auto h-auto w-[min(80vw,720px)] max-h-[42vh] object-contain drop-shadow-2xl select-none pointer-events-none"
+    : "mx-auto h-auto w-[min(80vw,720px)] max-h-[42vh] object-contain drop-shadow-2xl invert brightness-0 contrast-200 select-none pointer-events-none transform -translate-x-[10px]";
 
   return (
     <section
@@ -140,7 +140,7 @@ export default function HeroClient({
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, ease: "easeOut" }}
-          className="mb-6 sm:mb-8 flex justify-center"
+          className="mb-4 sm:mb-6 flex justify-center"
         >
           <img
             src={useCustomHeroImage && heroImageUrl ? heroImageUrl : "/logo.svg"}
@@ -179,14 +179,14 @@ export default function HeroClient({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.3 }}
-            className="mx-auto mt-8 max-w-4xl space-y-4 sm:mt-10 md:mt-12"
+            className="mx-auto mt-6 max-w-4xl space-y-4 sm:mt-10 md:mt-12"
           >
             {countdownLabel && (
               <p className="text-sm uppercase tracking-[0.35em] text-cream-light/60">
                 {countdownLabel}
               </p>
             )}
-            <div className="flex flex-wrap items-center justify-center gap-4">
+            <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
               {countdownDisplay}
             </div>
           </motion.div>
@@ -196,13 +196,13 @@ export default function HeroClient({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.5 }}
-          className="mt-8 sm:mt-10 md:mt-12"
+          className="mt-6 sm:mt-10 md:mt-12"
         >
           {!locked && (
             <>
               <a
                 href={ctaHref}
-                className="inline-flex items-center justify-center rounded-2xl border border-cream-light/30 px-14 py-4 text-sm uppercase tracking-[0.35em] text-cream-light transition-all duration-300 hover:bg-cream-light hover:text-charcoal-dark"
+                className="inline-flex items-center justify-center rounded-xl border border-cream-light/30 px-10 py-3 text-xs uppercase tracking-[0.28em] text-cream-light transition-all duration-300 hover:bg-cream-light hover:text-charcoal-dark sm:rounded-2xl sm:px-14 sm:py-4 sm:text-sm sm:tracking-[0.35em]"
               >
                 {ctaLabel}
               </a>
